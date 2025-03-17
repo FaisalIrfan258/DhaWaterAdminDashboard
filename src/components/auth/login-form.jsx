@@ -61,7 +61,6 @@ export default function LoginForm() {
           "Content-Type": "application/json",
         },
         body: JSON.stringify({ email, password }),
-        credentials: "include", // Important for cookies
       })
 
       if (!response.ok) {
