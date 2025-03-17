@@ -4,10 +4,10 @@ import { SidebarProvider } from "@/components/ui/sidebar"
 import DashboardSidebar from "@/components/dashboard/dashboard-sidebar"
 import TopBar from "@/components/dashboard/top-bar"
 
-export default function DashboardLayout({ children }) {
+export default async function DashboardLayout({ children }) {
   // Check for authentication on the server
-  const cookieStore = cookies()
-  const token = cookieStore.get("access_token")
+  const cookieStore = await cookies()
+  const token = cookieStore.get("admin_token")
 
   if (!token) {
     redirect("/login")

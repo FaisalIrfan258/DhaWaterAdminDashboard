@@ -4,6 +4,7 @@ import { useState } from "react"
 import { useRouter } from "next/navigation"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
+import Cookies from "js-cookie"
 
 export default function LoginForm() {
   const [email, setEmail] = useState("")
@@ -63,27 +64,18 @@ export default function LoginForm() {
         body: JSON.stringify({ email, password }),
       })
 
-      if (!response.ok) {
-        const errorData = await response.json().catch(() => ({}));
-        throw new Error(errorData.message || `Login failed with status: ${response.status}`);
+      if (response.ok) {
+        const data = await response.json()
+        Cookies.set("admin_token", data.token, { path: '/', secure: true, sameSite: 'Strict' })
+
+        // Redirect to dashboard
+        window.location.href = "/dashboard"
+      } else {
+        const errorData = await response.json().catch(() => ({}))
+        throw new Error(errorData.message || `Login failed with status: ${response.status}`)
       }
-
-      const data = await response.json()
-
-      // Store user data in localStorage
-      localStorage.setItem(
-        "user",
-        JSON.stringify({
-          fullname: data.fullname,
-          email: data.email,
-          isSuper: data.is_super,
-        }),
-      )
-
-      // Redirect to dashboard
-      router.push("/dashboard")
     } catch (error) {
-      console.error("Login error:", error)
+      console.error("Login failed:", error)
       setLoginError(error.message || "Failed to login. Please check your credentials.")
     } finally {
       setIsLoading(false)

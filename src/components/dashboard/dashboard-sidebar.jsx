@@ -61,7 +61,7 @@ export default function DashboardSidebar() {
     },
     {
         title: "IOT Devices",
-        icon: Cog, 
+        icon: Truck, 
         href: "/dashboard/devices",
         },
     {
