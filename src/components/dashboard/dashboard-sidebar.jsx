@@ -45,7 +45,7 @@ export default function DashboardSidebar() {
     {
       title: "Water Supply Request",
       icon: Droplet,
-      href: "/dashboard/water-supply",
+      href: "/dashboard/requests",
     },
     {
       title: "Confirm Booking",
