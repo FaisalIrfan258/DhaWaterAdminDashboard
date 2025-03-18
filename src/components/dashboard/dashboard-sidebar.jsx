@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react"
 import Link from "next/link"
 import { usePathname, useRouter } from "next/navigation"
-import { LayoutDashboard, Droplet, Calendar, Truck, Users, Shield, LogOut } from "lucide-react"
+import { LayoutDashboard, Droplet, Calendar, Truck, Users, Shield, LogOut, Cpu } from "lucide-react"
 import {
   Sidebar,
   SidebarContent,
@@ -15,30 +15,28 @@ import {
   SidebarSeparator,
   SidebarTrigger,
 } from "@/components/ui/sidebar"
+import Cookies from "js-cookie"
 
 export default function DashboardSidebar() {
   const pathname = usePathname()
   const router = useRouter()
-  const [user, setUser] = useState({ isSuper: false })
-
+  // Initialize with null to prevent hydration mismatch
+  const [user, setUser] = useState(null)
+  
   useEffect(() => {
-    // Get user data from localStorage
-    const userData = localStorage.getItem("user")
-    if (userData) {
-      setUser(JSON.parse(userData))
-    }
+    // Move the cookie check to useEffect to ensure it only runs client-side
+    const userType = Cookies.get("user_type")
+    setUser({ isSuper: userType === "superAdmin" })
   }, [])
 
   const handleLogout = () => {
-    // Clear cookies and localStorage
-    document.cookie = "access_token=; path=/; expires=Thu, 01 Jan 1970 00:00:01 GMT"
-    localStorage.removeItem("user")
-
-    // Redirect to login page
+    Cookies.remove("admin_token", { path: '/' })
+    Cookies.remove("user_type", { path: '/' })
     router.push("/login")
   }
 
-  const navItems = [
+  // Define base nav items
+  const baseNavItems = [
     {
       title: "Dashboard",
       icon: LayoutDashboard,
@@ -60,10 +58,10 @@ export default function DashboardSidebar() {
       href: "/dashboard/tankers",
     },
     {
-        title: "IOT Devices",
-        icon: Truck, 
-        href: "/dashboard/devices",
-        },
+      title: "IOT Devices",
+      icon: Cpu,
+      href: "/dashboard/devices",
+    },
     {
       title: "Users Management",
       icon: Users,
@@ -71,14 +69,18 @@ export default function DashboardSidebar() {
     },
   ]
 
-  // Admin Management item only for Super Admin
-  if (user.isSuper) {
-    navItems.push({
-      title: "Admin Management",
-      icon: Shield,
-      href: "/dashboard/admins",
-    })
+  // Only render the component once user state is initialized
+  if (user === null) {
+    return null // or a loading spinner
   }
+
+  const navItems = user.isSuper 
+    ? [...baseNavItems, {
+        title: "Admin Management",
+        icon: Shield,
+        href: "/dashboard/admins",
+      }]
+    : baseNavItems
 
   return (
     <Sidebar>
@@ -98,7 +100,7 @@ export default function DashboardSidebar() {
         <SidebarMenu>
           {navItems.map((item) => (
             <SidebarMenuItem key={item.href}>
-              <SidebarMenuButton asChild isActive={pathname === item.href} tooltip={item.title}>
+              <SidebarMenuButton asChild isActive={pathname === item.href}>
                 <Link href={item.href}>
                   <item.icon />
                   <span>{item.title}</span>
@@ -114,7 +116,7 @@ export default function DashboardSidebar() {
       <SidebarFooter>
         <SidebarMenu>
           <SidebarMenuItem>
-            <SidebarMenuButton onClick={handleLogout} tooltip="Logout">
+            <SidebarMenuButton onClick={handleLogout}>
               <LogOut />
               <span>Logout</span>
             </SidebarMenuButton>

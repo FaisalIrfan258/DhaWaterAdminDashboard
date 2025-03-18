@@ -70,9 +70,6 @@ export default function AdminList() {
     return <div>Loading...</div>
   }
 
-  if (!user.isSuper) {
-    return <div>You do not have permission to view this page.</div>
-  }
 
   return (
     <div className="rounded-lg border bg-card shadow-sm">

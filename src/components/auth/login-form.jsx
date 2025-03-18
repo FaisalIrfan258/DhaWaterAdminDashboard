@@ -67,6 +67,9 @@ export default function LoginForm() {
       if (response.ok) {
         const data = await response.json()
         Cookies.set("admin_token", data.token, { path: '/', secure: true, sameSite: 'Strict' })
+        
+        // Store user type in cookie instead of localStorage
+        Cookies.set("user_type", loginType, { path: '/', secure: true, sameSite: 'Strict' })
 
         // Redirect to dashboard
         window.location.href = "/dashboard"
