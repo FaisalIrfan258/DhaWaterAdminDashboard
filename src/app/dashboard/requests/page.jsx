@@ -24,6 +24,16 @@ import { Droplets, Search, RefreshCw } from "lucide-react"
 import { Input } from "@/components/ui/input"
 import { toast } from 'sonner'
 import { getCookie } from 'cookies-next'
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog"
 
 export default function RequestsPage() {
   const [requests, setRequests] = useState([])
@@ -32,20 +42,16 @@ export default function RequestsPage() {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState(null)
   const [isRefreshing, setIsRefreshing] = useState(false)
+  const [rejectDialogOpen, setRejectDialogOpen] = useState(false)
+  const [selectedRequestId, setSelectedRequestId] = useState(null)
   const baseUrl = process.env.NEXT_PUBLIC_BASE_URL
 
   // Fetch all requests
   const fetchRequests = async () => {
     setLoading(true)
     try {
-      const accessToken = getCookie('accessToken')
-      if (!accessToken) {
-        throw new Error('No access token found')
-      }
-
       const response = await fetch(`${baseUrl}/api/admin/requests`, {
         headers: {
-          'Authorization': `Bearer ${accessToken}`,
           'Content-Type': 'application/json',
         },
       })
@@ -55,8 +61,9 @@ export default function RequestsPage() {
       }
 
       const data = await response.json()
-      setRequests(data.requests || [])
-      setFilteredRequests(data.requests || [])
+      // API returns array directly, not wrapped in requests object
+      setRequests(data || [])
+      setFilteredRequests(data || [])
       setError(null)
     } catch (err) {
       console.error('Error fetching requests:', err)
@@ -80,9 +87,10 @@ export default function RequestsPage() {
     }
     
     const filtered = requests.filter(request => 
-      request.customer_name?.toLowerCase().includes(query) ||
+      request.Customer?.full_name?.toLowerCase().includes(query) ||
       request.request_id?.toString().includes(query) ||
-      request.status?.toLowerCase().includes(query)
+      request.request_status?.toLowerCase().includes(query) ||
+      request.description?.toLowerCase().includes(query)
     )
     
     setFilteredRequests(filtered)
@@ -102,6 +110,34 @@ export default function RequestsPage() {
     }
   }
 
+  // Handle accept request
+  const handleAccept = async (requestId) => {
+    try {
+      // Add your accept API call here
+      toast.success('Request accepted successfully')
+      await fetchRequests() // Refresh the list
+    } catch (error) {
+      console.error('Error accepting request:', error)
+      toast.error('Failed to accept request')
+    }
+  }
+
+  // Handle reject request
+  const handleReject = async () => {
+    try {
+      if (!selectedRequestId) return
+      
+      // Add your reject API call here
+      
+      setRejectDialogOpen(false)
+      toast.success('Request rejected successfully')
+      await fetchRequests() // Refresh the list
+    } catch (error) {
+      console.error('Error rejecting request:', error)
+      toast.error('Failed to reject request')
+    }
+  }
+
   useEffect(() => {
     fetchRequests()
   }, [])
@@ -110,11 +146,22 @@ export default function RequestsPage() {
   const getStatusBadgeVariant = (status) => {
     const variants = {
       'pending': 'warning',
-      'approved': 'success',
-      'rejected': 'destructive',
-      'completed': 'default'
+      'in progress': 'info',
+      'completed': 'success',
+      'rejected': 'destructive'
     }
     return variants[status?.toLowerCase()] || 'secondary'
+  }
+
+  // Format date function
+  const formatDate = (dateString) => {
+    return new Date(dateString).toLocaleString('en-US', {
+      year: 'numeric',
+      month: 'short',
+      day: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit'
+    })
   }
 
   return (
@@ -179,17 +226,18 @@ export default function RequestsPage() {
                 <TableHeader>
                   <TableRow>
                     <TableHead>Request ID</TableHead>
-                    <TableHead>Customer Name</TableHead>
+                    <TableHead>Customer</TableHead>
                     <TableHead>Request Date</TableHead>
                     <TableHead>Water Amount</TableHead>
-                    <TableHead>Total Price</TableHead>
+                    <TableHead>Payment Mode</TableHead>
                     <TableHead>Status</TableHead>
+                    <TableHead>Actions</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
                   {filteredRequests.length === 0 ? (
                     <TableRow>
-                      <TableCell colSpan={6} className="text-center py-8 text-muted-foreground">
+                      <TableCell colSpan={7} className="text-center py-8 text-muted-foreground">
                         {searchQuery ? 'No requests found matching your search' : 'No requests found'}
                       </TableCell>
                     </TableRow>
@@ -197,16 +245,46 @@ export default function RequestsPage() {
                     filteredRequests.map((request) => (
                       <TableRow key={request.request_id}>
                         <TableCell className="font-medium">#{request.request_id}</TableCell>
-                        <TableCell>{request.customer_name}</TableCell>
                         <TableCell>
-                          {new Date(request.request_date).toLocaleDateString()}
+                          <div className="flex flex-col">
+                            <span className="font-medium">{request.Customer.full_name}</span>
+                            <span className="text-sm text-muted-foreground">
+                              ID: {request.Customer.customer_id}
+                            </span>
+                          </div>
                         </TableCell>
-                        <TableCell>{request.water_amount} L</TableCell>
-                        <TableCell>Rs. {request.total_price}</TableCell>
+                        <TableCell>{formatDate(request.request_date)}</TableCell>
+                        <TableCell>{request.requested_liters.toLocaleString()} L</TableCell>
                         <TableCell>
-                          <Badge variant={getStatusBadgeVariant(request.status)}>
-                            {request.status}
+                          {request.description.replace('Payment Mode:', '').trim()}
+                        </TableCell>
+                        <TableCell>
+                          <Badge variant={getStatusBadgeVariant(request.request_status)}>
+                            {request.request_status}
                           </Badge>
+                        </TableCell>
+                        <TableCell>
+                          <div className="flex items-center gap-2">
+                            <Button
+                              variant="success"
+                              size="sm"
+                              onClick={() => handleAccept(request.request_id)}
+                              disabled={request.request_status.toLowerCase() !== 'pending'}
+                            >
+                              Accept
+                            </Button>
+                            <Button
+                              variant="destructive"
+                              size="sm"
+                              onClick={() => {
+                                setSelectedRequestId(request.request_id)
+                                setRejectDialogOpen(true)
+                              }}
+                              disabled={request.request_status.toLowerCase() !== 'pending'}
+                            >
+                              Reject
+                            </Button>
+                          </div>
                         </TableCell>
                       </TableRow>
                     ))
@@ -217,6 +295,27 @@ export default function RequestsPage() {
           </CardContent>
         </Card>
       </div>
+
+      {/* Reject Confirmation Dialog */}
+      <AlertDialog open={rejectDialogOpen} onOpenChange={setRejectDialogOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Are you sure?</AlertDialogTitle>
+            <AlertDialogDescription>
+              This action will reject the water supply request. This action cannot be undone.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={handleReject}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            >
+              Reject
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </DashboardShell>
   )
 } 
