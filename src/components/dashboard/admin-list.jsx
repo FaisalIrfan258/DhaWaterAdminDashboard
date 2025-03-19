@@ -1,5 +1,6 @@
 "use client"
 
+import React from "react"
 import { useState, useEffect } from "react"
 import { MoreHorizontal, Edit, Trash } from "lucide-react"
 import {
@@ -10,8 +11,11 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
+import { Button } from "@/components/ui/button"
+import { toast } from 'sonner'
 
-export default function AdminList() {
+export default function AdminList({ admins, onEdit, onDelete }) {
   const [user, setUser] = useState({ isSuper: false })
   const [isLoading, setIsLoading] = useState(true)
 
@@ -30,104 +34,40 @@ export default function AdminList() {
     setIsLoading(false)
   }, [])
 
-  // Sample data - in a real app, you would fetch this from your API
-  const admins = [
-    {
-      id: 1,
-      name: "John Doe",
-      email: "john@example.com",
-      role: "Admin",
-      status: "Active",
-      createdAt: "2023-10-15",
-    },
-    {
-      id: 2,
-      name: "Jane Smith",
-      email: "jane@example.com",
-      role: "Admin",
-      status: "Active",
-      createdAt: "2023-10-20",
-    },
-    {
-      id: 3,
-      name: "Robert Johnson",
-      email: "robert@example.com",
-      role: "Admin",
-      status: "Inactive",
-      createdAt: "2023-11-05",
-    },
-    {
-      id: 4,
-      name: "Sarah Williams",
-      email: "sarah@example.com",
-      role: "Admin",
-      status: "Active",
-      createdAt: "2023-11-10",
-    },
-  ]
-
   if (isLoading) {
     return <div>Loading...</div>
   }
 
-
   return (
-    <div className="rounded-lg border bg-card shadow-sm">
-      <div className="overflow-x-auto">
-        <table className="w-full">
-          <thead>
-            <tr className="border-b bg-muted/50 text-left text-sm font-medium text-muted-foreground">
-              <th className="p-4">Name</th>
-              <th className="p-4">Email</th>
-              <th className="p-4">Role</th>
-              <th className="p-4">Status</th>
-              <th className="p-4">Created At</th>
-              <th className="p-4 text-right">Actions</th>
-            </tr>
-          </thead>
-          <tbody>
-            {admins.map((admin) => (
-              <tr key={admin.id} className="border-b last:border-0 hover:bg-muted/50">
-                <td className="p-4 font-medium">{admin.name}</td>
-                <td className="p-4">{admin.email}</td>
-                <td className="p-4">{admin.role}</td>
-                <td className="p-4">
-                  <div
-                    className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium ${
-                      admin.status === "Active" ? "bg-green-100 text-green-800" : "bg-red-100 text-red-800"
-                    }`}
-                  >
-                    {admin.status}
-                  </div>
-                </td>
-                <td className="p-4">{admin.createdAt}</td>
-                <td className="p-4 text-right">
-                  <DropdownMenu>
-                    <DropdownMenuTrigger asChild>
-                      <button className="inline-flex h-8 w-8 items-center justify-center rounded-md border border-input bg-transparent p-0 text-sm font-medium ring-offset-background transition-colors hover:bg-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2">
-                        <MoreHorizontal className="h-4 w-4" />
-                        <span className="sr-only">Open menu</span>
-                      </button>
-                    </DropdownMenuTrigger>
-                    <DropdownMenuContent align="end">
-                      <DropdownMenuLabel>Actions</DropdownMenuLabel>
-                      <DropdownMenuSeparator />
-                      <DropdownMenuItem>
-                        <Edit className="mr-2 h-4 w-4" />
-                        <span>Edit</span>
-                      </DropdownMenuItem>
-                      <DropdownMenuItem className="text-red-600">
-                        <Trash className="mr-2 h-4 w-4" />
-                        <span>Delete</span>
-                      </DropdownMenuItem>
-                    </DropdownMenuContent>
-                  </DropdownMenu>
-                </td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      </div>
+    <div className="space-y-4">
+      <h2 className="text-xl font-semibold">Existing Admins</h2>
+      <Table>
+        <TableHeader>
+          <TableRow>
+            <TableHead>ID</TableHead>
+            <TableHead>Full Name</TableHead>
+            <TableHead>Email</TableHead>
+            <TableHead>Actions</TableHead>
+          </TableRow>
+        </TableHeader>
+        <TableBody>
+          {admins.map((admin) => (
+            <TableRow key={admin.admin_id}>
+              <TableCell>{admin.admin_id}</TableCell>
+              <TableCell>{admin.full_name}</TableCell>
+              <TableCell>{admin.email}</TableCell>
+              <TableCell>
+                <Button onClick={() => onEdit(admin)} variant="outline" className="mr-2">
+                  Edit
+                </Button>
+                <Button onClick={() => onDelete(admin.admin_id)} variant="destructive">
+                  Delete
+                </Button>
+              </TableCell>
+            </TableRow>
+          ))}
+        </TableBody>
+      </Table>
     </div>
   )
 }

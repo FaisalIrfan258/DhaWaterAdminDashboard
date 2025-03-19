@@ -81,7 +81,7 @@ export function UserModal({
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="sm:max-w-[500px] max-h-[90vh] overflow-hidden flex flex-col">
+      <DialogContent className="sm:max-w-[500px]">
         <DialogHeader>
           <DialogTitle>{title}</DialogTitle>
           <DialogDescription>
@@ -92,7 +92,7 @@ export function UserModal({
               : "Fill in the details to create a new user account"}
           </DialogDescription>
         </DialogHeader>
-        <form onSubmit={handleSubmit} className="flex-1 overflow-y-auto pr-1">
+        <form onSubmit={handleSubmit}>
           <div className="grid gap-4 py-4">
             <div className="grid grid-cols-4 items-center gap-4">
               <Label htmlFor="full_name" className="text-right">
@@ -235,7 +235,7 @@ export function UserModal({
             </div>
           </div>
 
-          <div className="flex justify-end gap-3 sticky bottom-0 pt-2 pb-2 bg-background">
+          <div className="flex justify-end gap-3">
             <Button type="button" variant="outline" onClick={onClose}>
               {isViewOnly ? "Close" : "Cancel"}
             </Button>

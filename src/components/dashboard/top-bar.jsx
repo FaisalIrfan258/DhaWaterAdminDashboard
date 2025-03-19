@@ -37,11 +37,11 @@ export default function TopBar() {
   }
 
   return (
-    <header className="border-b bg-background">
+    <header className="border-b">
       <div className="flex h-16 items-center justify-between px-6">
         <div className="flex items-center gap-2">
           <SidebarTrigger className="md:hidden" />
-          <h1 className="text-xl font-semibold">Admin Dashboard</h1>
+          <h1 className="text-xl font-semibold">DHA Water Supply Dashboard</h1>
         </div>
 
         <div className="flex items-center gap-4">

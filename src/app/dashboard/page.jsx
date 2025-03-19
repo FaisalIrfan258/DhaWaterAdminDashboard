@@ -11,7 +11,7 @@ export default function DashboardPage() {
 
       <DashboardStats />
 
-      <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
+      <div className="grid grid-cols gap-6 md:grid-cols-2">
         <WaterSupplyChart />
         <RecentBookings />
       </div>

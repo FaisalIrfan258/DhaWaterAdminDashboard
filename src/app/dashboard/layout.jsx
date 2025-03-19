@@ -20,10 +20,10 @@ export default async function DashboardLayout({ children }) {
   return (
     <SidebarProvider defaultOpen={defaultOpen}>
       <div className="flex min-h-screen">
-        <DashboardSidebar />
+        <DashboardSidebar className="w-64" />
         <div className="flex flex-col flex-1">
           <TopBar />
-          <main className="flex-1 p-6">{children}</main>
+          <main className="flex-1 p-6 overflow-auto">{children}</main>
         </div>
       </div>
     </SidebarProvider>

@@ -2,8 +2,9 @@
 
 import { useEffect, useState } from "react"
 import Link from "next/link"
+import Image from "next/image"
 import { usePathname, useRouter } from "next/navigation"
-import { LayoutDashboard, Droplet, Calendar, Truck, Users, Shield, LogOut, Cpu } from "lucide-react"
+import { LayoutDashboard, Droplet, Calendar, Truck, Users, Shield, LogOut, Cpu, Settings } from "lucide-react"
 import {
   Sidebar,
   SidebarContent,
@@ -12,7 +13,6 @@ import {
   SidebarMenu,
   SidebarMenuItem,
   SidebarMenuButton,
-  SidebarSeparator,
   SidebarTrigger,
 } from "@/components/ui/sidebar"
 import Cookies from "js-cookie"
@@ -22,7 +22,7 @@ export default function DashboardSidebar() {
   const router = useRouter()
   // Initialize with null to prevent hydration mismatch
   const [user, setUser] = useState(null)
-  
+
   useEffect(() => {
     // Move the cookie check to useEffect to ensure it only runs client-side
     const userType = Cookies.get("user_type")
@@ -30,8 +30,8 @@ export default function DashboardSidebar() {
   }, [])
 
   const handleLogout = () => {
-    Cookies.remove("admin_token", { path: '/' })
-    Cookies.remove("user_type", { path: '/' })
+    Cookies.remove("admin_token", { path: "/" })
+    Cookies.remove("user_type", { path: "/" })
     router.push("/login")
   }
 
@@ -47,11 +47,11 @@ export default function DashboardSidebar() {
       icon: Droplet,
       href: "/dashboard/requests",
     },
-    {
-      title: "Confirm Booking",
-      icon: Calendar,
-      href: "/dashboard/bookings",
-    },
+    // {
+    //   title: "Confirm Booking",
+    //   icon: Calendar,
+    //   href: "/dashboard/bookings",
+    // },
     {
       title: "Tanker Management",
       icon: Truck,
@@ -74,36 +74,42 @@ export default function DashboardSidebar() {
     return null // or a loading spinner
   }
 
-  const navItems = user.isSuper 
-    ? [...baseNavItems, {
-        title: "Admin Management",
-        icon: Shield,
-        href: "/dashboard/admins",
-      }]
+  const navItems = user.isSuper
+    ? [
+        ...baseNavItems,
+        {
+          title: "Admin Management",
+          icon: Shield,
+          href: "/dashboard/admins",
+        },
+      ]
     : baseNavItems
 
   return (
-    <Sidebar>
-      <SidebarHeader className="border-b">
-        <div className="flex items-center gap-2 px-4 py-2">
-          <div className="h-8 w-8 rounded-full bg-primary flex items-center justify-center text-primary-foreground font-bold">
-            A
+    <Sidebar className="text-white border-r-0 bg-gradient-to-b from-[#004D77] to-[#43A2B3]">
+      <SidebarHeader className="bg-[#004D77] border-b-0 p-0">
+        <div className="flex items-center h-16 px-6">
+          <div className="text-2xl font-bold">
+            <Image src="/assets/water.png" alt="logo" width={48} height={48} className="rounded-full" />
           </div>
-          <div className="font-semibold">Admin Dashboard</div>
-        </div>
-        <div className="md:hidden px-2">
-          <SidebarTrigger />
+          <div className="md:hidden ml-auto">
+            <SidebarTrigger className="text-white hover:text-white hover:bg-transparent" />
+          </div>
         </div>
       </SidebarHeader>
 
-      <SidebarContent>
-        <SidebarMenu>
+      <SidebarContent className="p-4">
+        <SidebarMenu className="space-y-2 md:space-y-4">
           {navItems.map((item) => (
             <SidebarMenuItem key={item.href}>
-              <SidebarMenuButton asChild isActive={pathname === item.href}>
+              <SidebarMenuButton
+                asChild
+                isActive={pathname === item.href}
+                className="text-white hover:bg-[#43A2B3] rounded-md p-2 transition-colors duration-200 data-[active=true]:bg-[#43A2B3]"
+              >
                 <Link href={item.href}>
-                  <item.icon />
-                  <span>{item.title}</span>
+                  <item.icon size={20} />
+                  <span className="text-sm md:text-base">{item.title}</span>
                 </Link>
               </SidebarMenuButton>
             </SidebarMenuItem>
@@ -111,14 +117,21 @@ export default function DashboardSidebar() {
         </SidebarMenu>
       </SidebarContent>
 
-      <SidebarSeparator />
-
-      <SidebarFooter>
-        <SidebarMenu>
+      <SidebarFooter className="p-4 mt-auto border-t-0">
+        <SidebarMenu className="space-y-2 md:space-y-4">
           <SidebarMenuItem>
-            <SidebarMenuButton onClick={handleLogout}>
-              <LogOut />
-              <span>Logout</span>
+            <SidebarMenuButton className="flex items-center space-x-2 text-white hover:bg-[#43A2B3] rounded-md p-2 transition-colors duration-200">
+              <Settings size={20} />
+              <span className="text-sm md:text-base">Settings</span>
+            </SidebarMenuButton>
+          </SidebarMenuItem>
+          <SidebarMenuItem>
+            <SidebarMenuButton
+              onClick={handleLogout}
+              className="flex items-center space-x-2 text-white hover:bg-[#43A2B3] rounded-md p-2 transition-colors duration-200"
+            >
+              <LogOut size={20} />
+              <span className="text-sm md:text-base">Logout</span>
             </SidebarMenuButton>
           </SidebarMenuItem>
         </SidebarMenu>
