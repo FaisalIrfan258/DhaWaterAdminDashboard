@@ -58,8 +58,7 @@ export default function DashboardStats() {
     
     {
       title: "Total Users",
-      value: totalUsers !== null ? totalUsers : "Loading...", // Placeholder for total users
-      
+      value: totalUsers !== null ? totalUsers : "Loading...", // Placeholder for total users      
       changeType: "positive", // Placeholder for change type
       icon: Users,
     },

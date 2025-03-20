@@ -23,7 +23,6 @@ import { Badge } from "@/components/ui/badge"
 import { Droplets, Search, RefreshCw } from "lucide-react"
 import { Input } from "@/components/ui/input"
 import { toast } from 'sonner'
-import { getCookie } from 'cookies-next'
 import {
   AlertDialog,
   AlertDialogAction,
@@ -34,6 +33,7 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog"
+import AcceptRequestModal from "@/components/accept-request-modal"
 
 export default function RequestsPage() {
   const [requests, setRequests] = useState([])
@@ -44,6 +44,8 @@ export default function RequestsPage() {
   const [isRefreshing, setIsRefreshing] = useState(false)
   const [rejectDialogOpen, setRejectDialogOpen] = useState(false)
   const [selectedRequestId, setSelectedRequestId] = useState(null)
+  const [selectedCustomerId, setSelectedCustomerId] = useState(null)
+  const [isModalOpen, setIsModalOpen] = useState(false)
   const baseUrl = process.env.NEXT_PUBLIC_BASE_URL
 
   // Fetch all requests
@@ -136,6 +138,12 @@ export default function RequestsPage() {
       console.error('Error rejecting request:', error)
       toast.error('Failed to reject request')
     }
+  }
+
+  const handleAcceptClick = (requestId, customerId) => {
+    setSelectedRequestId(requestId)
+    setSelectedCustomerId(customerId)
+    setIsModalOpen(true)
   }
 
   useEffect(() => {
@@ -268,7 +276,7 @@ export default function RequestsPage() {
                             <Button
                               variant="success"
                               size="sm"
-                              onClick={() => handleAccept(request.request_id)}
+                              onClick={() => handleAcceptClick(request.request_id, request.Customer.customer_id)}
                               disabled={request.request_status.toLowerCase() !== 'pending'}
                             >
                               Accept
@@ -316,6 +324,14 @@ export default function RequestsPage() {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      {/* Accept Request Modal */}
+      <AcceptRequestModal
+        isOpen={isModalOpen}
+        onClose={() => setIsModalOpen(false)}
+        requestId={selectedRequestId}
+        customerId={selectedCustomerId}
+      />
     </DashboardShell>
   )
 } 
