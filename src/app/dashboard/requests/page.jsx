@@ -180,8 +180,8 @@ export default function RequestsPage() {
         </div>
       </DashboardHeader>
 
-      <div className="grid gap-4">
-        <Card>
+      <div className="grid gap-4 w-full">
+        <Card className="max-w-full">
           <CardHeader>
             <CardTitle className="flex items-center">
               <Droplets className="mr-2 h-5 w-5" />
@@ -222,7 +222,7 @@ export default function RequestsPage() {
                 <RefreshCw className="h-8 w-8 animate-spin text-muted-foreground" />
               </div>
             ) : (
-              <Table>
+              <Table className="w-full">
                 <TableHeader>
                   <TableRow>
                     <TableHead>Request ID</TableHead>
