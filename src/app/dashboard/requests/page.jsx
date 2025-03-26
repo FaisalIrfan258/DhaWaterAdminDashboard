@@ -28,14 +28,17 @@ import {
   AlertDialogAction,
   AlertDialogCancel,
   AlertDialogContent,
-  AlertDialogDescription,
+  AlertDialogDescription,                                                                                               
   AlertDialogFooter,
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog"
 import AcceptRequestModal from "@/components/accept-request-modal"
+import { useUser } from "@/context/UserContext"
 
 export default function RequestsPage() {
+  const { user } = useUser()
+  const adminId = user ? user.id : 1
   const [requests, setRequests] = useState([])
   const [filteredRequests, setFilteredRequests] = useState([])
   const [searchQuery, setSearchQuery] = useState("")
@@ -98,6 +101,14 @@ export default function RequestsPage() {
     setFilteredRequests(filtered)
   }
 
+  // Sort requests in ascending order by request date
+  const sortedRequests = [...requests].sort((a, b) => new Date(b.request_date) - new Date(a.request_date));
+
+  // Update filtered requests to use sorted requests
+  useEffect(() => {
+    setFilteredRequests(sortedRequests);
+  }, [requests]);
+
   // Handle refresh
   const handleRefresh = async () => {
     setIsRefreshing(true)
@@ -154,8 +165,8 @@ export default function RequestsPage() {
   const getStatusBadgeVariant = (status) => {
     const variants = {
       'pending': 'warning',
-      'in progress': 'info',
-      'completed': 'success',
+      'in progress': 'default',
+      'accepted': 'success',
       'rejected': 'destructive'
     }
     return variants[status?.toLowerCase()] || 'secondary'
@@ -171,6 +182,25 @@ export default function RequestsPage() {
       minute: '2-digit'
     })
   }
+
+  const handleSubmit = async () => {
+    try {
+      const response = await fetch(`${baseUrl}/api/accept-request`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          request_id: selectedRequestId,
+          admin_id: adminId,
+          customer_id: selectedCustomerId,
+        }),
+      });
+      // Handle response...
+    } catch (error) {
+      console.error('Error accepting request:', error);
+    }
+  };
 
   return (
     <DashboardShell>
@@ -237,7 +267,7 @@ export default function RequestsPage() {
                     <TableHead>Customer</TableHead>
                     <TableHead>Request Date</TableHead>
                     <TableHead>Water Amount</TableHead>
-                    <TableHead>Payment Mode</TableHead>
+                    {/* <TableHead>Payment Mode</TableHead> */}
                     <TableHead>Status</TableHead>
                     <TableHead>Actions</TableHead>
                   </TableRow>
@@ -263,9 +293,9 @@ export default function RequestsPage() {
                         </TableCell>
                         <TableCell>{formatDate(request.request_date)}</TableCell>
                         <TableCell>{request.requested_liters.toLocaleString()} L</TableCell>
-                        <TableCell>
+                        {/* <TableCell>
                           {request.description.replace('Payment Mode:', '').trim()}
-                        </TableCell>
+                        </TableCell> */}
                         <TableCell>
                           <Badge variant={getStatusBadgeVariant(request.request_status)}>
                             {request.request_status}
@@ -277,7 +307,7 @@ export default function RequestsPage() {
                               variant="success"
                               size="sm"
                               onClick={() => handleAcceptClick(request.request_id, request.Customer.customer_id)}
-                              disabled={request.request_status.toLowerCase() !== 'pending'}
+                              disabled={request.request_status.toLowerCase() !== 'in progress'}
                             >
                               Accept
                             </Button>
@@ -288,7 +318,7 @@ export default function RequestsPage() {
                                 setSelectedRequestId(request.request_id)
                                 setRejectDialogOpen(true)
                               }}
-                              disabled={request.request_status.toLowerCase() !== 'pending'}
+                              disabled={request.request_status.toLowerCase() !== 'in progress'}
                             >
                               Reject
                             </Button>
@@ -331,6 +361,7 @@ export default function RequestsPage() {
         onClose={() => setIsModalOpen(false)}
         requestId={selectedRequestId}
         customerId={selectedCustomerId}
+        adminId={adminId}
       />
     </DashboardShell>
   )

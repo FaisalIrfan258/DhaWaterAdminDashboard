@@ -5,7 +5,7 @@ import { Modal } from "@/components/ui/modal"; // Adjust the import path as nece
 import { Button } from "@/components/ui/button"; // Adjust the import path as necessary
 import { toast } from "sonner";
 
-const AcceptRequestModal = ({ isOpen, onClose, requestId, customerId }) => {
+const AcceptRequestModal = ({ isOpen, onClose, requestId, customerId, adminId }) => {
   const [tankers, setTankers] = useState([]);
   const [selectedTankerId, setSelectedTankerId] = useState("");
   const [scheduledDate, setScheduledDate] = useState("");
@@ -32,17 +32,18 @@ const AcceptRequestModal = ({ isOpen, onClose, requestId, customerId }) => {
   const handleSubmit = async (e) => {
     e.preventDefault();
 
-    // Construct the request body
+    // Construct the request body for creating a booking
     const requestBody = {
-      tanker_id: parseInt(selectedTankerId), // Ensure tanker_id is an integer
       request_id: requestId,
+      admin_id: adminId, // Use the admin ID passed as a prop
+      tanker_id: parseInt(selectedTankerId), // Ensure tanker_id is an integer
       customer_id: customerId,
-      schedule_date: scheduledDate,
+      scheduled_date: scheduledDate,
     };
 
     try {
       const baseUrl = process.env.NEXT_PUBLIC_BASE_URL; // Ensure this is set in your environment variables
-      const response = await fetch(`${baseUrl}/api/bookings/approve-request`, {
+      const response = await fetch(`${baseUrl}/api/bookings/create-booking`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -51,16 +52,16 @@ const AcceptRequestModal = ({ isOpen, onClose, requestId, customerId }) => {
       });
 
       if (!response.ok) {
-        throw new Error("Failed to approve request");
+        throw new Error("Failed to create booking");
       }
 
       const result = await response.json();
-      console.log("Request approved:", result);
-      toast.success("Request approved successfully!");
+      console.log("Booking created:", result);
+      toast.success("Booking created successfully!");
       onClose(); // Close the modal after successful submission
     } catch (error) {
-      console.error("Error approving request:", error);
-      toast.error("Failed to approve request");
+      console.error("Error creating booking:", error);
+      toast.error("Failed to create booking");
     }
   };
 

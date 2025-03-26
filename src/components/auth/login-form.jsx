@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import Cookies from "js-cookie"
+import { useUser } from '@/context/UserContext'
 
 export default function LoginForm() {
   const [email, setEmail] = useState("")
@@ -14,6 +15,7 @@ export default function LoginForm() {
   const [errors, setErrors] = useState({ email: "", password: "" })
   const [loginError, setLoginError] = useState("")
   const router = useRouter()
+  const { setUser } = useUser()
 
   const validateForm = () => {
     let valid = true
@@ -70,6 +72,9 @@ export default function LoginForm() {
         
         // Store user type in cookie instead of localStorage
         Cookies.set("user_type", loginType, { path: '/', secure: true, sameSite: 'Strict' })
+
+        // Set user data in context
+        setUser(data)
 
         // Redirect to dashboard
         window.location.href = "/dashboard"

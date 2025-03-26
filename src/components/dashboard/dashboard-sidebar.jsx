@@ -48,7 +48,7 @@ export default function DashboardSidebar() {
       href: "/dashboard/requests",
     },
     {
-      title: "Confirm Booking",
+      title: "Confirmed Bookings",
       icon: Calendar,
       href: "/dashboard/bookings",
     },
