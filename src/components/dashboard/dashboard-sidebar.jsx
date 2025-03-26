@@ -47,11 +47,11 @@ export default function DashboardSidebar() {
       icon: Droplet,
       href: "/dashboard/requests",
     },
-    // {
-    //   title: "Confirm Booking",
-    //   icon: Calendar,
-    //   href: "/dashboard/bookings",
-    // },
+    {
+      title: "Confirm Booking",
+      icon: Calendar,
+      href: "/dashboard/bookings",
+    },
     {
       title: "Tanker Management",
       icon: Truck,
