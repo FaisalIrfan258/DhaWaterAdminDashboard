@@ -35,6 +35,7 @@ import {
 } from "@/components/ui/alert-dialog"
 import AcceptRequestModal from "@/components/accept-request-modal"
 import { useUser } from "@/context/UserContext"
+import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from "@/components/ui/select"
 
 export default function RequestsPage() {
   const { user } = useUser()
@@ -49,6 +50,7 @@ export default function RequestsPage() {
   const [selectedRequestId, setSelectedRequestId] = useState(null)
   const [selectedCustomerId, setSelectedCustomerId] = useState(null)
   const [isModalOpen, setIsModalOpen] = useState(false)
+  const [statusFilter, setStatusFilter] = useState("All")
   const baseUrl = process.env.NEXT_PUBLIC_BASE_URL
 
   // Fetch all requests
@@ -109,6 +111,15 @@ export default function RequestsPage() {
     setFilteredRequests(sortedRequests);
   }, [requests]);
 
+  // Update filtered requests based on status filter
+  useEffect(() => {
+    if (statusFilter === "All") {
+      setFilteredRequests(requests);
+    } else {
+      setFilteredRequests(requests.filter(request => request.request_status === statusFilter));
+    }
+  }, [statusFilter, requests]);
+
   // Handle refresh
   const handleRefresh = async () => {
     setIsRefreshing(true)
@@ -138,18 +149,26 @@ export default function RequestsPage() {
   // Handle reject request
   const handleReject = async () => {
     try {
-      if (!selectedRequestId) return
-      
-      // Add your reject API call here
-      
-      setRejectDialogOpen(false)
-      toast.success('Request rejected successfully')
-      await fetchRequests() // Refresh the list
+      if (!selectedRequestId) return;
+
+      // Use the specified API for rejection
+      const response = await fetch(`${baseUrl}/api/bookings/reject-request/${selectedRequestId}`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+      });
+
+      if (!response.ok) throw new Error('Failed to reject request');
+
+      setRejectDialogOpen(false);
+      toast.success('Request rejected successfully');
+      await fetchRequests(); // Refresh the list
     } catch (error) {
-      console.error('Error rejecting request:', error)
-      toast.error('Failed to reject request')
+      console.error('Error rejecting request:', error);
+      toast.error('Failed to reject request');
     }
-  }
+  };
 
   const handleAcceptClick = (requestId, customerId) => {
     setSelectedRequestId(requestId)
@@ -206,6 +225,17 @@ export default function RequestsPage() {
     <DashboardShell>
       <DashboardHeader heading="Water Supply Requests" text="Manage water supply requests from customers">
         <div className="flex items-center gap-2">
+          <Select onValueChange={setStatusFilter} defaultValue="All">
+            <SelectTrigger>
+              <SelectValue placeholder="Filter by status" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="All">All</SelectItem>
+              <SelectItem value="In Progress">In Progress</SelectItem>
+              <SelectItem value="Accepted">Accepted</SelectItem>
+              <SelectItem value="Rejected">Rejected</SelectItem>
+            </SelectContent>
+          </Select>
           <Button 
             variant="outline" 
             size="icon" 

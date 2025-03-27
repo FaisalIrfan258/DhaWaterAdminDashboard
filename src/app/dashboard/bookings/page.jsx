@@ -41,6 +41,7 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
+import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from "@/components/ui/select";
 
 export default function BookingsPage() {
   const [bookings, setBookings] = useState([]);
@@ -53,6 +54,7 @@ export default function BookingsPage() {
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
   const [selectedBooking, setSelectedBooking] = useState(null);
+  const [statusFilter, setStatusFilter] = useState("All");
   const baseUrl = process.env.NEXT_PUBLIC_BASE_URL;
 
   const fetchBookings = async () => {
@@ -61,8 +63,10 @@ export default function BookingsPage() {
       const response = await fetch(`${baseUrl}/api/bookings/all-bookings`);
       if (!response.ok) throw new Error("Failed to fetch bookings");
       const data = await response.json();
-      setBookings(data);
-      setFilteredBookings(data);
+      // Sort bookings in ascending order by scheduled date
+      const sortedData = data.sort((a, b) => new Date(b.scheduled_date) - new Date(a.scheduled_date));
+      setBookings(sortedData);
+      setFilteredBookings(sortedData);
       setError(null);
     } catch (err) {
       console.error("Error fetching bookings:", err);
@@ -140,6 +144,14 @@ export default function BookingsPage() {
     fetchBookings();
   }, []);
 
+  useEffect(() => {
+    if (statusFilter === "All") {
+      setFilteredBookings(bookings);
+    } else {
+      setFilteredBookings(bookings.filter(booking => booking.status === statusFilter));
+    }
+  }, [statusFilter, bookings]);
+
   return (
     <DashboardShell>
       <DashboardHeader
@@ -147,6 +159,16 @@ export default function BookingsPage() {
         text="Manage your bookings for customers"
       >
         <div className="flex items-center gap-2">
+          <Select onValueChange={setStatusFilter} defaultValue="All">
+            <SelectTrigger>
+              <SelectValue placeholder="Filter by status" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="All">All</SelectItem>
+              <SelectItem value="Pending">Pending</SelectItem>
+              <SelectItem value="Delivered">Delivered</SelectItem>
+            </SelectContent>
+          </Select>
           <Button
             variant="outline"
             size="icon"
@@ -222,7 +244,7 @@ export default function BookingsPage() {
                     </TableRow>
                   ) : (
                     filteredBookings.map((booking) => (
-                      <TableRow>
+                      <TableRow key={booking.booking_id}>
                         <TableCell>{booking.booking_id}</TableCell>
                         <TableCell>{booking.Customer.full_name}</TableCell>
                         <TableCell>{booking.Tanker.tanker_name}</TableCell>
