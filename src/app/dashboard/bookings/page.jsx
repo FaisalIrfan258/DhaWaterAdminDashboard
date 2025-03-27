@@ -20,7 +20,7 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
-import { Search, RefreshCw, MoreHorizontal } from "lucide-react";
+import { Calendar, Search, RefreshCw, MoreHorizontal } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { toast } from "sonner";
 import {
@@ -142,131 +142,143 @@ export default function BookingsPage() {
 
   return (
     <DashboardShell>
-      <DashboardHeader>
-        <Card>
-          <CardHeader>
-            <CardTitle>Bookings</CardTitle>
-            <CardDescription>View and manage your bookings.</CardDescription>
-          </CardHeader>
-          <CardContent>
-            <div className="flex justify-between items-center mb-4">
-              <div className="relative w-64">
-                <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
-                <Input
-                  type="search"
-                  placeholder="Search bookings..."
-                  className="pl-8"
-                  value={searchQuery}
-                  onChange={handleSearch}
-                />
-              </div>
-              <div className="flex items-center gap-2">
-          <Button 
-            variant="outline" 
-            size="icon" 
-            onClick={handleRefresh} 
+      <DashboardHeader
+        heading="Bookings"
+        text="Manage your bookings for customers"
+      >
+        <div className="flex items-center gap-2">
+          <Button
+            variant="outline"
+            size="icon"
+            onClick={handleRefresh}
             disabled={isRefreshing}
           >
-            <RefreshCw className={`h-4 w-4 ${isRefreshing ? 'animate-spin' : ''}`} />
+            <RefreshCw
+              className={`h-4 w-4 ${isRefreshing ? "animate-spin" : ""}`}
+            />
             <span className="sr-only">Refresh</span>
           </Button>
         </div>
+      </DashboardHeader>
+
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center">
+            <Calendar className="mr-2 h-5 w-5" />
+            Confirmed Bookings
+          </CardTitle>
+          <CardDescription>View and manage your bookings.</CardDescription>
+        </CardHeader>
+        <CardContent>
+          <div className="flex justify-between items-center mb-4">
+            <div className="relative w-64">
+              <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
+              <Input
+                type="search"
+                placeholder="Search bookings..."
+                className="pl-8"
+                value={searchQuery}
+                onChange={handleSearch}
+              />
             </div>
+            <div className="flex items-center gap-2"></div>
+          </div>
 
-            {error && (
-              <div className="bg-destructive/15 text-destructive p-3 rounded-md mb-4">
-                {error}
+          {error && (
+            <div className="bg-destructive/15 text-destructive p-3 rounded-md mb-4">
+              {error}
+            </div>
+          )}
+
+          <div className="relative w-full overflow-auto">
+            {loading ? (
+              <div className="flex justify-center items-center py-8">
+                <RefreshCw className="h-8 w-8 animate-spin text-muted-foreground" />
               </div>
-            )}
-
-            <div className="relative w-full overflow-auto">
-              {loading ? (
-                <div className="flex justify-center items-center py-8">
-                  <RefreshCw className="h-8 w-8 animate-spin text-muted-foreground" />
-                </div>
-              ) : (
-                <Table>
-                  <TableHeader>
+            ) : (
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead> ID </TableHead>
+                    <TableHead>Customer Name</TableHead>
+                    <TableHead>Tanker Name</TableHead>
+                    <TableHead>Admin Name</TableHead>
+                    <TableHead>Status</TableHead>
+                    <TableHead>Scheduled Date</TableHead>
+                    <TableHead>Actions</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {filteredBookings.length === 0 ? (
                     <TableRow>
-                      <TableHead> ID </TableHead>
-                      <TableHead>Customer ID</TableHead>
-                      <TableHead>Tanker ID</TableHead>
-                      <TableHead>Status</TableHead>
-                      <TableHead>Scheduled Date</TableHead>
-                      <TableHead>Actions</TableHead>
+                      <TableCell
+                        colSpan={5}
+                        className="text-center py-8 text-muted-foreground"
+                      >
+                        {searchQuery
+                          ? "No bookings found matching your search"
+                          : "No bookings found"}
+                      </TableCell>
                     </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {filteredBookings.length === 0 ? (
+                  ) : (
+                    filteredBookings.map((booking) => (
                       <TableRow>
-                        <TableCell
-                          colSpan={5}
-                          className="text-center py-8 text-muted-foreground"
-                        >
-                          {searchQuery
-                            ? "No bookings found matching your search"
-                            : "No bookings found"}
+                        <TableCell>{booking.booking_id}</TableCell>
+                        <TableCell>{booking.Customer.full_name}</TableCell>
+                        <TableCell>{booking.Tanker.tanker_name}</TableCell>
+                        <TableCell>{booking.Admin.full_name}</TableCell>
+                        <TableCell>
+                          <Badge
+                            variant={
+                              booking.status === "Pending"
+                                ? "default"
+                                : "success"
+                            }
+                          >
+                            {booking.status}
+                          </Badge>
+                        </TableCell>
+                        <TableCell>
+                          {new Date(booking.scheduled_date).toLocaleString()}
+                        </TableCell>
+
+                        <TableCell>
+                          <DropdownMenu>
+                            <DropdownMenuTrigger asChild>
+                              <Button variant="ghost" size="sm">
+                                <MoreHorizontal className="h-4 w-4" />
+                                <span className="sr-only">Open menu</span>
+                              </Button>
+                            </DropdownMenuTrigger>
+                            <DropdownMenuContent align="end">
+                              <DropdownMenuItem
+                                onClick={() => handleViewBooking(booking)}
+                              >
+                                View Details
+                              </DropdownMenuItem>
+                              <DropdownMenuItem
+                                onClick={() => handleEditBooking(booking)}
+                              >
+                                Edit Booking
+                              </DropdownMenuItem>
+                              <DropdownMenuItem
+                                onClick={() => handleDeleteBooking(booking)}
+                                className="text-destructive"
+                              >
+                                Delete Booking
+                              </DropdownMenuItem>
+                            </DropdownMenuContent>
+                          </DropdownMenu>
                         </TableCell>
                       </TableRow>
-                    ) : (
-                      filteredBookings.map((booking) => (
-                        <TableRow>
-                          <TableCell>{booking.booking_id}</TableCell>
-                          <TableCell>{booking.customer_id}</TableCell>
-                          <TableCell>{booking.tanker_id}</TableCell>
-                          <TableCell>
-                            <Badge
-                              variant={
-                                booking.status === "Pending"
-                                  ? "default"
-                                  : "success"
-                              }
-                            >
-                              {booking.status}
-                            </Badge>
-                          </TableCell>
-                          <TableCell>
-                            {new Date(booking.scheduled_date).toLocaleString()}
-                          </TableCell>
-
-                          <TableCell>
-                            <DropdownMenu>
-                              <DropdownMenuTrigger asChild>
-                                <Button variant="ghost" size="sm">
-                                  <MoreHorizontal className="h-4 w-4" />
-                                  <span className="sr-only">Open menu</span>
-                                </Button>
-                              </DropdownMenuTrigger>
-                              <DropdownMenuContent align="end">
-                                <DropdownMenuItem
-                                  onClick={() => handleViewBooking(booking)}
-                                >
-                                  View Details
-                                </DropdownMenuItem>
-                                <DropdownMenuItem
-                                  onClick={() => handleEditBooking(booking)}
-                                >
-                                  Edit Booking
-                                </DropdownMenuItem>
-                                <DropdownMenuItem
-                                  onClick={() => handleDeleteBooking(booking)}
-                                  className="text-destructive"
-                                >
-                                  Delete Booking
-                                </DropdownMenuItem>
-                              </DropdownMenuContent>
-                            </DropdownMenu>
-                          </TableCell>
-                        </TableRow>
-                      ))
-                    )}
-                  </TableBody>
-                </Table>
-              )}
-            </div>
-          </CardContent>
-        </Card>
-      </DashboardHeader>
+                    ))
+                  )}
+                </TableBody>
+              </Table>
+            )}
+          </div>
+        </CardContent>
+      </Card>
 
       <BookingViewModal
         isOpen={isViewModalOpen}

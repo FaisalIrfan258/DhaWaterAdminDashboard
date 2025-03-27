@@ -138,3 +138,12 @@
     height: 100%;
   }
 }
+
+@media (max-width: 768px) {
+  .sidebar {
+    display: none; /* Hide sidebar on smaller screens */
+  }
+  .main-content {
+    width: 100%; /* Full width for main content */
+  }
+}

@@ -12,7 +12,6 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
-import { SidebarTrigger } from "@/components/ui/sidebar"
 import { useRouter } from "next/navigation"
 
 export default function TopBar() {
@@ -40,8 +39,7 @@ export default function TopBar() {
     <header className="border-b">
       <div className="flex h-16 items-center justify-between px-6">
         <div className="flex items-center gap-2">
-          <SidebarTrigger className="md:hidden" />
-          <h1 className="text-xl font-semibold">DHA Water Supply Dashboard</h1>
+          <h1 className="text-xl font-semibold">DHA Hydrant Dashboard</h1>
         </div>
 
         <div className="flex items-center gap-4">
