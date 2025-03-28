@@ -30,6 +30,7 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
+import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from "@/components/ui/select"
 
 export default function DevicesPage() {
   const [devices, setDevices] = useState([])
@@ -43,6 +44,7 @@ export default function DevicesPage() {
     sensor: null
   })
   const [isRefreshing, setIsRefreshing] = useState(false)
+  const [statusFilter, setStatusFilter] = useState("All")
 
   const baseUrl = process.env.NEXT_PUBLIC_BASE_URL;
 
@@ -206,6 +208,15 @@ export default function DevicesPage() {
     }
   }, [devices])
 
+  // Update filtered devices based on status filter
+  useEffect(() => {
+    let filtered = [...devices];
+    if (statusFilter !== "All") {
+      filtered = filtered.filter(device => device.status === statusFilter);
+    }
+    setFilteredDevices(filtered);
+  }, [statusFilter, devices]);
+
   const handleRefresh = async () => {
     setIsRefreshing(true)
     try {
@@ -247,7 +258,7 @@ export default function DevicesPage() {
     <DashboardShell>
       <DashboardHeader heading="Devices Management" text="Manage your IoT devices and sensors">
         <div className="flex items-center gap-2">
-          <Button 
+        <Button 
             variant="outline" 
             size="icon" 
             onClick={handleRefresh} 
@@ -256,6 +267,17 @@ export default function DevicesPage() {
             <RefreshCw className={`h-4 w-4 ${isRefreshing ? 'animate-spin' : ''}`} />
             <span className="sr-only">Refresh</span>
           </Button>
+          <Select onValueChange={setStatusFilter} defaultValue="All">
+            <SelectTrigger>
+              <SelectValue placeholder="Filter by status" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="All">All</SelectItem>
+              <SelectItem value="Active">Active</SelectItem>
+              <SelectItem value="Faulty">Faulty</SelectItem>
+            </SelectContent>
+          </Select>
+          
           <Button onClick={() => openModal("add")}>
             <Plus className="mr-2 h-4 w-4" />
             Add Device

@@ -31,6 +31,13 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { TankerModal } from "@/components/tankers/tanker-modal";
 import { TankerDetailsModal } from "@/components/tankers/tanker-details-modal";
+import {
+  Select,
+  SelectTrigger,
+  SelectValue,
+  SelectContent,
+  SelectItem,
+} from "@/components/ui/select";
 
 export default function TankersPage() {
   const [tankers, setTankers] = useState([]);
@@ -43,6 +50,7 @@ export default function TankersPage() {
   const [detailsModalOpen, setDetailsModalOpen] = useState(false);
   const [editingTanker, setEditingTanker] = useState(null);
   const [viewingTanker, setViewingTanker] = useState(null);
+  const [statusFilter, setStatusFilter] = useState("All");
   const baseUrl = process.env.NEXT_PUBLIC_BASE_URL;
 
   const getStatusBadgeVariant = (status) => {
@@ -64,7 +72,9 @@ export default function TankersPage() {
       if (!response.ok) throw new Error("Failed to fetch tankers");
 
       const data = await response.json();
-      const sortedTankers = [...data].sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
+      const sortedTankers = [...data].sort(
+        (a, b) => new Date(b.created_at) - new Date(a.created_at)
+      );
       setTankers(sortedTankers);
       setFilteredTankers(sortedTankers);
       setError(null);
@@ -180,6 +190,17 @@ export default function TankersPage() {
     setModalOpen(true); // Open the edit modal
   };
 
+  // Update filtered tankers based on status filter
+  useEffect(() => {
+    let filtered = [...tankers];
+    if (statusFilter !== "All") {
+      filtered = filtered.filter(
+        (tanker) => tanker.availability_status === statusFilter
+      );
+    }
+    setFilteredTankers(filtered);
+  }, [statusFilter, tankers]);
+
   useEffect(() => {
     fetchTankers();
   }, []);
@@ -198,6 +219,16 @@ export default function TankersPage() {
               className={`h-4 w-4 ${isRefreshing ? "animate-spin" : ""}`}
             />
           </Button>
+          <Select onValueChange={setStatusFilter} defaultValue="All">
+            <SelectTrigger>
+              <SelectValue placeholder="Filter by status" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="All">All</SelectItem>
+              <SelectItem value="Available">Available</SelectItem>
+              <SelectItem value="Unavailable">Unavailable</SelectItem>
+            </SelectContent>
+          </Select>
           <Button onClick={() => setModalOpen(true)}>
             <Plus className="mr-2 h-4 w-4" />
             Add Tanker
