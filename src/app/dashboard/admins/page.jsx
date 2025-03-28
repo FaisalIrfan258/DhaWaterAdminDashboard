@@ -22,7 +22,8 @@ export default function AdminManagementPage() {
       try {
         const response = await fetch(`${baseUrl}/api/superadmin/view-admins`);
         const data = await response.json();
-        setAdmins(data.admins); // Set the admins from the fetched data
+        const sortedAdmins = [...data.admins].sort((a, b) => a.full_name.localeCompare(b.full_name));
+        setAdmins(sortedAdmins); // Set the sorted admins from the fetched data
       } catch (error) {
         console.error('Error fetching admins:', error);
         toast.error('Failed to fetch admins');

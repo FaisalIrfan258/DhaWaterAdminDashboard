@@ -103,7 +103,7 @@ export default function RequestsPage() {
     setFilteredRequests(filtered)
   }
 
-  // Sort requests in ascending order by request date
+  // Sort requests in descending order by request date
   const sortedRequests = [...requests].sort((a, b) => new Date(b.request_date) - new Date(a.request_date));
 
   // Update filtered requests to use sorted requests
@@ -114,9 +114,9 @@ export default function RequestsPage() {
   // Update filtered requests based on status filter
   useEffect(() => {
     if (statusFilter === "All") {
-      setFilteredRequests(requests);
+      setFilteredRequests(sortedRequests);
     } else {
-      setFilteredRequests(requests.filter(request => request.request_status === statusFilter));
+      setFilteredRequests(sortedRequests.filter(request => request.request_status === statusFilter));
     }
   }, [statusFilter, requests]);
 

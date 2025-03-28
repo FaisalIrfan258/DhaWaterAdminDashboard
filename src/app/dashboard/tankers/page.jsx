@@ -64,8 +64,9 @@ export default function TankersPage() {
       if (!response.ok) throw new Error("Failed to fetch tankers");
 
       const data = await response.json();
-      setTankers(data);
-      setFilteredTankers(data);
+      const sortedTankers = [...data].sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
+      setTankers(sortedTankers);
+      setFilteredTankers(sortedTankers);
       setError(null);
     } catch (err) {
       console.error("Error fetching tankers:", err);

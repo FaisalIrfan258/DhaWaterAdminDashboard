@@ -56,8 +56,9 @@ export default function DevicesPage() {
       }
       const data = await response.json()
       const devicesList = data.sensors || []
-      setDevices(devicesList)
-      setFilteredDevices(devicesList)
+      const sortedDevices = [...devicesList].sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
+      setDevices(sortedDevices)
+      setFilteredDevices(sortedDevices)
       setError(null)
     } catch (err) {
       console.error('Error fetching devices:', err)

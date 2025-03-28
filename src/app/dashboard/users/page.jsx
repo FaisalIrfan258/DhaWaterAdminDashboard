@@ -57,8 +57,9 @@ export default function UsersPage() {
       if (!response.ok) throw new Error('Failed to fetch users')
       const data = await response.json()
       const usersList = data.users || []
-      setUsers(usersList)
-      setFilteredUsers(usersList) // Initialize filtered users with all users
+      const sortedUsers = [...usersList].sort((a, b) => a.full_name.localeCompare(b.full_name))
+      setUsers(sortedUsers)
+      setFilteredUsers(sortedUsers) // Initialize filtered users with all users
     } catch (error) {
       console.error('Error fetching users:', error)
       toast.error('Failed to load users', {
