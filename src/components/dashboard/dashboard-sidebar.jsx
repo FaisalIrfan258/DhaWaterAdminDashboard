@@ -12,7 +12,8 @@ import {
   Users,
   Shield,
   Cpu,
-
+  ChartNoAxesCombined,
+  NotebookPen,
 } from "lucide-react";
 import Cookies from "js-cookie";
 
@@ -34,11 +35,21 @@ const CustomSidebar = () => {
 
   const baseNavItems = [
     { title: "Dashboard", icon: LayoutDashboard, href: "/dashboard" },
-    { title: "Water Supply Request", icon: Droplet, href: "/dashboard/requests" },
-    { title: "Confirmed Bookings", icon: Calendar, href: "/dashboard/bookings" },
+    {
+      title: "Water Supply Request",
+      icon: Droplet,
+      href: "/dashboard/requests",
+    },
+    {
+      title: "Confirmed Bookings",
+      icon: Calendar,
+      href: "/dashboard/bookings",
+    },
     { title: "Tanker Management", icon: Truck, href: "/dashboard/tankers" },
+    { title: "Driver Management", icon: Users, href: "/dashboard/drivers" },
     { title: "IOT Devices", icon: Cpu, href: "/dashboard/devices" },
     { title: "Users Management", icon: Users, href: "/dashboard/users" },
+    { title: "Complains", icon: NotebookPen, href: "/dashboard/complains" },
   ];
 
   if (user === null) {
@@ -48,6 +59,11 @@ const CustomSidebar = () => {
   const navItems = user.isSuper
     ? [
         ...baseNavItems,
+        {
+          title: "Reports and Analytics",
+          icon: ChartNoAxesCombined,
+          href: "/dashboard/reports",
+        },
         {
           title: "Admin Management",
           icon: Shield,
@@ -76,22 +92,6 @@ const CustomSidebar = () => {
         </div>
       </div>
       <div className="p-4 mt-auto">
-        {/* <div className="space-y-2">
-          <Link
-            href="/settings"
-            className="flex items-center p-2 rounded-md hover:bg-[#43A2B3] transition-colors duration-200"
-          >
-            <Settings size={20} className="mr-2" />
-            <span>Settings</span>
-          </Link>
-          <button
-            onClick={handleLogout}
-            className="flex items-center p-2 rounded-md hover:bg-[#43A2B3] transition-colors duration-200 w-full"
-          >
-            <LogOut size={20} className="mr-2" />
-            <span>Logout</span>
-          </button>
-        </div> */}
       </div>
     </div>
   );
