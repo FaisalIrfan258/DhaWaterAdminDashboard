@@ -12,14 +12,16 @@ export default async function DashboardLayout({ children }) {
     redirect("/login");
   }
 
-  
   return (
     <div className="flex min-h-screen">
+      {/* Fixed Sidebar */}
       <CustomSidebar />
-      <div className="flex flex-col flex-1">
+
+      {/* Main content section with padding to prevent overlap with fixed sidebar */}
+      <div className="pl-64 flex flex-col flex-1">
         <TopBar />
         <main className="flex-1 p-6 overflow-auto">{children}</main>
       </div>
     </div>
-  )
+  );
 }
