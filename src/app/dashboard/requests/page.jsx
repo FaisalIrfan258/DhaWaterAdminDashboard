@@ -36,10 +36,11 @@ import {
 import AcceptRequestModal from "@/components/accept-request-modal"
 import { useUser } from "@/context/UserContext"
 import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from "@/components/ui/select"
+import Cookies from "js-cookie"
 
 export default function RequestsPage() {
   const { user } = useUser()
-  const adminId = user ? user.id : 1
+  const [adminId, setAdminId] = useState(null)
   const [requests, setRequests] = useState([])
   const [filteredRequests, setFilteredRequests] = useState([])
   const [searchQuery, setSearchQuery] = useState("")
@@ -52,6 +53,12 @@ export default function RequestsPage() {
   const [isModalOpen, setIsModalOpen] = useState(false)
   const [statusFilter, setStatusFilter] = useState("All")
   const baseUrl = process.env.NEXT_PUBLIC_BASE_URL
+
+  useEffect(() => {
+    // Access the admin_id cookie on the client side
+    const id = Cookies.get("admin_id")
+    setAdminId(id)
+  }, [])
 
   // Fetch all requests
   const fetchRequests = async () => {

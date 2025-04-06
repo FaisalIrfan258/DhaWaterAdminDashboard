@@ -33,6 +33,7 @@ import {
 import { MoreHorizontal, Eye, Pencil, Trash2 } from "lucide-react"
 import { ViewUserModal } from '@/components/users/view-user-modal'
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog"
+import { useRouter } from "next/navigation"
 
 export default function UsersPage() {
   const [users, setUsers] = useState([])
@@ -49,6 +50,7 @@ export default function UsersPage() {
   const [userToDelete, setUserToDelete] = useState(null)
   const baseUrl = process.env.NEXT_PUBLIC_BASE_URL
   const [isRefreshing, setIsRefreshing] = useState(false)
+  const router = useRouter()
 
   // Fetch all users
   const fetchUsers = async () => {
@@ -222,42 +224,8 @@ export default function UsersPage() {
   }
 
   // Handle view user details
-  const handleViewUser = async (user) => {
-    setIsLoading(true);
-    try {
-      const response = await fetch(`${baseUrl}/api/customer/customer-profile?customer_id=${user.customer_id}`);
-      
-      if (!response.ok) {
-        throw new Error('Failed to fetch user details');
-      }
-      
-      const data = await response.json();
-      
-      // Format the user data for the modal
-      const formattedUser = {
-        customer_id: data.customer.customer_id,
-        full_name: data.customer.full_name,
-        email: data.customer.email,
-        phone_number: data.customer.phone_number,
-        home_address: data.customer.home_address,
-        username: data.customer.username,
-        // Don't include password for view mode
-        tank_capacity: data.customer.tank_capacity || 0,
-        balance: data.customer.balance || 0,
-        device_id: data.device_id,
-        created_at: data.customer.created_at
-      };
-      
-      setViewingUser(formattedUser);
-      setIsViewModalOpen(true);
-    } catch (error) {
-      console.error('Error fetching user details:', error);
-      toast.error('Failed to load user details', {
-        description: 'Please try again or contact support.'
-      });
-    } finally {
-      setIsLoading(false);
-    }
+  const handleViewUser = (user) => {
+    router.push(`/dashboard/users/${user.customer_id}`);
   }
 
   // Open delete confirmation dialog

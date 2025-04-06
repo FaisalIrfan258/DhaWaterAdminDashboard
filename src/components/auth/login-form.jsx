@@ -68,9 +68,12 @@ export default function LoginForm() {
 
       if (response.ok) {
         const data = await response.json()
-        Cookies.set("admin_token", data.token, { path: '/', secure: true, sameSite: 'Strict' })
         
-        // Store user type in cookie instead of localStorage
+        // Store admin token and admin ID in cookies
+        Cookies.set("admin_token", data.admin_token, { path: '/', secure: true, sameSite: 'Strict' })
+        Cookies.set("admin_id", data.admin_id, { path: '/', secure: true, sameSite: 'Strict' })
+        
+        // Store user type in cookie
         Cookies.set("user_type", loginType, { path: '/', secure: true, sameSite: 'Strict' })
 
         // Set user data in context
