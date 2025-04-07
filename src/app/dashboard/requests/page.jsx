@@ -52,6 +52,8 @@ export default function RequestsPage() {
   const [selectedCustomerId, setSelectedCustomerId] = useState(null)
   const [isModalOpen, setIsModalOpen] = useState(false)
   const [statusFilter, setStatusFilter] = useState("All")
+  const [rejectReason, setRejectReason] = useState("hydrant closed")
+  const [notificationTitle, setNotificationTitle] = useState("")
   const baseUrl = process.env.NEXT_PUBLIC_BASE_URL
 
   useEffect(() => {
@@ -156,7 +158,7 @@ export default function RequestsPage() {
   // Handle reject request
   const handleReject = async () => {
     try {
-      if (!selectedRequestId) return;
+      if (!selectedRequestId || !selectedCustomerId) return;
 
       // Use the specified API for rejection
       const response = await fetch(`${baseUrl}/api/bookings/reject-request/${selectedRequestId}`, {
@@ -167,6 +169,20 @@ export default function RequestsPage() {
       });
 
       if (!response.ok) throw new Error('Failed to reject request');
+
+      // Send notification with customer_id included
+      await fetch(`${baseUrl}/api/notification/create-notification`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          title: notificationTitle,
+          message: rejectReason,
+          admin_id: adminId,
+          customer_id: selectedCustomerId,
+        }),
+      });
 
       setRejectDialogOpen(false);
       toast.success('Request rejected successfully');
@@ -353,6 +369,7 @@ export default function RequestsPage() {
                               size="sm"
                               onClick={() => {
                                 setSelectedRequestId(request.request_id)
+                                setSelectedCustomerId(request.Customer.customer_id)
                                 setRejectDialogOpen(true)
                               }}
                               disabled={request.request_status.toLowerCase() !== 'in progress'}
@@ -380,6 +397,31 @@ export default function RequestsPage() {
               This action will reject the water supply request. This action cannot be undone.
             </AlertDialogDescription>
           </AlertDialogHeader>
+          <div className="mb-4">
+            <label htmlFor="reject-reason" className="block text-sm font-medium text-gray-700">Reject Reason</label>
+            <select
+              id="reject-reason"
+              value={rejectReason}
+              onChange={(e) => setRejectReason(e.target.value)}
+              className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm focus:ring focus:ring-opacity-50"
+            >
+              <option value="hydrant closed">Hydrant Closed</option>
+              <option value="no water available">No Water Available</option>
+              <option value="holiday">Holiday</option>
+              {/* Add more reasons as needed */}
+            </select>
+          </div>
+          <div className="mb-4">
+            <label htmlFor="notification-title" className="block text-sm font-medium text-gray-700">Notification Title</label>
+            <input
+              id="notification-title"
+              type="text"
+              value={notificationTitle}
+              onChange={(e) => setNotificationTitle(e.target.value)}
+              className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm focus:ring focus:ring-opacity-50"
+              placeholder="Enter notification title"
+            />
+          </div>
           <AlertDialogFooter>
             <AlertDialogCancel>Cancel</AlertDialogCancel>
             <AlertDialogAction
