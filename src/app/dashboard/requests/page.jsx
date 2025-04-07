@@ -399,26 +399,30 @@ export default function RequestsPage() {
           </AlertDialogHeader>
           <div className="mb-4">
             <label htmlFor="reject-reason" className="block text-sm font-medium text-gray-700">Reject Reason</label>
-            <select
-              id="reject-reason"
+            <Select
               value={rejectReason}
-              onChange={(e) => setRejectReason(e.target.value)}
-              className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm focus:ring focus:ring-opacity-50"
+              onValueChange={setRejectReason}
+              className="mt-1 w-full"
             >
-              <option value="hydrant closed">Hydrant Closed</option>
-              <option value="no water available">No Water Available</option>
-              <option value="holiday">Holiday</option>
-              {/* Add more reasons as needed */}
-            </select>
+              <SelectTrigger>
+                <SelectValue placeholder="Select a reason" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="hydrant closed">Hydrant Closed</SelectItem>
+                <SelectItem value="no water available">No Water Available</SelectItem>
+                <SelectItem value="holiday">Holiday</SelectItem>
+                {/* Add more reasons as needed */}
+              </SelectContent>
+            </Select>
           </div>
           <div className="mb-4">
             <label htmlFor="notification-title" className="block text-sm font-medium text-gray-700">Notification Title</label>
-            <input
+            <Input
               id="notification-title"
               type="text"
               value={notificationTitle}
               onChange={(e) => setNotificationTitle(e.target.value)}
-              className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm focus:ring focus:ring-opacity-50"
+              className="mt-1"
               placeholder="Enter notification title"
             />
           </div>
