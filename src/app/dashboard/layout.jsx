@@ -5,7 +5,7 @@ import { redirect } from "next/navigation";
 
 export default async function DashboardLayout({ children }) {
   // Check for authentication on the server
-  const cookieStore = cookies();
+  const cookieStore = await cookies();  // Await cookies() here
   const token = cookieStore.get("admin_token");
 
   if (!token) {
