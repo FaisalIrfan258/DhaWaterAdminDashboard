@@ -22,7 +22,6 @@ export function UserModal({
   onClose,
   mode = "add", // "add" | "edit" | "view"
   user = null,
-  sensors,
   onSubmit,
   isLoading 
 }) {
@@ -39,6 +38,10 @@ export function UserModal({
   }
 
   const [formData, setFormData] = useState(defaultFormData)
+  const [sensors, setSensors] = useState([])
+  const [isSensorDropdownOpen, setIsSensorDropdownOpen] = useState(false)
+  const baseUrl = process.env.NEXT_PUBLIC_BASE_URL; // Ensure this is set in your environment variables
+
 
   useEffect(() => {
     if (mode === "edit" && user) {
@@ -51,6 +54,27 @@ export function UserModal({
       setFormData(defaultFormData)
     }
   }, [mode, user])
+
+  const fetchAvailableSensors = async () => {
+    try {
+      const response = await fetch(`${baseUrl}/api/sensor/available-sensors`)
+      if (!response.ok) throw new Error("Failed to fetch available sensors")
+      
+      const data = await response.json()
+      // Filter sensors to only include those that are "Not Assigned"
+      const notAssignedSensors = data.sensors.filter(sensor => sensor.status === "Not Assigned")
+      setSensors(notAssignedSensors) // Set the available sensors
+    } catch (error) {
+      console.error("Error fetching available sensors:", error)
+    }
+  }
+
+  const handleSensorDropdownOpen = () => {
+    if (!isSensorDropdownOpen) {
+      fetchAvailableSensors()
+    }
+    setIsSensorDropdownOpen(true)
+  }
 
   const handleSubmit = (e) => {
     e.preventDefault()
@@ -219,6 +243,7 @@ export function UserModal({
               <Select
                 value={formData.device_id}
                 onValueChange={(value) => setFormData({ ...formData, device_id: value })}
+                onOpenChange={handleSensorDropdownOpen}
                 disabled={isViewOnly}
               >
                 <SelectTrigger className="col-span-3">
@@ -227,7 +252,7 @@ export function UserModal({
                 <SelectContent>
                   {sensors.map((sensor) => (
                     <SelectItem key={sensor.sensor_id} value={sensor.sensor_id.toString()}>
-                      {sensor.sensor_name} (ID: {sensor.sensor_id})
+                      {sensor.sensor_id}
                     </SelectItem>
                   ))}
                 </SelectContent>

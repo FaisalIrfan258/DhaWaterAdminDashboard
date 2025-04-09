@@ -11,21 +11,21 @@ const AcceptRequestModal = ({ isOpen, onClose, requestId, customerId, adminId })
   const [scheduledDate, setScheduledDate] = useState("");
 
   useEffect(() => {
-    const fetchTankers = async () => {
+    const fetchAvailableTankers = async () => {
       const baseUrl = process.env.NEXT_PUBLIC_BASE_URL; // Ensure this is set in your environment variables
       try {
-        const response = await fetch(`${baseUrl}/api/tankers`);
-        if (!response.ok) throw new Error("Failed to fetch tankers");
+        const response = await fetch(`${baseUrl}/api/tankers/available-tankers`);
+        if (!response.ok) throw new Error("Failed to fetch available tankers");
         const data = await response.json();
-        setTankers(data); // Assuming the API returns an array of tankers
+        setTankers(data); // Assuming the API returns an array of available tankers
       } catch (error) {
-        console.error("Error fetching tankers:", error);
-        toast.error("Failed to load tankers");
+        console.error("Error fetching available tankers:", error);
+        toast.error("Failed to load available tankers");
       }
     };
 
     if (isOpen) {
-      fetchTankers();
+      fetchAvailableTankers();
     }
   }, [isOpen]);
 
