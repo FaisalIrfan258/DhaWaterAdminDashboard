@@ -1,7 +1,7 @@
 "use client"
 
 import { useEffect, useState } from "react"
-import { User } from "lucide-react"
+import { Bell, User } from "lucide-react"
 import { Avatar, AvatarFallback } from "@/components/ui/avatar"
 import { Button } from "@/components/ui/button"
 import {
@@ -13,23 +13,29 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
 import { useRouter } from "next/navigation"
+import Cookies from "js-cookie"
+import Link from "next/link"
 
 export default function TopBar() {
   const router = useRouter()
   const [user, setUser] = useState({ fullname: "", email: "", isSuper: false })
 
   useEffect(() => {
-    // Get user data from localStorage
-    const userData = localStorage.getItem("user")
-    if (userData) {
-      setUser(JSON.parse(userData))
-    }
+    // Get admin_id from cookies
+    const fullname = Cookies.get("admin_name") || ""
+    const email = Cookies.get("admin_email") || ""
+    const isSuper = Cookies.get("is_super") === "true"
+
+    setUser({ fullname, email, isSuper })
   }, [])
 
   const handleLogout = () => {
-    // Clear cookies and localStorage
+    // Clear cookies
     document.cookie = "access_token=; path=/; expires=Thu, 01 Jan 1970 00:00:01 GMT"
-    localStorage.removeItem("user")
+    document.cookie = "admin_id=; path=/; expires=Thu, 01 Jan 1970 00:00:01 GMT"
+    document.cookie = "admin_name=; path=/; expires=Thu, 01 Jan 1970 00:00:01 GMT"
+    document.cookie = "admin_email=; path=/; expires=Thu, 01 Jan 1970 00:00:01 GMT"
+    document.cookie = "is_super=; path=/; expires=Thu, 01 Jan 1970 00:00:01 GMT"
 
     // Redirect to login page
     router.push("/login")
@@ -43,6 +49,12 @@ export default function TopBar() {
         </div>
 
         <div className="flex items-center gap-4">
+          <Link href="/dashboard/notifications">
+            <Button variant="ghost" size="icon" className="relative">
+              <Bell className="h-5 w-5" />
+            </Button>
+          </Link>
+
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
               <Button variant="ghost" className="relative h-8 w-8 rounded-full">
@@ -68,4 +80,3 @@ export default function TopBar() {
     </header>
   )
 }
-

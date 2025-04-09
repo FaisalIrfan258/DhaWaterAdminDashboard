@@ -286,8 +286,8 @@ export default function TankersPage() {
                       <TableHead className="w-[80px]">ID</TableHead>
                       <TableHead>Name</TableHead>
                       <TableHead>Plate Number</TableHead>
-                      <TableHead className="text-right">Capacity (L)</TableHead>
-                      <TableHead className="text-right">Price/Liter</TableHead>
+                      <TableHead className="text-right">Capacity (G)</TableHead>
+                      <TableHead className="text-right">Price/Gallon</TableHead>
                       <TableHead className="text-right">Cost</TableHead>
                       <TableHead>Status</TableHead>
                       <TableHead className="w-[100px]">Actions</TableHead>
