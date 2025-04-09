@@ -21,7 +21,7 @@ export function SensorModal({
     sensor_name: "",
     sensor_details: "",
     manufacturing_date: new Date().toISOString().split('T')[0],
-    status: "Active"
+    status: "Not Assigned"
   }
 
   const [formData, setFormData] = useState(mode === "add" ? defaultFormData : sensor || defaultFormData)

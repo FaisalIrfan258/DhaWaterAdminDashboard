@@ -273,8 +273,8 @@ export default function DevicesPage() {
             </SelectTrigger>
             <SelectContent>
               <SelectItem value="All">All</SelectItem>
-              <SelectItem value="Active">Active</SelectItem>
-              <SelectItem value="Faulty">Faulty</SelectItem>
+              <SelectItem value="Assigned">Assigned</SelectItem>
+              <SelectItem value="Not Assigned">Not Assigned</SelectItem>
             </SelectContent>
           </Select>
           
@@ -356,7 +356,7 @@ export default function DevicesPage() {
                             'N/A'}
                         </TableCell>
                         <TableCell>
-                          <Badge variant={device.status === "Active" ? "success" : "destructive"}>
+                          <Badge variant={device.status === "Assigned" ? "success" : "destructive"}>
                             {device.status || 'Unknown'}
                           </Badge>
                         </TableCell>
