@@ -379,7 +379,7 @@ export default function RequestsPage() {
                           {formatDate(request.request_date)}
                         </TableCell>
                         <TableCell>
-                          {request.requested_liters.toLocaleString()} L
+                          {request.requested_liters.toLocaleString()} G
                         </TableCell>
                         {/* <TableCell>
                           {request.description.replace('Payment Mode:', '').trim()}
