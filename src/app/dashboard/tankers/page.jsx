@@ -38,6 +38,7 @@ import {
   SelectContent,
   SelectItem,
 } from "@/components/ui/select";
+import Cookies from "js-cookie";
 
 export default function TankersPage() {
   const [tankers, setTankers] = useState([]);
@@ -51,7 +52,14 @@ export default function TankersPage() {
   const [editingTanker, setEditingTanker] = useState(null);
   const [viewingTanker, setViewingTanker] = useState(null);
   const [statusFilter, setStatusFilter] = useState("All");
+  const [isSuper, setIsSuper] = useState(false);
   const baseUrl = process.env.NEXT_PUBLIC_BASE_URL;
+
+  // Check if user is a super admin
+  useEffect(() => {
+    const userType = Cookies.get("user_type");
+    setIsSuper(userType === "superAdmin");
+  }, []);
 
   const getStatusBadgeVariant = (status) => {
     switch (status) {
@@ -229,10 +237,12 @@ export default function TankersPage() {
               <SelectItem value="Unavailable">Unavailable</SelectItem>
             </SelectContent>
           </Select>
-          <Button onClick={() => setModalOpen(true)}>
-            <Plus className="mr-2 h-4 w-4" />
-            Add Tanker
-          </Button>
+          {isSuper && (
+            <Button onClick={() => setModalOpen(true)}>
+              <Plus className="mr-2 h-4 w-4" />
+              Add Tanker
+            </Button>
+          )}
         </div>
       </DashboardHeader>
 
@@ -347,11 +357,13 @@ export default function TankersPage() {
                                 >
                                   View Details
                                 </DropdownMenuItem>
-                                <DropdownMenuItem
-                                  onClick={() => handleEdit(tanker)}
-                                >
-                                  Edit Tanker
-                                </DropdownMenuItem>
+                                {isSuper && (
+                                  <DropdownMenuItem
+                                    onClick={() => handleEdit(tanker)}
+                                  >
+                                    Edit Tanker
+                                  </DropdownMenuItem>
+                                )}
                               </DropdownMenuContent>
                             </DropdownMenu>
                           </TableCell>
@@ -373,7 +385,7 @@ export default function TankersPage() {
           setEditingTanker(null);
         }}
         tanker={editingTanker}
-        onSubmit={handleEditTanker}
+        onSubmit={editingTanker ? handleEditTanker : handleAddTanker}
       />
 
       <TankerDetailsModal
