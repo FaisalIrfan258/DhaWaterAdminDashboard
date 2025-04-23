@@ -2,16 +2,16 @@
 
 import React from "react"
 import { useState, useEffect } from "react"
-import { MoreHorizontal, Edit, Trash } from "lucide-react"
+import { Edit, Trash, Shield, User } from "lucide-react"
+import { Badge } from "@/components/ui/badge"
 import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuLabel,
-  DropdownMenuSeparator,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu"
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow
+} from "@/components/ui/table"
 import { Button } from "@/components/ui/button"
 import { toast } from 'sonner'
 
@@ -35,39 +35,70 @@ export default function AdminList({ admins, onEdit, onDelete }) {
   }, [])
 
   if (isLoading) {
-    return <div>Loading...</div>
+    return <div className="flex justify-center py-8">Loading...</div>
+  }
+
+  if (admins.length === 0) {
+    return (
+      <div className="text-center py-8 text-muted-foreground">
+        No administrators found. Add your first administrator to get started.
+      </div>
+    )
   }
 
   return (
     <div className="space-y-4">
-      <h2 className="text-xl font-semibold">Existing Admins</h2>
-      <Table>
-        <TableHeader>
-          <TableRow>
-            <TableHead>ID</TableHead>
-            <TableHead>Full Name</TableHead>
-            <TableHead>Email</TableHead>
-            <TableHead>Actions</TableHead>
-          </TableRow>
-        </TableHeader>
-        <TableBody>
-          {admins.map((admin) => (
-            <TableRow key={admin.admin_id}>
-              <TableCell>{admin.admin_id}</TableCell>
-              <TableCell>{admin.full_name}</TableCell>
-              <TableCell>{admin.email}</TableCell>
-              <TableCell>
-                <Button onClick={() => onEdit(admin)} variant="outline" className="mr-2">
-                  Edit
-                </Button>
-                <Button onClick={() => onDelete(admin.admin_id)} variant="destructive">
-                  Delete
-                </Button>
-              </TableCell>
+      <div className="rounded-md border">
+        <Table>
+          <TableHeader>
+            <TableRow className="bg-muted/50">
+              <TableHead className="w-[80px]">ID</TableHead>
+              <TableHead>Full Name</TableHead>
+              <TableHead>Email</TableHead>
+              <TableHead>User Type</TableHead>
+              {user.isSuper && <TableHead className="text-right">Actions</TableHead>}
             </TableRow>
-          ))}
-        </TableBody>
-      </Table>
+          </TableHeader>
+          <TableBody>
+            {admins.map((admin) => (
+              <TableRow key={admin.admin_id} className="hover:bg-muted/50">
+                <TableCell className="font-medium">{admin.admin_id}</TableCell>
+                <TableCell>{admin.full_name}</TableCell>
+                <TableCell>{admin.email}</TableCell>
+                <TableCell>
+                  <Badge 
+                    variant={admin.UserType?.description === "Super Admin" || admin.is_super ? "default" : "outline"}
+                    className="flex w-fit items-center gap-1"
+                  >
+                    {admin.UserType?.description === "Super Admin" || admin.is_super ? 
+                      <Shield className="h-3 w-3" /> : 
+                      <User className="h-3 w-3" />
+                    }
+                    {admin.UserType?.description || (admin.is_super ? "Super Admin" : "Admin")}
+                  </Badge>
+                </TableCell>
+                {user.isSuper && (
+                  <TableCell className="text-right">
+                    <Button onClick={() => onEdit(admin)} variant="ghost" size="sm" className="h-8 w-8 p-0 mr-1">
+                      <Edit className="h-4 w-4" />
+                      <span className="sr-only">Edit</span>
+                    </Button>
+                    <Button 
+                      onClick={() => onDelete(admin.admin_id)} 
+                      variant="ghost" 
+                      size="sm" 
+                      className="h-8 w-8 p-0 text-destructive hover:text-destructive hover:bg-destructive/10"
+                    >
+                      <Trash className="h-4 w-4" />
+                      <span className="sr-only">Delete</span>
+                    </Button>
+                  </TableCell>
+                )}
+              </TableRow>
+            ))}
+          </TableBody>
+        </Table>
+      </div>
     </div>
   )
 }

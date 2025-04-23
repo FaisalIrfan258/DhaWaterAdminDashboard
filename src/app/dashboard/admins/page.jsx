@@ -4,42 +4,61 @@ import { useState, useEffect } from "react"
 import AdminList from "@/components/dashboard/admin-list"
 import { toast } from 'sonner'
 import { Modal } from "@/components/ui/modal"
+import { Button } from "@/components/ui/button"
+import { Input } from "@/components/ui/input"
+import { Label } from "@/components/ui/label"
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
+import { PlusCircle } from "lucide-react"
 
 export default function AdminManagementPage() {
   const [fullName, setFullName] = useState("")
   const [email, setEmail] = useState("")
   const [password, setPassword] = useState("")
-  const [admins, setAdmins] = useState([]) // State to hold the list of admins
-  const [selectedAdmin, setSelectedAdmin] = useState(null) // State to hold the admin being edited
-  const [isModalOpen, setIsModalOpen] = useState(false) // State to control modal visibility
+  const [userType, setUserType] = useState("")
+  const [admins, setAdmins] = useState([])
+  const [selectedAdmin, setSelectedAdmin] = useState(null)
+  const [isModalOpen, setIsModalOpen] = useState(false)
+  const [isLoading, setIsLoading] = useState(false)
 
   // Define the base URL
-  const baseUrl = process.env.NEXT_PUBLIC_BASE_URL; // Ensure this is set in your environment variables
+  const baseUrl = process.env.NEXT_PUBLIC_BASE_URL;
 
   // Fetch admins on component mount
   useEffect(() => {
-    const fetchAdmins = async () => {
-      try {
-        const response = await fetch(`${baseUrl}/api/superadmin/view-admins`);
-        const data = await response.json();
-        const sortedAdmins = [...data.admins].sort((a, b) => a.full_name.localeCompare(b.full_name));
-        setAdmins(sortedAdmins); // Set the sorted admins from the fetched data
-      } catch (error) {
-        console.error('Error fetching admins:', error);
-        toast.error('Failed to fetch admins');
-      }
-    };
-
     fetchAdmins();
   }, []);
 
+  const fetchAdmins = async () => {
+    setIsLoading(true);
+    try {
+      const response = await fetch(`${baseUrl}/api/superadmin/view-admins`);
+      const data = await response.json();
+      const sortedAdmins = [...data.admins].sort((a, b) => a.full_name.localeCompare(b.full_name));
+      setAdmins(sortedAdmins);
+    } catch (error) {
+      console.error('Error fetching admins:', error);
+      toast.error('Failed to fetch admins');
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
   const handleAddAdmin = async (e) => {
     e.preventDefault();
+    setIsLoading(true);
+
+    if (!fullName || !email || !password || !userType) {
+      toast.error('Please fill all required fields');
+      setIsLoading(false);
+      return;
+    }
 
     const payload = {
       full_name: fullName,
       email: email,
       password: password,
+      user_type: userType
     };
 
     try {
@@ -59,18 +78,33 @@ export default function AdminManagementPage() {
     } catch (error) {
       console.error('Error:', error);
       toast.error('Failed to create admin');
+    } finally {
+      setIsLoading(false);
     }
   };
 
-  const handleUpdateAdmin = async () => {
-    if (!selectedAdmin) return; // Ensure there's a selected admin
+  const handleUpdateAdmin = async (e) => {
+    e.preventDefault();
+    if (!selectedAdmin) return;
+    setIsLoading(true);
+
+    if (!fullName || !email || !userType) {
+      toast.error('Please fill all required fields');
+      setIsLoading(false);
+      return;
+    }
 
     const payload = {
       admin_id: selectedAdmin,
       full_name: fullName,
       email: email,
-      password: password,
+      user_type: userType
     };
+
+    // Only include password if it was changed
+    if (password) {
+      payload.password = password;
+    }
 
     try {
       const response = await fetch(`${baseUrl}/api/superadmin/update-admin`, {
@@ -85,10 +119,12 @@ export default function AdminManagementPage() {
 
       toast.success('Admin updated successfully');
       resetForm();
-      await fetchAdmins(); // Re-fetch admins after updating
+      await fetchAdmins();
     } catch (error) {
       console.error('Error:', error);
       toast.error('Failed to update admin');
+    } finally {
+      setIsLoading(false);
     }
   };
 
@@ -96,11 +132,13 @@ export default function AdminManagementPage() {
     setFullName("");
     setEmail("");
     setPassword("");
-    setSelectedAdmin(null); // Reset selected admin
-    setIsModalOpen(false); // Close the modal
+    setUserType("");
+    setSelectedAdmin(null);
+    setIsModalOpen(false);
   };
 
   const handleDeleteAdmin = async (adminId) => {
+    setIsLoading(true);
     try {
       const response = await fetch(`${baseUrl}/api/superadmin/delete-admin?admin_id=${adminId}`, {
         method: 'DELETE',
@@ -109,79 +147,129 @@ export default function AdminManagementPage() {
       if (!response.ok) throw new Error('Failed to delete admin');
 
       toast.success('Admin deleted successfully');
-      await fetchAdmins(); // Re-fetch admins after deletion
+      await fetchAdmins();
     } catch (error) {
       console.error('Error:', error);
       toast.error('Failed to delete admin');
+    } finally {
+      setIsLoading(false);
     }
   };
 
+  const handleOpenAddModal = () => {
+    resetForm();
+    setIsModalOpen(true);
+  };
+
+  const handleOpenEditModal = (admin) => {
+    setFullName(admin.full_name);
+    setEmail(admin.email);
+    setPassword(""); // Clear password for security
+    setUserType(admin.UserType?.description || "Admin"); 
+    setSelectedAdmin(admin.admin_id);
+    setIsModalOpen(true);
+  };
+
   return (
-    <div className="space-y-6">
-      <div className="flex items-center justify-between">
-        <h1 className="text-3xl font-bold tracking-tight">Admin Management</h1>
-        <button 
-          className="inline-flex items-center justify-center rounded-md text-sm font-medium bg-primary text-primary-foreground hover:bg-primary/90 h-10 px-4 py-2"
-          onClick={() => {
-            resetForm();
-            setIsModalOpen(true);
-          }}
-        >
-          Add New Admin
-        </button>
-      </div>
+    <div className="space-y-8 p-6">
+      <Card>
+        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-4">
+          <CardTitle className="text-2xl font-bold">Admin Management</CardTitle>
+          <Button 
+            onClick={handleOpenAddModal}
+            className="flex items-center gap-2"
+          >
+            <PlusCircle className="h-4 w-4" />
+            Add New Admin
+          </Button>
+        </CardHeader>
+        <CardContent>
+          {isLoading && <div className="flex justify-center py-6">Loading administrators...</div>}
+          {!isLoading && (
+            <AdminList 
+              admins={admins} 
+              onEdit={handleOpenEditModal} 
+              onDelete={handleDeleteAdmin} 
+            />
+          )}
+        </CardContent>
+      </Card>
 
-      <AdminList 
-        admins={admins} 
-        onEdit={(admin) => {
-          setFullName(admin.full_name);
-          setEmail(admin.email);
-          setPassword(""); // Clear password for security
-          setSelectedAdmin(admin.admin_id); // Set the selected admin for editing
-          setIsModalOpen(true); // Open the modal
-        }} 
-        onDelete={handleDeleteAdmin} 
-      />
-
-      <Modal isOpen={isModalOpen} onClose={resetForm} title={selectedAdmin ? "Edit Admin" : "Add New Admin"}>
-        <form onSubmit={selectedAdmin ? handleUpdateAdmin : handleAddAdmin}>
-          <div>
-            <label className="block text-sm font-medium">Full Name</label>
-            <input 
+      <Modal 
+        isOpen={isModalOpen} 
+        onClose={resetForm} 
+        title={selectedAdmin ? "Edit Administrator" : "Add New Administrator"}
+      >
+        <form onSubmit={selectedAdmin ? handleUpdateAdmin : handleAddAdmin} className="space-y-4 p-1">
+          <div className="space-y-2">
+            <Label htmlFor="fullName">Full Name</Label>
+            <Input 
+              id="fullName"
               type="text" 
               value={fullName} 
               onChange={(e) => setFullName(e.target.value)} 
+              placeholder="Enter full name"
               required 
-              className="mt-1 block w-full border border-gray-300 rounded-md p-2"
             />
           </div>
-          <div>
-            <label className="block text-sm font-medium">Email</label>
-            <input 
+          
+          <div className="space-y-2">
+            <Label htmlFor="email">Email Address</Label>
+            <Input 
+              id="email"
               type="email" 
               value={email} 
               onChange={(e) => setEmail(e.target.value)} 
+              placeholder="Enter email address"
               required 
-              className="mt-1 block w-full border border-gray-300 rounded-md p-2"
             />
           </div>
-          <div>
-            <label className="block text-sm font-medium">Password</label>
-            <input 
+          
+          <div className="space-y-2">
+            <Label htmlFor="password">
+              {selectedAdmin ? "Password (leave blank to keep current)" : "Password"}
+            </Label>
+            <Input 
+              id="password"
               type="password" 
               value={password} 
               onChange={(e) => setPassword(e.target.value)} 
-              required 
-              className="mt-1 block w-full border border-gray-300 rounded-md p-2"
+              placeholder={selectedAdmin ? "••••••••" : "Enter password"}
+              required={!selectedAdmin} 
             />
           </div>
-          <div className="flex justify-end">
-            <button 
-              type="submit" 
-              className="inline-flex items-center justify-center rounded-md text-sm font-medium bg-primary text-primary-foreground hover:bg-primary/90 h-10 px-4 py-2"
+          
+          <div className="space-y-2">
+            <Label htmlFor="userType">User Type</Label>
+            <Select
+              value={userType}
+              onValueChange={setUserType}
+              required
             >
-              {selectedAdmin ? "Update Admin" : "Create Admin"}
-            </button>
+              <SelectTrigger id="userType">
+                <SelectValue placeholder="Select user type" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="Admin">Admin</SelectItem>
+                <SelectItem value="Super Admin">Super Admin</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+          
+          <div className="flex justify-end gap-2 pt-2">
+            <Button 
+              type="button" 
+              onClick={resetForm}
+              variant="outline"
+            >
+              Cancel
+            </Button>
+            <Button 
+              type="submit" 
+              disabled={isLoading}
+            >
+              {isLoading ? "Processing..." : (selectedAdmin ? "Update Administrator" : "Add Administrator")}
+            </Button>
           </div>
         </form>
       </Modal>

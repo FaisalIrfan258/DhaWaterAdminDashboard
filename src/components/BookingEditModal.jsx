@@ -4,6 +4,8 @@ import React, { useState, useEffect } from "react";
 import { Modal } from "@/components/ui/modal"; // Adjust the import path as necessary
 import { Button } from "@/components/ui/button"; // Adjust the import path as necessary
 import { toast } from "sonner";
+import Cookies from "js-cookie";
+import { useRouter } from "next/navigation";
 
 const BookingEditModal = ({ isOpen, onClose, booking, onRefresh }) => {
   const [formData, setFormData] = useState({
@@ -12,6 +14,21 @@ const BookingEditModal = ({ isOpen, onClose, booking, onRefresh }) => {
     customer_id: "",
     scheduled_date: "",
   });
+  const [isSuper, setIsSuper] = useState(false);
+  const router = useRouter();
+
+  useEffect(() => {
+    // Check if user is super admin
+    const userType = Cookies.get("user_type");
+    setIsSuper(userType === "superAdmin");
+    
+    // If not a super admin and modal is open, redirect to dashboard
+    if (userType !== "superAdmin" && isOpen) {
+      toast.error("You don't have permission to edit bookings");
+      onClose();
+      router.push("/dashboard");
+    }
+  }, [isOpen, onClose, router]);
 
   useEffect(() => {
     if (booking) {
@@ -49,6 +66,11 @@ const BookingEditModal = ({ isOpen, onClose, booking, onRefresh }) => {
       toast.error("Failed to update booking");
     }
   };
+
+  // Return null if not a super admin
+  if (!isSuper) {
+    return null;
+  }
 
   return (
     <Modal isOpen={isOpen} onClose={onClose} title="Edit Booking">

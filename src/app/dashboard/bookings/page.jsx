@@ -42,6 +42,7 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from "@/components/ui/select";
+import Cookies from "js-cookie";
 
 export default function BookingsPage() {
   const [bookings, setBookings] = useState([]);
@@ -55,7 +56,14 @@ export default function BookingsPage() {
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
   const [selectedBooking, setSelectedBooking] = useState(null);
   const [statusFilter, setStatusFilter] = useState("All");
+  const [isSuper, setIsSuper] = useState(false);
   const baseUrl = process.env.NEXT_PUBLIC_BASE_URL;
+
+  // Check if user is super admin
+  useEffect(() => {
+    const userType = Cookies.get("user_type");
+    setIsSuper(userType === "superAdmin");
+  }, []);
 
   const fetchBookings = async () => {
     setLoading(true);
@@ -113,6 +121,11 @@ export default function BookingsPage() {
   };
 
   const handleDeleteBooking = (booking) => {
+    // Check if user is a super admin before allowing delete
+    if (!isSuper) {
+      toast.error("You don't have permission to delete bookings");
+      return;
+    }
     setSelectedBooking(booking);
     setIsDeleteDialogOpen(true);
   };
@@ -120,11 +133,22 @@ export default function BookingsPage() {
   const confirmDeleteBooking = async () => {
     if (!selectedBooking) return;
 
+    // Double check super admin status before proceeding
+    const userType = Cookies.get("user_type");
+    if (userType !== "superAdmin") {
+      toast.error("You don't have permission to delete bookings");
+      setIsDeleteDialogOpen(false);
+      return;
+    }
+
     try {
       const response = await fetch(
         `${baseUrl}/api/bookings/delete-booking/${selectedBooking.booking_id}`,
         {
           method: "DELETE",
+          headers: {
+            "Content-Type": "application/json",
+          }
         }
       );
 
@@ -278,17 +302,21 @@ export default function BookingsPage() {
                               >
                                 View Details
                               </DropdownMenuItem>
-                              <DropdownMenuItem
-                                onClick={() => handleEditBooking(booking)}
-                              >
-                                Edit Booking
-                              </DropdownMenuItem>
-                              <DropdownMenuItem
-                                onClick={() => handleDeleteBooking(booking)}
-                                className="text-destructive"
-                              >
-                                Delete Booking
-                              </DropdownMenuItem>
+                              {isSuper && (
+                                <>
+                                  <DropdownMenuItem
+                                    onClick={() => handleEditBooking(booking)}
+                                  >
+                                    Edit Booking
+                                  </DropdownMenuItem>
+                                  <DropdownMenuItem
+                                    onClick={() => handleDeleteBooking(booking)}
+                                    className="text-destructive"
+                                  >
+                                    Delete Booking
+                                  </DropdownMenuItem>
+                                </>
+                              )}
                             </DropdownMenuContent>
                           </DropdownMenu>
                         </TableCell>
