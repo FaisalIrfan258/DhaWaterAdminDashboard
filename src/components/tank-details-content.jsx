@@ -15,7 +15,7 @@ const TankDetailsContent = () => {
   useEffect(() => {
     const fetchTankData = async () => {
       try {
-        const response = await fetch(`${baseUrl}/api/tankStatus/latest-water-level/?tank_id=1`);
+        const response = await fetch(`${baseUrl}/api/tankStatus/latest-water-level/?tank_id=2`);
         if (!response.ok) {
           throw new Error('Failed to fetch tank data');
         }

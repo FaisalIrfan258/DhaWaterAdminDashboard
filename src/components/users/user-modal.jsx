@@ -34,7 +34,8 @@ export function UserModal({
     password: "",
     tank_capacity: "",
     balance: "",
-    device_id: ""
+    device_id: "",
+    category: "Corporate"
   }
 
   const [formData, setFormData] = useState(defaultFormData)
@@ -82,7 +83,8 @@ export function UserModal({
       ...formData,
       tank_capacity: Number(formData.tank_capacity),
       balance: Number(formData.balance),
-      device_id: Number(formData.device_id)
+      device_id: Number(formData.device_id),
+      category: formData.category
     }
 
     if (mode === "edit") {
@@ -257,6 +259,22 @@ export function UserModal({
                   ))}
                 </SelectContent>
               </Select>
+            </div>
+
+            <div className="grid grid-cols-4 items-center gap-4">
+              <Label htmlFor="category" className="text-right">
+                Category
+              </Label>
+              <select
+                id="category"
+                value={formData.category}
+                onChange={(e) => setFormData({ ...formData, category: e.target.value })}
+                className="col-span-3"
+                disabled={isViewOnly}
+              >
+                <option value="Corporate">Corporate</option>
+                <option value="Cicili">Cicili</option>
+              </select>
             </div>
           </div>
 

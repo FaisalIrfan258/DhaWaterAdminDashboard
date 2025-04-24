@@ -19,7 +19,7 @@ const ReservoirStatus = () => {
     const fetchWaterLevel = async () => {
       try {
         const response = await fetch(
-          'https://water-management-system-cse5a6chapgyhpc0.centralindia-01.azurewebsites.net/api/tankStatus/latest-water-level/?tank_id=1'
+          'https://water-management-system-cse5a6chapgyhpc0.centralindia-01.azurewebsites.net/api/tankStatus/latest-water-level/?tank_id=2'
         );
         const data = await response.json();
         setWaterLevel(data.water_level);

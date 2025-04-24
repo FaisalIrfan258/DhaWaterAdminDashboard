@@ -31,6 +31,7 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
+import Cookies from "js-cookie"
 
 export default function DriversPage() {
   const [drivers, setDrivers] = useState([])
@@ -63,9 +64,17 @@ export default function DriversPage() {
   const [editUsername, setEditUsername] = useState("")
   const [editStatus, setEditStatus] = useState("")
 
+  const [isSuper, setIsSuper] = useState(false)
+
   useEffect(() => {
     fetchDrivers()
   }, [])
+
+  // Check if user is super admin
+  useEffect(() => {
+    const userType = Cookies.get("user_type");
+    setIsSuper(userType === "superAdmin");
+  }, []);
 
   // Fetch all drivers
   const fetchDrivers = async () => {
@@ -533,27 +542,31 @@ export default function DriversPage() {
                               <Eye className="h-4 w-4" />
                               <span className="sr-only">View</span>
                             </Button>
-                            <Button
-                              variant="ghost"
-                              size="icon"
-                              onClick={() => openEditDialog(driver)}
-                              className="h-8 w-8"
-                            >
-                              <Pencil className="h-4 w-4" />
-                              <span className="sr-only">Edit</span>
-                            </Button>
-                            <Button
-                              variant="ghost"
-                              size="icon"
-                              onClick={() => {
-                                setSelectedDriver(driver)
-                                setIsDeleteDialogOpen(true)
-                              }}
-                              className="h-8 w-8 text-destructive"
-                            >
-                              <X className="h-4 w-4" />
-                              <span className="sr-only">Delete</span>
-                            </Button>
+                            {isSuper && (
+                              <Button
+                                variant="ghost"
+                                size="icon"
+                                onClick={() => openEditDialog(driver)}
+                                className="h-8 w-8"
+                              >
+                                <Pencil className="h-4 w-4" />
+                                <span className="sr-only">Edit</span>
+                              </Button>
+                            )}
+                            {isSuper && (
+                              <Button
+                                variant="ghost"
+                                size="icon"
+                                onClick={() => {
+                                  setSelectedDriver(driver)
+                                  setIsDeleteDialogOpen(true)
+                                }}
+                                className="h-8 w-8 text-destructive"
+                              >
+                                <X className="h-4 w-4" />
+                                <span className="sr-only">Delete</span>
+                              </Button>
+                            )}
                           </div>
                         </TableCell>
                       </TableRow>

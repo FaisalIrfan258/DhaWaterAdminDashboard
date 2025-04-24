@@ -34,6 +34,7 @@ import { MoreHorizontal, Eye, Pencil, Trash2 } from "lucide-react"
 import { ViewUserModal } from '@/components/users/view-user-modal'
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog"
 import { useRouter } from "next/navigation"
+import Cookies from "js-cookie"
 
 export default function UsersPage() {
   const [users, setUsers] = useState([])
@@ -51,6 +52,7 @@ export default function UsersPage() {
   const baseUrl = process.env.NEXT_PUBLIC_BASE_URL
   const [isRefreshing, setIsRefreshing] = useState(false)
   const router = useRouter()
+  const [isSuper, setIsSuper] = useState(false)
 
   // Fetch all users
   const fetchUsers = async () => {
@@ -60,8 +62,26 @@ export default function UsersPage() {
       const data = await response.json()
       const usersList = data.users || []
       const sortedUsers = [...usersList].sort((a, b) => a.full_name.localeCompare(b.full_name))
-      setUsers(sortedUsers)
-      setFilteredUsers(sortedUsers) // Initialize filtered users with all users
+      
+      // Update to include all relevant fields
+      const formattedUsers = sortedUsers.map(user => ({
+        customer_id: user.customer_id,
+        full_name: user.full_name,
+        email: user.email,
+        phone_number: user.phone_number,
+        home_address: user.home_address,
+        username: user.username,
+        balance: user.balance, // Include balance
+        created_at: user.created_at,
+        WaterTanks: user.WaterTanks.map(tank => ({
+          sensor_id: tank.sensor_id // Map sensor_id from WaterTanks
+        })),
+        userType: user.UserType.type, // Include user type
+        userTypeDescription: user.UserType.description // Include user type description
+      }));
+
+      setUsers(formattedUsers)
+      setFilteredUsers(formattedUsers) // Initialize filtered users with all users
     } catch (error) {
       console.error('Error fetching users:', error)
       toast.error('Failed to load users', {
@@ -119,7 +139,10 @@ export default function UsersPage() {
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify(userData),
+        body: JSON.stringify({
+          ...userData,
+          category: userData.category, // Include category
+        }),
       });
 
       if (!response.ok) {
@@ -199,16 +222,18 @@ export default function UsersPage() {
       
       // Format the user data for the modal
       const formattedUser = {
-        customer_id: data.customer.customer_id,
-        full_name: data.customer.full_name,
-        email: data.customer.email,
-        phone_number: data.customer.phone_number,
-        home_address: data.customer.home_address,
-        username: data.customer.username,
+        customer_id: data.customer_id,
+        full_name: data.full_name,
+        email: data.email,
+        phone_number: data.phone_number,
+        home_address: data.home_address,
+        username: data.username,
         password: "", // Clear password when editing
-        tank_capacity: data.customer.tank_capacity || 0,
-        balance: data.customer.balance || 0,
-        device_id: data.device_id
+        balance: data.balance || 0,
+        created_at: data.created_at,
+        tank_capacity: data.WaterTanks[0]?.tank_id || 0, // Assuming tank_capacity is represented by tank_id
+        water_level: data.WaterTanks[0]?.WaterTankStatuses[0]?.water_level || 0, // Extract water level
+        device_id: data.device_id // Assuming device_id is part of the response
       };
       
       setEditingUser(formattedUser);
@@ -230,6 +255,10 @@ export default function UsersPage() {
 
   // Open delete confirmation dialog
   const confirmDeleteUser = (user) => {
+    if (!isSuper) {
+      toast.error('You do not have permission to delete users.');
+      return;
+    }
     setUserToDelete(user);
     setIsDeleteDialogOpen(true);
   }
@@ -316,6 +345,12 @@ export default function UsersPage() {
       day: 'numeric'
     })
   }
+
+  // Check if user is super admin
+  useEffect(() => {
+    const userType = Cookies.get("user_type");
+    setIsSuper(userType === "superAdmin");
+  }, []);
 
   return (
     <DashboardShell>
@@ -426,17 +461,21 @@ export default function UsersPage() {
                               <Eye className="mr-2 h-4 w-4" />
                               View details
                             </DropdownMenuItem>
-                            <DropdownMenuItem onClick={() => handleEditUser(user)}>
-                              <Pencil className="mr-2 h-4 w-4" />
-                              Edit user
-                            </DropdownMenuItem>
-                            <DropdownMenuItem 
-                              onClick={() => confirmDeleteUser(user)}
-                              className="text-destructive"
-                            >
-                              <Trash2 className="mr-2 h-4 w-4" />
-                              Delete user
-                            </DropdownMenuItem>
+                            {isSuper && (
+                              <DropdownMenuItem onClick={() => handleEditUser(user)}>
+                                <Pencil className="mr-2 h-4 w-4" />
+                                Edit user
+                              </DropdownMenuItem>
+                            )}
+                            {isSuper && (
+                              <DropdownMenuItem 
+                                onClick={() => confirmDeleteUser(user)}
+                                className="text-destructive"
+                              >
+                                <Trash2 className="mr-2 h-4 w-4" />
+                                Delete user
+                              </DropdownMenuItem>
+                            )}
                           </DropdownMenuContent>
                         </DropdownMenu>
                       </TableCell>

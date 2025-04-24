@@ -31,6 +31,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
 import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from "@/components/ui/select"
+import Cookies from "js-cookie"
 
 export default function DevicesPage() {
   const [devices, setDevices] = useState([])
@@ -45,6 +46,7 @@ export default function DevicesPage() {
   })
   const [isRefreshing, setIsRefreshing] = useState(false)
   const [statusFilter, setStatusFilter] = useState("All")
+  const [isSuper, setIsSuper] = useState(false)
 
   const baseUrl = process.env.NEXT_PUBLIC_BASE_URL;
 
@@ -254,6 +256,12 @@ export default function DevicesPage() {
     }
   }
 
+  // Check if user is super admin
+  useEffect(() => {
+    const userType = Cookies.get("user_type");
+    setIsSuper(userType === "superAdmin");
+  }, []);
+
   return (
     <DashboardShell>
       <DashboardHeader heading="Devices Management" text="Manage your IoT devices and sensors">
@@ -373,17 +381,21 @@ export default function DevicesPage() {
                                 <Eye className="mr-2 h-4 w-4" />
                                 View details
                               </DropdownMenuItem>
-                              <DropdownMenuItem onClick={() => openModal("edit", device)}>
-                                <Pencil className="mr-2 h-4 w-4" />
-                                Edit device
-                              </DropdownMenuItem>
-                              <DropdownMenuItem 
-                                onClick={() => handleDeleteDevice(device.sensor_id)}
-                                className="text-destructive"
-                              >
-                                <Trash2 className="mr-2 h-4 w-4" />
-                                Delete device
-                              </DropdownMenuItem>
+                              {isSuper && (
+                                <>
+                                  <DropdownMenuItem onClick={() => openModal("edit", device)}>
+                                    <Pencil className="mr-2 h-4 w-4" />
+                                    Edit device
+                                  </DropdownMenuItem>
+                                  <DropdownMenuItem 
+                                    onClick={() => handleDeleteDevice(device.sensor_id)}
+                                    className="text-destructive"
+                                  >
+                                    <Trash2 className="mr-2 h-4 w-4" />
+                                    Delete device
+                                  </DropdownMenuItem>
+                                </>
+                              )}
                             </DropdownMenuContent>
                           </DropdownMenu>
                         </TableCell>
