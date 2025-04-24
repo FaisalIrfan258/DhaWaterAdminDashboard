@@ -8,6 +8,7 @@ export default function DashboardStats() {
   const [totalTankers, setTotalTankers] = useState(null);
   const [totalPendingRequests, setTotalPendingRequests] = useState(null);
   const [totalUsers, setTotalUsers] = useState(null);
+  const [pendingDeliveries, setPendingDeliveries] = useState(0); // State for pending deliveries
   const baseUrl = process.env.NEXT_PUBLIC_BASE_URL; // Ensure this is set in your environment variables
 
   useEffect(() => {
@@ -30,6 +31,13 @@ export default function DashboardStats() {
         if (!usersResponse.ok) throw new Error('Failed to fetch total users');
         const usersData = await usersResponse.json();
         setTotalUsers(usersData.total_users); // Accessing total_users from the response
+
+        // Fetch all bookings to count pending deliveries
+        const bookingsResponse = await fetch(`${baseUrl}/api/bookings/all-bookings`);
+        if (!bookingsResponse.ok) throw new Error('Failed to fetch bookings');
+        const bookingsData = await bookingsResponse.json();
+        const pendingCount = bookingsData.filter(booking => booking.status === "Pending").length; // Count pending bookings
+        setPendingDeliveries(pendingCount); // Set pending deliveries count
       } catch (error) {
         console.error('Error fetching stats:', error);
         toast.error('Failed to load stats');
@@ -44,23 +52,26 @@ export default function DashboardStats() {
     {
       title: "Total Pending Water Requests",
       value: totalPendingRequests !== null ? totalPendingRequests : "Loading...", // Placeholder for pending requests
-      
       changeType: "positive", // Placeholder for change type
       icon: Droplet,
     },
     {
       title: "Active Tankers",
       value: totalTankers !== null ? totalTankers : "Loading...", // Placeholder for active tankers
-     
       changeType: "positive", // Placeholder for change type
       icon: Truck,
     },
-    
     {
       title: "Total Users",
       value: totalUsers !== null ? totalUsers : "Loading...", // Placeholder for total users      
       changeType: "positive", // Placeholder for change type
       icon: Users,
+    },
+    {
+      title: "Pending Deliveries", // New card for pending deliveries
+      value: pendingDeliveries !== null ? pendingDeliveries : "Loading...", // Placeholder for pending deliveries
+      changeType: "positive", // Placeholder for change type
+      icon: Calendar,
     },
   ];
 
