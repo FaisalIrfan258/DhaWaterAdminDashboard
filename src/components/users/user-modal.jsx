@@ -274,6 +274,8 @@ export function UserModal({
               >
                 <option value="Corporate">Corporate</option>
                 <option value="Civil">Civil</option>
+                <option value="Employee">DHA Employees</option>
+
               </select>
             </div>
           </div>
