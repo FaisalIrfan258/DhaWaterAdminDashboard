@@ -87,7 +87,7 @@ const AcceptRequestModal = ({ isOpen, onClose, requestId, customerId, adminId })
         <div>
           <label className="block text-sm font-medium">Scheduled Date</label>
           <input
-            type="datetime-local" // Use datetime-local for better date input
+            type="date"
             value={scheduledDate}
             onChange={(e) => setScheduledDate(e.target.value)}
             required
