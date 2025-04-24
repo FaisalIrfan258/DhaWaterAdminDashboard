@@ -61,7 +61,9 @@ export default function UsersPage() {
       if (!response.ok) throw new Error('Failed to fetch users')
       const data = await response.json()
       const usersList = data.users || []
-      const sortedUsers = [...usersList].sort((a, b) => a.full_name.localeCompare(b.full_name))
+      
+      // Sort users by created_at in descending order
+      const sortedUsers = [...usersList].sort((a, b) => new Date(b.created_at) - new Date(a.created_at))
       
       // Update to include all relevant fields
       const formattedUsers = sortedUsers.map(user => ({

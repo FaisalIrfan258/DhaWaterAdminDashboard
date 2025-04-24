@@ -273,7 +273,7 @@ export function UserModal({
                 disabled={isViewOnly}
               >
                 <option value="Corporate">Corporate</option>
-                <option value="Cicili">Cicili</option>
+                <option value="Civil">Civil</option>
               </select>
             </div>
           </div>

@@ -127,6 +127,9 @@ const UserDetailsPage = () => {
                   <strong>Account Created:</strong>{" "}
                   {new Date(user.created_at).toLocaleDateString()}
                 </p>
+                <p>
+                  <strong>User Type:</strong> {user.UserType.description}
+                </p>
               </div>
             </CardContent>
           </Card>
