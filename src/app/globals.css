@@ -147,3 +147,11 @@
     width: 100%; /* Full width for main content */
   }
 }
+
+.scrollbar-hidden {
+  scrollbar-width: none; /* For Firefox */
+}
+
+.scrollbar-hidden::-webkit-scrollbar {
+  display: none; /* For Chrome, Safari, and Opera */
+}
