@@ -299,9 +299,6 @@ export default function RequestsPage() {
               <Droplets className="mr-2 h-5 w-5" />
               Water Supply Requests
             </CardTitle>
-            <CardDescription>
-              View and manage water supply requests from all customers.
-            </CardDescription>
           </CardHeader>
           <CardContent>
             <div className="flex justify-between items-center mb-4">

@@ -28,6 +28,7 @@ const UserDetailsPage = () => {
   const [loading, setLoading] = useState(true);
   const [waterLevel, setWaterLevel] = useState(0); // State for water level
   const [bookings, setBookings] = useState([]); // State for recent bookings
+  const [tankStatus, setTankStatus] = useState([]); // State for hourly tank status
 
   useEffect(() => {
     if (!userId) return; // Exit early if userId is not available
@@ -70,8 +71,30 @@ const UserDetailsPage = () => {
       }
     };
 
+    const fetchHourlyTankStatus = async () => {
+      const endDate = new Date(); // Current date
+      const startDate = new Date(endDate); // Copy current date
+      startDate.setDate(endDate.getDate() - 1); // Set start date to one day before
+
+      const formattedStartDate = startDate.toISOString().split('T')[0]; // Format to YYYY-MM-DD
+      const formattedEndDate = endDate.toISOString().split('T')[0]; // Format to YYYY-MM-DD
+
+      try {
+        const response = await fetch(
+          `${process.env.NEXT_PUBLIC_BASE_URL}/api/tankStatus/hourly-tank-status?customer_id=${userId}&start_date=${formattedStartDate}&end_date=${formattedEndDate}`
+        );
+        if (!response.ok) throw new Error("Failed to fetch tank status");
+        const data = await response.json();
+        setTankStatus(data); // Set tank status data
+      } catch (error) {
+        console.error("Error fetching tank status:", error);
+        toast.error("Failed to load tank status");
+      }
+    };
+
     fetchUserDetails();
     fetchRecentBookings();
+    fetchHourlyTankStatus(); // Call the new function
   }, [userId]);
 
   if (loading) return <div>Loading...</div>;
@@ -258,6 +281,62 @@ const UserDetailsPage = () => {
                           <td className="px-4 py-3">{booking.status}</td>
                           <td className="px-4 py-3">
                             {booking.Request?.requested_liters || "N/A"} liters
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              )}
+            </CardContent>
+          </Card>
+        </motion.div>
+      </div>
+
+      {/* Hourly Tank Status Section */}
+      <div className="flex flex-col gap-6">
+        <motion.div
+          className="flex-1"
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.5, delay: 0.6 }}
+        >
+          <Card className="shadow-lg hover:shadow-xl transition-shadow duration-300 w-full">
+            <CardHeader>
+              <CardTitle className="text-indigo-700">
+                Hourly Tank Status
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              {tankStatus.length === 0 ? (
+                <div>No hourly tank status data found.</div>
+              ) : (
+                <div className="overflow-x-auto">
+                  <table className="w-full border-collapse">
+                    <thead>
+                      <tr className="bg-indigo-100">
+                        <th className="px-4 py-3 text-left text-xs font-medium text-indigo-700 uppercase">
+                          Status Date
+                        </th>
+                        <th className="px-4 py-3 text-left text-xs font-medium text-indigo-700 uppercase">
+                          Average Level (Gallons)
+                        </th>
+                        <th className="px-4 py-3 text-left text-xs font-medium text-indigo-700 uppercase">
+                          Daily Consumption (Gallons)
+                        </th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {tankStatus.map((status, index) => (
+                        <tr key={index} className="border-b border-indigo-200">
+                          <td className="px-4 py-3">
+                            {new Date(status.status_date).toLocaleDateString()}
+                          </td>
+                          <td className="px-4 py-3">
+                            {status.avg_level_gallons.toFixed(2)}
+                          </td>
+                          <td className="px-4 py-3">
+                            {status.daily_consumption_gallons.toFixed(2)}
                           </td>
                         </tr>
                       ))}

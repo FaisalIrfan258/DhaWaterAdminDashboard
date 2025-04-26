@@ -253,9 +253,6 @@ export default function TankersPage() {
               <Truck className="mr-2 h-5 w-5" />
               Water Tankers
             </CardTitle>
-            <CardDescription>
-              View and manage your water tanker fleet.
-            </CardDescription>
           </CardHeader>
           <CardContent>
             <div className="flex justify-between items-center mb-4">

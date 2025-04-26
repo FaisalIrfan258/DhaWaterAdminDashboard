@@ -465,7 +465,6 @@ export default function DriversPage() {
               <Car className="mr-2 h-5 w-5" />
               Water Tanker Drivers
             </CardTitle>
-            <CardDescription>View and manage all water tanker drivers.</CardDescription>
           </CardHeader>
           <CardContent>
             <div className="flex justify-between items-center mb-4">

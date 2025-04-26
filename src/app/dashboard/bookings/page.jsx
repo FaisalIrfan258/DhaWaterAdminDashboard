@@ -41,7 +41,13 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
-import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from "@/components/ui/select";
+import {
+  Select,
+  SelectTrigger,
+  SelectValue,
+  SelectContent,
+  SelectItem,
+} from "@/components/ui/select";
 import Cookies from "js-cookie";
 
 export default function BookingsPage() {
@@ -72,7 +78,9 @@ export default function BookingsPage() {
       if (!response.ok) throw new Error("Failed to fetch bookings");
       const data = await response.json();
       // Sort bookings in ascending order by scheduled date
-      const sortedData = data.sort((a, b) => new Date(b.scheduled_date) - new Date(a.scheduled_date));
+      const sortedData = data.sort(
+        (a, b) => new Date(b.scheduled_date) - new Date(a.scheduled_date)
+      );
       setBookings(sortedData);
       setFilteredBookings(sortedData);
       setError(null);
@@ -148,7 +156,7 @@ export default function BookingsPage() {
           method: "DELETE",
           headers: {
             "Content-Type": "application/json",
-          }
+          },
         }
       );
 
@@ -172,7 +180,9 @@ export default function BookingsPage() {
     if (statusFilter === "All") {
       setFilteredBookings(bookings);
     } else {
-      setFilteredBookings(bookings.filter(booking => booking.status === statusFilter));
+      setFilteredBookings(
+        bookings.filter((booking) => booking.status === statusFilter)
+      );
     }
   }, [statusFilter, bookings]);
 
@@ -213,7 +223,6 @@ export default function BookingsPage() {
             <Calendar className="mr-2 h-5 w-5" />
             Confirmed Bookings
           </CardTitle>
-          <CardDescription>View and manage your bookings.</CardDescription>
         </CardHeader>
         <CardContent>
           <div className="flex justify-between items-center mb-4">

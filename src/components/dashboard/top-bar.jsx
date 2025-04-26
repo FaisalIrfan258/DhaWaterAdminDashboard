@@ -45,7 +45,7 @@ export default function TopBar() {
     <header className="border-b">
       <div className="flex h-16 items-center justify-between px-6">
         <div className="flex items-center gap-2">
-          <h1 className="text-xl font-semibold">DHA Hydrant Dashboard</h1>
+          <h1 className="text-xl font-semibold">HydraTrack  Dashboard</h1>
         </div>
 
         <div className="flex items-center gap-4">
