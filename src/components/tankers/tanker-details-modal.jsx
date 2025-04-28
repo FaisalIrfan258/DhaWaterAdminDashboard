@@ -7,42 +7,50 @@ import { Label } from "@/components/ui/label"
 export function TankerDetailsModal({ open, onClose, tanker }) {
   return (
     <Dialog open={open} onOpenChange={onClose}>
-      <DialogContent>
+      <DialogContent className="w-full max-w-xl">
         <DialogHeader>
           <DialogTitle>Tanker Details</DialogTitle>
         </DialogHeader>
-        <div className="space-y-4">
+        <div className="grid grid-cols-1 gap-4 mb-6">
           <div>
             <Label>Tanker Name</Label>
-            <Input value={tanker?.tanker_name} readOnly />
+            <Input className="mt-2" value={tanker?.tanker_name || ""} readOnly />
           </div>
           <div>
             <Label>Plate Number</Label>
-            <Input value={tanker?.plate_number} readOnly />
+            <Input className="mt-2" value={tanker?.plate_number || ""} readOnly />
           </div>
           <div>
-            <Label>Capacity (Liters)</Label>
-            <Input value={tanker?.capacity} readOnly />
+            <Label>Capacity (Gallons)</Label>
+            <Input className="mt-2" value={tanker?.capacity ?? ""} readOnly />
           </div>
           <div>
             <Label>Price per Liter (Rs.)</Label>
-            <Input value={tanker?.price_per_liter} readOnly />
+            <Input className="mt-2" value={tanker?.price_per_liter ?? ""} readOnly />
           </div>
           <div>
             <Label>Cost (Rs.)</Label>
-            <Input value={tanker?.cost} readOnly />
+            <Input className="mt-2" value={tanker?.cost ?? ""} readOnly />
           </div>
           <div>
             <Label>Availability Status</Label>
-            <Input value={tanker?.availability_status} readOnly />
+            <Input className="mt-2" value={tanker?.availability_status || ""} readOnly />
+          </div>
+          <div>
+            <Label>Phase ID</Label>
+            <Input className="mt-2" value={tanker?.phase_id ?? ""} readOnly />
+          </div>
+          <div>
+            <Label>Assigned Driver ID</Label>
+            <Input className="mt-2" value={tanker?.assigned_driver_id ?? ""} readOnly />
           </div>
         </div>
-        <div className="flex justify-end gap-2">
-          <Button type="button" variant="outline" onClick={onClose}>
+        <div className="flex justify-end">
+          <Button variant="outline" onClick={onClose}>
             Close
           </Button>
         </div>
       </DialogContent>
     </Dialog>
-  );
-} 
+  )
+}

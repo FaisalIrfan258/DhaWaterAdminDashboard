@@ -4,8 +4,11 @@ import { useState } from "react"
 import { useRouter } from "next/navigation"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
+import { Label } from "@/components/ui/label"
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
+import { Eye, EyeOff, Lock, Mail, ShieldAlert, ShieldCheck } from "lucide-react"
 import Cookies from "js-cookie"
-import { useUser } from '@/context/UserContext'
+import { useUser } from "@/context/UserContext"
 
 export default function LoginForm() {
   const [email, setEmail] = useState("")
@@ -14,6 +17,7 @@ export default function LoginForm() {
   const [loginType, setLoginType] = useState("admin") // "admin" or "superAdmin"
   const [errors, setErrors] = useState({ email: "", password: "" })
   const [loginError, setLoginError] = useState("")
+  const [showPassword, setShowPassword] = useState(false)
   const router = useRouter()
   const { setUser } = useUser()
 
@@ -68,13 +72,25 @@ export default function LoginForm() {
 
       if (response.ok) {
         const data = await response.json()
-        
+
         // Store admin token and admin ID in cookies
-        Cookies.set("admin_token", data.admin_token, { path: '/', secure: true, sameSite: 'Strict' })
-        Cookies.set("admin_id", data.admin_id, { path: '/', secure: true, sameSite: 'Strict' })
-        
+        Cookies.set("admin_token", data.admin_token, {
+          path: "/",
+          secure: true,
+          sameSite: "Strict",
+        })
+        Cookies.set("admin_id", data.admin_id, {
+          path: "/",
+          secure: true,
+          sameSite: "Strict",
+        })
+
         // Store user type in cookie
-        Cookies.set("user_type", loginType, { path: '/', secure: true, sameSite: 'Strict' })
+        Cookies.set("user_type", loginType, {
+          path: "/",
+          secure: true,
+          sameSite: "Strict",
+        })
 
         // Set user data in context
         setUser(data)
@@ -93,61 +109,133 @@ export default function LoginForm() {
     }
   }
 
+  const togglePasswordVisibility = () => {
+    setShowPassword(!showPassword)
+  }
+
   return (
     <form onSubmit={handleSubmit} className="space-y-6">
+      <Tabs defaultValue="admin" value={loginType} onValueChange={setLoginType} className="w-full">
+        <TabsList className="grid grid-cols-2 w-full">
+          <TabsTrigger value="admin" className="flex items-center gap-2">
+            <ShieldCheck className="h-4 w-4" />
+            <span>Admin</span>
+          </TabsTrigger>
+          <TabsTrigger value="superAdmin" className="flex items-center gap-2">
+            <ShieldAlert className="h-4 w-4" />
+            <span>Super Admin</span>
+          </TabsTrigger>
+        </TabsList>
+        <TabsContent value="admin" className="mt-4">
+          <p className="text-sm text-gray-500 mb-4">
+            Sign in as an administrator to manage your assigned water supply facilities.
+          </p>
+        </TabsContent>
+        <TabsContent value="superAdmin" className="mt-4">
+          <p className="text-sm text-gray-500 mb-4">
+            Sign in as a super administrator to access all system controls and management features.
+          </p>
+        </TabsContent>
+      </Tabs>
+
       <div className="space-y-4">
-        <div className="flex gap-2">
-          <Button
-            type="button"
-            variant={loginType === "admin" ? "default" : "outline"}
-            className="flex-1"
-            onClick={() => setLoginType("admin")}
-          >
-            Sign in as Admin
-          </Button>
-          <Button
-            type="button"
-            variant={loginType === "superAdmin" ? "default" : "outline"}
-            className="flex-1"
-            onClick={() => setLoginType("superAdmin")}
-          >
-            Sign in as Super Admin
-          </Button>
+        <div className="space-y-2">
+          <Label htmlFor="email">Email</Label>
+          <div className="relative">
+            <Mail className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-500" />
+            <Input
+              id="email"
+              placeholder="your.email@hydratank.com"
+              type="email"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              required
+              className={`pl-10 ${
+                errors.email ? "border-red-500 focus-visible:ring-red-500" : "focus-visible:ring-cyan-500"
+              }`}
+            />
+          </div>
+          {errors.email && <p className="text-sm text-red-500 mt-1">{errors.email}</p>}
         </div>
 
         <div className="space-y-2">
-          <Input
-            id="email"
-            placeholder="Email"
-            type="email"
-            value={email}
-            onChange={(e) => setEmail(e.target.value)}
-            required
-            className={errors.email ? "border-red-500" : ""}
-          />
-          {errors.email && <p className="text-sm text-red-500">{errors.email}</p>}
-        </div>
-
-        <div className="space-y-2">
-          <Input
-            id="password"
-            placeholder="Password"
-            type="password"
-            value={password}
-            onChange={(e) => setPassword(e.target.value)}
-            required
-            className={errors.password ? "border-red-500" : ""}
-          />
-          {errors.password && <p className="text-sm text-red-500">{errors.password}</p>}
+          <Label htmlFor="password">Password</Label>
+          <div className="relative">
+            <Lock className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-500" />
+            <Input
+              id="password"
+              placeholder="••••••••"
+              type={showPassword ? "text" : "password"}
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              required
+              className={`pl-10 ${
+                errors.password ? "border-red-500 focus-visible:ring-red-500" : "focus-visible:ring-cyan-500"
+              }`}
+            />
+            <Button
+              type="button"
+              variant="ghost"
+              size="icon"
+              className="absolute right-1 top-1/2 -translate-y-1/2 h-7 w-7"
+              onClick={togglePasswordVisibility}
+            >
+              {showPassword ? <EyeOff className="h-4 w-4 text-gray-500" /> : <Eye className="h-4 w-4 text-gray-500" />}
+              <span className="sr-only">{showPassword ? "Hide password" : "Show password"}</span>
+            </Button>
+          </div>
+          {errors.password && <p className="text-sm text-red-500 mt-1">{errors.password}</p>}
         </div>
       </div>
 
-      {loginError && <p className="text-sm text-red-500 mt-2">{loginError}</p>}
+      <div className="flex items-center justify-between">
+        <div className="flex items-center">
+          <input
+            id="remember-me"
+            name="remember-me"
+            type="checkbox"
+            className="h-4 w-4 rounded border-gray-300 text-cyan-600 focus:ring-cyan-500"
+          />
+          <label htmlFor="remember-me" className="ml-2 block text-sm text-gray-700">
+            Remember me
+          </label>
+        </div>
+        <div className="text-sm">
+          <a href="#" className="font-medium text-cyan-600 hover:text-cyan-500">
+            Forgot your password?
+          </a>
+        </div>
+      </div>
 
-      <Button type="submit" className="w-full" disabled={isLoading}>
-        {isLoading ? "Signing in..." : "Sign in"}
+      {loginError && (
+        <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg text-sm">{loginError}</div>
+      )}
+
+      <Button
+        type="submit"
+        className="w-full bg-gradient-to-r from-cyan-600 to-blue-600 hover:from-cyan-700 hover:to-blue-700 transition-all duration-300"
+        disabled={isLoading}
+      >
+        {isLoading ? "Signing in..." : `Sign in as ${loginType === "admin" ? "Admin" : "Super Admin"}`}
       </Button>
+
+      <div className="relative">
+        <div className="absolute inset-0 flex items-center">
+          <span className="w-full border-t border-gray-300" />
+        </div>
+        <div className="relative flex justify-center text-xs uppercase">
+          <span className="bg-white px-2 text-gray-500">Need help?</span>
+        </div>
+      </div>
+
+      <div className="text-center text-sm">
+        <p className="text-gray-600">
+          Contact system administrator or call our support at
+          <a href="tel:+1234567890" className="font-medium text-cyan-600 hover:text-cyan-500 ml-1">
+            (123) 456-7890
+          </a>
+        </p>
+      </div>
     </form>
   )
 }
-

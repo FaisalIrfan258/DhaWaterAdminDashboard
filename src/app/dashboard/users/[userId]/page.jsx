@@ -30,6 +30,10 @@ const UserDetailsPage = () => {
   const [bookings, setBookings] = useState([]); // State for recent bookings
   const [tankStatus, setTankStatus] = useState([]); // State for hourly tank status
 
+  // New state variables for date inputs
+  const [startDate, setStartDate] = useState("");
+  const [endDate, setEndDate] = useState("");
+
   useEffect(() => {
     if (!userId) return; // Exit early if userId is not available
 
@@ -71,30 +75,35 @@ const UserDetailsPage = () => {
       }
     };
 
-    const fetchHourlyTankStatus = async () => {
-      const endDate = new Date(); // Current date
-      const startDate = new Date(endDate); // Copy current date
-      startDate.setDate(endDate.getDate() - 1); // Set start date to one day before
-
-      const formattedStartDate = startDate.toISOString().split('T')[0]; // Format to YYYY-MM-DD
-      const formattedEndDate = endDate.toISOString().split('T')[0]; // Format to YYYY-MM-DD
-
-      try {
-        const response = await fetch(
-          `${process.env.NEXT_PUBLIC_BASE_URL}/api/tankStatus/hourly-tank-status?customer_id=${userId}&start_date=${formattedStartDate}&end_date=${formattedEndDate}`
-        );
-        if (!response.ok) throw new Error("Failed to fetch tank status");
-        const data = await response.json();
-        setTankStatus(data); // Set tank status data
-      } catch (error) {
-        console.error("Error fetching tank status:", error);
-        toast.error("Failed to load tank status");
-      }
-    };
-
     fetchUserDetails();
     fetchRecentBookings();
-    fetchHourlyTankStatus(); // Call the new function
+  }, [userId]);
+
+  // Define fetchHourlyTankStatus outside of useEffect
+  const fetchHourlyTankStatus = async () => {
+    if (!startDate || !endDate) {
+      toast.error("Please enter both start and end dates.");
+      return;
+    }
+
+    try {
+      const response = await fetch(
+        `${process.env.NEXT_PUBLIC_BASE_URL}/api/tankStatus/hourly-tank-status?customer_id=${userId}&start_date=${startDate}&end_date=${endDate}`
+      );
+      if (!response.ok) throw new Error("Failed to fetch tank status");
+      const data = await response.json();
+      setTankStatus(data);
+    } catch (error) {
+      console.error("Error fetching tank status:", error);
+      toast.error("Failed to load tank status");
+    }
+  };
+
+  // Call fetchHourlyTankStatus when userId changes
+  useEffect(() => {
+    if (userId) {
+      fetchHourlyTankStatus(); // Optionally call this if you want to fetch on load
+    }
   }, [userId]);
 
   if (loading) return <div>Loading...</div>;
@@ -291,6 +300,34 @@ const UserDetailsPage = () => {
             </CardContent>
           </Card>
         </motion.div>
+      </div>
+
+      {/* Date Input Section */}
+      <div className="flex flex-col gap-4">
+        <label>
+          Start Date:
+          <input
+            type="date"
+            value={startDate}
+            onChange={(e) => setStartDate(e.target.value)}
+            className="border rounded p-2"
+          />
+        </label>
+        <label>
+          End Date:
+          <input
+            type="date"
+            value={endDate}
+            onChange={(e) => setEndDate(e.target.value)}
+            className="border rounded p-2"
+          />
+        </label>
+        <button
+          onClick={fetchHourlyTankStatus} // Now this will work
+          className="bg-indigo-600 text-white rounded p-2"
+        >
+          Fetch Tank Status
+        </button>
       </div>
 
       {/* Hourly Tank Status Section */}

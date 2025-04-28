@@ -1,231 +1,251 @@
-"use client";
+"use client"
 
-import { useState, useEffect } from "react";
-import { DashboardShell } from "@/components/dashboard/dashboard-shell";
-import { DashboardHeader } from "@/components/dashboard/dashboard-header";
-import { Button } from "@/components/ui/button";
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table";
-import { Badge } from "@/components/ui/badge";
-import { Truck, Search, RefreshCw, Plus, MoreHorizontal } from "lucide-react";
-import { Input } from "@/components/ui/input";
-import { toast } from "sonner";
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
-import { TankerModal } from "@/components/tankers/tanker-modal";
-import { TankerDetailsModal } from "@/components/tankers/tanker-details-modal";
-import {
-  Select,
-  SelectTrigger,
-  SelectValue,
-  SelectContent,
-  SelectItem,
-} from "@/components/ui/select";
-import Cookies from "js-cookie";
+import { useState, useEffect } from "react"
+import { DashboardShell } from "@/components/dashboard/dashboard-shell"
+import { DashboardHeader } from "@/components/dashboard/dashboard-header"
+import { Button } from "@/components/ui/button"
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
+import { Badge } from "@/components/ui/badge"
+import { Truck, Search, RefreshCw, Plus, MoreHorizontal, Trash2 } from "lucide-react"
+import { Input } from "@/components/ui/input"
+import { toast } from "sonner"
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"
+import { TankerModal } from "@/components/tankers/tanker-modal"
+import { TankerDetailsModal } from "@/components/tankers/tanker-details-modal"
+import { DeleteConfirmationDialog } from "@/components/tankers/delete-confirmation-dialog"
+import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from "@/components/ui/select"
+import Cookies from "js-cookie"
 
 export default function TankersPage() {
-  const [tankers, setTankers] = useState([]);
-  const [filteredTankers, setFilteredTankers] = useState([]);
-  const [searchQuery, setSearchQuery] = useState("");
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(null);
-  const [isRefreshing, setIsRefreshing] = useState(false);
-  const [modalOpen, setModalOpen] = useState(false);
-  const [detailsModalOpen, setDetailsModalOpen] = useState(false);
-  const [editingTanker, setEditingTanker] = useState(null);
-  const [viewingTanker, setViewingTanker] = useState(null);
-  const [statusFilter, setStatusFilter] = useState("All");
-  const [isSuper, setIsSuper] = useState(false);
-  const baseUrl = process.env.NEXT_PUBLIC_BASE_URL;
+  const [tankers, setTankers] = useState([])
+  const [filteredTankers, setFilteredTankers] = useState([])
+  const [searchQuery, setSearchQuery] = useState("")
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState(null)
+  const [isRefreshing, setIsRefreshing] = useState(false)
+  const [modalOpen, setModalOpen] = useState(false)
+  const [detailsModalOpen, setDetailsModalOpen] = useState(false)
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false)
+  const [editingTanker, setEditingTanker] = useState(null)
+  const [viewingTanker, setViewingTanker] = useState(null)
+  const [deletingTanker, setDeletingTanker] = useState(null)
+  const [statusFilter, setStatusFilter] = useState("All")
+  const [isSuper, setIsSuper] = useState(false)
+  const [isDeleting, setIsDeleting] = useState(false)
+  const baseUrl = process.env.NEXT_PUBLIC_BASE_URL
 
   // Check if user is a super admin
   useEffect(() => {
-    const userType = Cookies.get("user_type");
-    setIsSuper(userType === "superAdmin");
-  }, []);
+    const userType = Cookies.get("user_type")
+    setIsSuper(userType === "superAdmin")
+  }, [])
 
   const getStatusBadgeVariant = (status) => {
     switch (status) {
       case "Available":
-        return "success";
+        return "success"
       case "Unavailable":
-        return "destructive";
+        return "destructive"
       default:
-        return "default";
+        return "default"
     }
-  };
+  }
 
   // Fetch all tankers
   const fetchTankers = async () => {
-    setLoading(true);
+    setLoading(true)
     try {
-      const response = await fetch(`${baseUrl}/api/tankers`);
-      if (!response.ok) throw new Error("Failed to fetch tankers");
+      const response = await fetch(`${baseUrl}/api/tankers`)
+      if (!response.ok) throw new Error("Failed to fetch tankers")
 
-      const data = await response.json();
-      const sortedTankers = [...data].sort(
-        (a, b) => new Date(b.created_at) - new Date(a.created_at)
-      );
-      setTankers(sortedTankers);
-      setFilteredTankers(sortedTankers);
-      setError(null);
+      const data = await response.json()
+      const sortedTankers = [...data].sort((a, b) => new Date(b.created_at) - new Date(a.created_at))
+      setTankers(sortedTankers)
+      setFilteredTankers(sortedTankers)
+      setError(null)
     } catch (err) {
-      console.error("Error fetching tankers:", err);
-      setError("Failed to load tankers");
-      toast.error("Failed to load tankers");
+      console.error("Error fetching tankers:", err)
+      setError("Failed to load tankers")
+      toast.error("Failed to load tankers")
     } finally {
-      setLoading(false);
+      setLoading(false)
     }
-  };
+  }
 
   // Handle adding a new tanker
   const handleAddTanker = async (data) => {
     try {
+      const payload = {
+        tanker_name: data.tanker_name,
+        capacity: Number.parseInt(data.capacity),
+        availability_status: data.availability_status,
+        plate_number: data.plate_number,
+        price_per_liter: data.price_per_liter,
+        cost: data.cost,
+        assigned_driver_id: data.assigned_driver_id ? Number.parseInt(data.assigned_driver_id) : null,
+        phase_id: Number.parseInt(data.phase_id),
+      }
+
       const response = await fetch(`${baseUrl}/api/tankers`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
         },
-        body: JSON.stringify(data),
-      });
+        body: JSON.stringify(payload),
+      })
 
-      if (!response.ok) throw new Error("Failed to add tanker");
-      toast.success("Tanker added successfully");
-      fetchTankers(); // Refresh the list
-      setModalOpen(false);
+      if (!response.ok) throw new Error("Failed to add tanker")
+      toast.success("Tanker added successfully")
+      fetchTankers() // Refresh the list
+      setModalOpen(false)
     } catch (error) {
-      console.error("Error:", error);
-      toast.error("Failed to add tanker");
+      console.error("Error:", error)
+      toast.error("Failed to add tanker")
     }
-  };
+  }
 
   // Handle editing a tanker
   const handleEditTanker = async (data) => {
     if (!editingTanker) {
-      toast.error("No tanker selected for editing");
-      return;
+      toast.error("No tanker selected for editing")
+      return
     }
 
     try {
-      const response = await fetch(
-        `${baseUrl}/api/tankers/${editingTanker.tanker_id}`,
-        {
-          method: "PUT",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify(data), // Send the updated data including availability
-        }
-      );
+      const payload = {
+        tanker_id: editingTanker.tanker_id,
+        tanker_name: data.tanker_name,
+        capacity: Number.parseInt(data.capacity),
+        availability_status: data.availability_status,
+        plate_number: data.plate_number,
+        price_per_liter: data.price_per_liter,
+        cost: data.cost,
+        assigned_driver_id: data.assigned_driver_id ? Number.parseInt(data.assigned_driver_id) : null,
+        phase_id: Number.parseInt(data.phase_id),
+      }
 
-      if (!response.ok) throw new Error("Failed to update tanker");
-      toast.success("Tanker updated successfully");
-      fetchTankers(); // Refresh the list
-      setModalOpen(false);
+      const response = await fetch(`${baseUrl}/api/tankers/${editingTanker.tanker_id}`, {
+        method: "PUT",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(payload),
+      })
+
+      if (!response.ok) throw new Error("Failed to update tanker")
+      toast.success("Tanker updated successfully")
+      fetchTankers() // Refresh the list
+      setModalOpen(false)
     } catch (error) {
-      console.error("Error:", error);
-      toast.error("Failed to update tanker");
+      console.error("Error:", error)
+      toast.error("Failed to update tanker")
     }
-  };
+  }
+
+  // Handle deleting a tanker
+  const handleDeleteTanker = async () => {
+    if (!deletingTanker) {
+      toast.error("No tanker selected for deletion")
+      return
+    }
+
+    setIsDeleting(true)
+    try {
+      const response = await fetch(`${baseUrl}/api/tankers/${deletingTanker.tanker_id}`, {
+        method: "DELETE",
+      })
+
+      if (!response.ok) throw new Error("Failed to delete tanker")
+      toast.success("Tanker deleted successfully")
+      fetchTankers() // Refresh the list
+      setDeleteDialogOpen(false)
+      setDeletingTanker(null)
+    } catch (error) {
+      console.error("Error:", error)
+      toast.error("Failed to delete tanker")
+    } finally {
+      setIsDeleting(false)
+    }
+  }
 
   // Handle viewing tanker details
   const handleViewDetails = async (tankerId) => {
     try {
-      const response = await fetch(`${baseUrl}/api/tankers/${tankerId}`);
-      if (!response.ok) throw new Error("Failed to fetch tanker details");
+      const response = await fetch(`${baseUrl}/api/tankers/${tankerId}`)
+      if (!response.ok) throw new Error("Failed to fetch tanker details")
 
-      const tanker = await response.json();
-      setViewingTanker(tanker);
-      setDetailsModalOpen(true);
+      const tanker = await response.json()
+      setViewingTanker(tanker)
+      setDetailsModalOpen(true)
     } catch (error) {
-      console.error("Error:", error);
-      toast.error("Failed to fetch tanker details");
+      console.error("Error:", error)
+      toast.error("Failed to fetch tanker details")
     }
-  };
+  }
 
   // Handle search
   const handleSearch = (e) => {
-    const query = e.target.value.toLowerCase();
-    setSearchQuery(query);
+    const query = e.target.value.toLowerCase()
+    setSearchQuery(query)
 
     if (!query.trim()) {
-      setFilteredTankers(tankers);
-      return;
+      setFilteredTankers(tankers)
+      return
     }
 
     const filtered = tankers.filter(
       (tanker) =>
         tanker.tanker_name.toLowerCase().includes(query) ||
         tanker.plate_number.toLowerCase().includes(query) ||
-        tanker.availability_status.toLowerCase().includes(query)
-    );
+        tanker.availability_status.toLowerCase().includes(query),
+    )
 
-    setFilteredTankers(filtered);
-  };
+    setFilteredTankers(filtered)
+  }
 
   // Handle refresh
   const handleRefresh = async () => {
-    setIsRefreshing(true);
+    setIsRefreshing(true)
     try {
-      await fetchTankers();
-      toast.success("Tankers list refreshed");
+      await fetchTankers()
+      toast.success("Tankers list refreshed")
     } catch (error) {
-      toast.error("Failed to refresh tankers");
+      toast.error("Failed to refresh tankers")
     } finally {
-      setIsRefreshing(false);
+      setIsRefreshing(false)
     }
-  };
+  }
 
   const handleEdit = (tanker) => {
-    setEditingTanker(tanker); // Set the selected tanker for editing
-    setModalOpen(true); // Open the edit modal
-  };
+    setEditingTanker(tanker) // Set the selected tanker for editing
+    setModalOpen(true) // Open the edit modal
+  }
+
+  const handleDelete = (tanker) => {
+    setDeletingTanker(tanker) // Set the selected tanker for deletion
+    setDeleteDialogOpen(true) // Open the delete confirmation dialog
+  }
 
   // Update filtered tankers based on status filter
   useEffect(() => {
-    let filtered = [...tankers];
+    let filtered = [...tankers]
     if (statusFilter !== "All") {
-      filtered = filtered.filter(
-        (tanker) => tanker.availability_status === statusFilter
-      );
+      filtered = filtered.filter((tanker) => tanker.availability_status === statusFilter)
     }
-    setFilteredTankers(filtered);
-  }, [statusFilter, tankers]);
+    setFilteredTankers(filtered)
+  }, [statusFilter, tankers])
 
   useEffect(() => {
-    fetchTankers();
-  }, []);
+    fetchTankers()
+  }, [])
 
   return (
     <DashboardShell>
       <DashboardHeader heading="Tankers" text="Manage your water tanker fleet">
         <div className="flex items-center gap-2">
-          <Button
-            variant="outline"
-            size="icon"
-            onClick={handleRefresh}
-            disabled={isRefreshing}
-          >
-            <RefreshCw
-              className={`h-4 w-4 ${isRefreshing ? "animate-spin" : ""}`}
-            />
+          <Button variant="outline" size="icon" onClick={handleRefresh} disabled={isRefreshing}>
+            <RefreshCw className={`h-4 w-4 ${isRefreshing ? "animate-spin" : ""}`} />
           </Button>
           <Select onValueChange={setStatusFilter} defaultValue="All">
             <SelectTrigger>
@@ -269,17 +289,12 @@ export default function TankersPage() {
 
               {searchQuery && (
                 <div className="text-sm text-muted-foreground">
-                  Found {filteredTankers.length}{" "}
-                  {filteredTankers.length === 1 ? "tanker" : "tankers"}
+                  Found {filteredTankers.length} {filteredTankers.length === 1 ? "tanker" : "tankers"}
                 </div>
               )}
             </div>
 
-            {error && (
-              <div className="bg-destructive/15 text-destructive p-3 rounded-md mb-4">
-                {error}
-              </div>
-            )}
+            {error && <div className="bg-destructive/15 text-destructive p-3 rounded-md mb-4">{error}</div>}
 
             <div className="relative w-full overflow-auto">
               {loading ? (
@@ -303,38 +318,21 @@ export default function TankersPage() {
                   <TableBody>
                     {filteredTankers.length === 0 ? (
                       <TableRow>
-                        <TableCell
-                          colSpan={8}
-                          className="text-center py-8 text-muted-foreground"
-                        >
-                          {searchQuery
-                            ? "No tankers found matching your search"
-                            : "No tankers found"}
+                        <TableCell colSpan={8} className="text-center py-8 text-muted-foreground">
+                          {searchQuery ? "No tankers found matching your search" : "No tankers found"}
                         </TableCell>
                       </TableRow>
                     ) : (
                       filteredTankers.map((tanker) => (
                         <TableRow key={tanker.tanker_id}>
-                          <TableCell className="font-medium">
-                            #{tanker.tanker_id}
-                          </TableCell>
+                          <TableCell className="font-medium">#{tanker.tanker_id}</TableCell>
                           <TableCell>{tanker.tanker_name}</TableCell>
                           <TableCell>{tanker.plate_number}</TableCell>
-                          <TableCell className="text-right">
-                            {tanker.capacity.toLocaleString()}
-                          </TableCell>
-                          <TableCell className="text-right">
-                            Rs. {Number(tanker.price_per_liter).toFixed(2)}
-                          </TableCell>
-                          <TableCell className="text-right">
-                            Rs. {Number(tanker.cost).toFixed(2)}
-                          </TableCell>
+                          <TableCell className="text-right">{tanker.capacity.toLocaleString()}</TableCell>
+                          <TableCell className="text-right">Rs. {Number(tanker.price_per_liter).toFixed(2)}</TableCell>
+                          <TableCell className="text-right">Rs. {Number(tanker.cost).toFixed(2)}</TableCell>
                           <TableCell>
-                            <Badge
-                              variant={getStatusBadgeVariant(
-                                tanker.availability_status
-                              )}
-                            >
+                            <Badge variant={getStatusBadgeVariant(tanker.availability_status)}>
                               {tanker.availability_status}
                             </Badge>
                           </TableCell>
@@ -347,19 +345,20 @@ export default function TankersPage() {
                                 </Button>
                               </DropdownMenuTrigger>
                               <DropdownMenuContent align="end">
-                                <DropdownMenuItem
-                                  onClick={() =>
-                                    handleViewDetails(tanker.tanker_id)
-                                  }
-                                >
+                                <DropdownMenuItem onClick={() => handleViewDetails(tanker.tanker_id)}>
                                   View Details
                                 </DropdownMenuItem>
                                 {isSuper && (
-                                  <DropdownMenuItem
-                                    onClick={() => handleEdit(tanker)}
-                                  >
-                                    Edit Tanker
-                                  </DropdownMenuItem>
+                                  <>
+                                    <DropdownMenuItem onClick={() => handleEdit(tanker)}>Edit Tanker</DropdownMenuItem>
+                                    <DropdownMenuItem
+                                      onClick={() => handleDelete(tanker)}
+                                      className="text-destructive focus:text-destructive"
+                                    >
+                                     
+                                      Delete Tanker
+                                    </DropdownMenuItem>
+                                  </>
                                 )}
                               </DropdownMenuContent>
                             </DropdownMenu>
@@ -378,8 +377,8 @@ export default function TankersPage() {
       <TankerModal
         open={modalOpen}
         onClose={() => {
-          setModalOpen(false);
-          setEditingTanker(null);
+          setModalOpen(false)
+          setEditingTanker(null)
         }}
         tanker={editingTanker}
         onSubmit={editingTanker ? handleEditTanker : handleAddTanker}
@@ -388,11 +387,22 @@ export default function TankersPage() {
       <TankerDetailsModal
         open={detailsModalOpen}
         onClose={() => {
-          setDetailsModalOpen(false);
-          setViewingTanker(null);
+          setDetailsModalOpen(false)
+          setViewingTanker(null)
         }}
         tanker={viewingTanker}
       />
+
+      <DeleteConfirmationDialog
+        open={deleteDialogOpen}
+        onClose={() => {
+          setDeleteDialogOpen(false)
+          setDeletingTanker(null)
+        }}
+        onConfirm={handleDeleteTanker}
+        tanker={deletingTanker}
+        isDeleting={isDeleting}
+      />
     </DashboardShell>
-  );
+  )
 }
