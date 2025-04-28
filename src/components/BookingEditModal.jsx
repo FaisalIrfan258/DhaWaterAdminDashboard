@@ -1,11 +1,21 @@
 "use client";
 
 import React, { useState, useEffect } from "react";
-import { Modal } from "@/components/ui/modal"; // Adjust the import path as necessary
-import { Button } from "@/components/ui/button"; // Adjust the import path as necessary
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+  DialogFooter
+} from "@/components/ui/dialog";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import { toast } from "sonner";
 import Cookies from "js-cookie";
 import { useRouter } from "next/navigation";
+import { Calendar, Loader2 } from "lucide-react";
 
 const BookingEditModal = ({ isOpen, onClose, booking, onRefresh }) => {
   const [formData, setFormData] = useState({
@@ -14,6 +24,9 @@ const BookingEditModal = ({ isOpen, onClose, booking, onRefresh }) => {
     customer_id: "",
     scheduled_date: "",
   });
+  const [bookingDetails, setBookingDetails] = useState(null);
+  const [isLoading, setIsLoading] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const [isSuper, setIsSuper] = useState(false);
   const router = useRouter();
 
@@ -31,15 +44,42 @@ const BookingEditModal = ({ isOpen, onClose, booking, onRefresh }) => {
   }, [isOpen, onClose, router]);
 
   useEffect(() => {
-    if (booking) {
-      setFormData({
-        admin_id: booking.admin_id,
-        tanker_id: booking.tanker_id,
-        customer_id: booking.customer_id,
-        scheduled_date: booking.scheduled_date,
-      });
-    }
-  }, [booking]);
+    const fetchBookingDetails = async () => {
+      if (!booking || !isOpen) return;
+      
+      setIsLoading(true);
+      try {
+        const response = await fetch(`${process.env.NEXT_PUBLIC_BASE_URL}/api/bookings/single-booking/${booking.booking_id}`);
+        if (!response.ok) throw new Error("Failed to fetch booking details");
+        const data = await response.json();
+        setBookingDetails(data);
+        
+        // Format date for datetime-local input
+        const formattedDate = formatDateForInput(data.scheduled_date);
+        
+        // Set form values
+        setFormData({
+          admin_id: data.Admin.admin_id,
+          tanker_id: data.Tanker.tanker_id,
+          customer_id: data.Customer.customer_id,
+          scheduled_date: formattedDate,
+        });
+      } catch (error) {
+        console.error("Error fetching booking details:", error);
+        toast.error("Failed to load booking details");
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    fetchBookingDetails();
+  }, [booking, isOpen]);
+
+  // Format date for datetime-local input
+  const formatDateForInput = (dateString) => {
+    const date = new Date(dateString);
+    return date.toISOString().slice(0, 16);
+  };
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -48,6 +88,7 @@ const BookingEditModal = ({ isOpen, onClose, booking, onRefresh }) => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    setIsSubmitting(true);
     try {
       const response = await fetch(`${process.env.NEXT_PUBLIC_BASE_URL}/api/bookings/update-booking/${booking.booking_id}`, {
         method: "PUT",
@@ -64,6 +105,8 @@ const BookingEditModal = ({ isOpen, onClose, booking, onRefresh }) => {
     } catch (error) {
       console.error("Error updating booking:", error);
       toast.error("Failed to update booking");
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
@@ -73,51 +116,107 @@ const BookingEditModal = ({ isOpen, onClose, booking, onRefresh }) => {
   }
 
   return (
-    <Modal isOpen={isOpen} onClose={onClose} title="Edit Booking">
-      <form onSubmit={handleSubmit}>
-        <div>
-          <label>Admin ID</label>
-          <input
-            type="text"
-            name="admin_id"
-            value={formData.admin_id}
-            onChange={handleChange}
-            required
-          />
-        </div>
-        <div>
-          <label>Tanker ID</label>
-          <input
-            type="text"
-            name="tanker_id"
-            value={formData.tanker_id}
-            onChange={handleChange}
-            required
-          />
-        </div>
-        <div>
-          <label>Customer ID</label>
-          <input
-            type="text"
-            name="customer_id"
-            value={formData.customer_id}
-            onChange={handleChange}
-            required
-          />
-        </div>
-        <div>
-          <label>Scheduled Date</label>
-          <input
-            type="datetime-local"
-            name="scheduled_date"
-            value={formData.scheduled_date}
-            onChange={handleChange}
-            required
-          />
-        </div>
-        <Button type="submit">Update Booking</Button>
-      </form>
-    </Modal>
+    <Dialog open={isOpen} onOpenChange={onClose}>
+      <DialogContent className="sm:max-w-[500px]">
+        <DialogHeader>
+          <DialogTitle className="text-xl flex items-center gap-2">
+            <Calendar className="h-5 w-5" />
+            Edit Booking
+          </DialogTitle>
+          <DialogDescription>
+            {bookingDetails ? (
+              <>Update booking for customer <span className="font-medium">{bookingDetails.Customer.full_name}</span></>
+            ) : (
+              "Update booking details"
+            )}
+          </DialogDescription>
+        </DialogHeader>
+        
+        {isLoading ? (
+          <div className="py-8 flex justify-center items-center">
+            <Loader2 className="h-6 w-6 animate-spin text-primary" />
+          </div>
+        ) : (
+          <form onSubmit={handleSubmit} className="space-y-4 py-4">
+            <div className="grid gap-4">
+              <div className="grid gap-2">
+                <Label htmlFor="admin_id">Admin</Label>
+                <Input
+                  id="admin_id"
+                  name="admin_id"
+                  value={formData.admin_id}
+                  onChange={handleChange}
+                  required
+                  disabled={isSubmitting}
+                />
+                {bookingDetails && (
+                  <p className="text-xs text-muted-foreground">
+                    Current: {bookingDetails.Admin.full_name}
+                  </p>
+                )}
+              </div>
+              
+              <div className="grid gap-2">
+                <Label htmlFor="tanker_id">Tanker</Label>
+                <Input
+                  id="tanker_id"
+                  name="tanker_id"
+                  value={formData.tanker_id}
+                  onChange={handleChange}
+                  required
+                  disabled={isSubmitting}
+                />
+                {bookingDetails && (
+                  <p className="text-xs text-muted-foreground">
+                    Current: {bookingDetails.Tanker.tanker_name}
+                  </p>
+                )}
+              </div>
+              
+              <div className="grid gap-2">
+                <Label htmlFor="customer_id">Customer</Label>
+                <Input
+                  id="customer_id"
+                  name="customer_id"
+                  value={formData.customer_id}
+                  onChange={handleChange}
+                  required
+                  disabled={isSubmitting}
+                />
+                {bookingDetails && (
+                  <p className="text-xs text-muted-foreground">
+                    Current: {bookingDetails.Customer.full_name}
+                  </p>
+                )}
+              </div>
+              
+              <div className="grid gap-2">
+                <Label htmlFor="scheduled_date">Scheduled Date</Label>
+                <Input
+                  id="scheduled_date"
+                  type="datetime-local"
+                  name="scheduled_date"
+                  value={formData.scheduled_date}
+                  onChange={handleChange}
+                  required
+                  disabled={isSubmitting}
+                />
+              </div>
+            </div>
+            
+            <DialogFooter>
+              <Button type="button" variant="outline" onClick={onClose} disabled={isSubmitting}>
+                Cancel
+              </Button>
+              <Button type="submit" disabled={isSubmitting}>
+                {isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                Save Changes
+              </Button>
+            </DialogFooter>
+          </form>
+        )}
+      </DialogContent>
+    </Dialog>
   );
 };
 
