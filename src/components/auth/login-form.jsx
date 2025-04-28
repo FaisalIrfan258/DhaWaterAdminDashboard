@@ -84,6 +84,21 @@ export default function LoginForm() {
           secure: true,
           sameSite: "Strict",
         })
+        Cookies.set("admin_name", data.full_name, {
+          path: "/",
+          secure: true,
+          sameSite: "Strict",
+        })
+        Cookies.set("admin_email", data.email, {
+          path: "/",
+          secure: true,
+          sameSite: "Strict",
+        })
+        Cookies.set("is_super", data.is_super, {
+          path: "/",
+          secure: true,
+          sameSite: "Strict",
+        })
 
         // Store user type in cookie
         Cookies.set("user_type", loginType, {
