@@ -198,7 +198,8 @@ export default function TankersPage() {
       (tanker) =>
         tanker.tanker_name.toLowerCase().includes(query) ||
         tanker.plate_number.toLowerCase().includes(query) ||
-        tanker.availability_status.toLowerCase().includes(query),
+        tanker.availability_status.toLowerCase().includes(query) ||
+        (tanker.Driver?.full_name && tanker.Driver.full_name.toLowerCase().includes(query)),
     )
 
     setFilteredTankers(filtered)
@@ -312,13 +313,14 @@ export default function TankersPage() {
                       <TableHead className="text-right">Price/Gallon</TableHead>
                       <TableHead className="text-right">Cost</TableHead>
                       <TableHead>Status</TableHead>
+                      <TableHead>Driver</TableHead>
                       <TableHead className="w-[100px]">Actions</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
                     {filteredTankers.length === 0 ? (
                       <TableRow>
-                        <TableCell colSpan={8} className="text-center py-8 text-muted-foreground">
+                        <TableCell colSpan={9} className="text-center py-8 text-muted-foreground">
                           {searchQuery ? "No tankers found matching your search" : "No tankers found"}
                         </TableCell>
                       </TableRow>
@@ -336,6 +338,7 @@ export default function TankersPage() {
                               {tanker.availability_status}
                             </Badge>
                           </TableCell>
+                          <TableCell>{tanker.Driver?.full_name || "—"}</TableCell>
                           <TableCell>
                             <DropdownMenu>
                               <DropdownMenuTrigger asChild>

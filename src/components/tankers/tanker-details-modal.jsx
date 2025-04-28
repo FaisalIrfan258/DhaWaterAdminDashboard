@@ -1,6 +1,5 @@
 "use client"
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog"
-import { Input } from "@/components/ui/input"
 import { Button } from "@/components/ui/button"
 import { Label } from "@/components/ui/label"
 
@@ -12,37 +11,41 @@ export function TankerDetailsModal({ open, onClose, tanker }) {
           <DialogTitle>Tanker Details</DialogTitle>
         </DialogHeader>
         <div className="grid grid-cols-1 gap-4 mb-6">
-          <div>
-            <Label>Tanker Name</Label>
-            <Input className="mt-2" value={tanker?.tanker_name || ""} readOnly />
+          <div className="flex items-center justify-between">
+            <Label className="font-medium">Tanker Name:</Label>
+            <div className="text-right">{tanker?.tanker_name || "—"}</div>
           </div>
-          <div>
-            <Label>Plate Number</Label>
-            <Input className="mt-2" value={tanker?.plate_number || ""} readOnly />
+          <div className="flex items-center justify-between">
+            <Label className="font-medium">Plate Number:</Label>
+            <div className="text-right">{tanker?.plate_number || "—"}</div>
           </div>
-          <div>
-            <Label>Capacity (Gallons)</Label>
-            <Input className="mt-2" value={tanker?.capacity ?? ""} readOnly />
+          <div className="flex items-center justify-between">
+            <Label className="font-medium">Capacity (Gallons):</Label>
+            <div className="text-right">{tanker?.capacity || "—"}</div>
           </div>
-          <div>
-            <Label>Price per Liter (Rs.)</Label>
-            <Input className="mt-2" value={tanker?.price_per_liter ?? ""} readOnly />
+          <div className="flex items-center justify-between">
+            <Label className="font-medium">Price per Liter (Rs.):</Label>
+            <div className="text-right">{tanker?.price_per_liter || "—"}</div>
           </div>
-          <div>
-            <Label>Cost (Rs.)</Label>
-            <Input className="mt-2" value={tanker?.cost ?? ""} readOnly />
+          <div className="flex items-center justify-between">
+            <Label className="font-medium">Cost (Rs.):</Label>
+            <div className="text-right">{tanker?.cost || "—"}</div>
           </div>
-          <div>
-            <Label>Availability Status</Label>
-            <Input className="mt-2" value={tanker?.availability_status || ""} readOnly />
+          <div className="flex items-center justify-between">
+            <Label className="font-medium">Availability Status:</Label>
+            <div className="text-right">{tanker?.availability_status || "—"}</div>
           </div>
-          <div>
-            <Label>Phase ID</Label>
-            <Input className="mt-2" value={tanker?.phase_id ?? ""} readOnly />
+          <div className="flex items-center justify-between">
+            <Label className="font-medium">Phase:</Label>
+            <div className="text-right">
+              {tanker?.TankerPhaseRelations && tanker.TankerPhaseRelations[0]?.Phase?.phase_name 
+                ? `${tanker.TankerPhaseRelations[0].Phase.phase_name}`
+                : "—"}
+            </div>
           </div>
-          <div>
-            <Label>Assigned Driver ID</Label>
-            <Input className="mt-2" value={tanker?.assigned_driver_id ?? ""} readOnly />
+          <div className="flex items-center justify-between">
+            <Label className="font-medium">Assigned Driver:</Label>
+            <div className="text-right">{tanker?.Driver?.full_name || "—"}</div>
           </div>
         </div>
         <div className="flex justify-end">

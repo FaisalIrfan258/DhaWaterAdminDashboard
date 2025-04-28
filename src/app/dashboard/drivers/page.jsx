@@ -7,7 +7,7 @@ import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { Badge } from "@/components/ui/badge"
-import { Car, Search, RefreshCw, X, Plus, Pencil, Eye } from "lucide-react"
+import { Car, Search, RefreshCw, X, Plus, Pencil, Eye, MoreHorizontal, Trash2 } from "lucide-react"
 import { Input } from "@/components/ui/input"
 import { toast } from "sonner"
 import {
@@ -31,6 +31,12 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu"
 import Cookies from "js-cookie"
 
 export default function DriversPage() {
@@ -531,42 +537,38 @@ export default function DriversPage() {
                           </Badge>
                         </TableCell>
                         <TableCell>
-                          <div className="flex items-center gap-2">
-                            <Button
-                              variant="ghost"
-                              size="icon"
-                              onClick={() => fetchSingleDriver(driver.driver_id)}
-                              className="h-8 w-8"
-                            >
-                              <Eye className="h-4 w-4" />
-                              <span className="sr-only">View</span>
-                            </Button>
-                            {isSuper && (
-                              <Button
-                                variant="ghost"
-                                size="icon"
-                                onClick={() => openEditDialog(driver)}
-                                className="h-8 w-8"
-                              >
-                                <Pencil className="h-4 w-4" />
-                                <span className="sr-only">Edit</span>
+                          <DropdownMenu>
+                            <DropdownMenuTrigger asChild>
+                              <Button variant="ghost" size="sm">
+                                <MoreHorizontal className="h-4 w-4" />
+                                <span className="sr-only">Open menu</span>
                               </Button>
-                            )}
-                            {isSuper && (
-                              <Button
-                                variant="ghost"
-                                size="icon"
-                                onClick={() => {
-                                  setSelectedDriver(driver)
-                                  setIsDeleteDialogOpen(true)
-                                }}
-                                className="h-8 w-8 text-destructive"
-                              >
-                                <X className="h-4 w-4" />
-                                <span className="sr-only">Delete</span>
-                              </Button>
-                            )}
-                          </div>
+                            </DropdownMenuTrigger>
+                            <DropdownMenuContent align="end">
+                              <DropdownMenuItem onClick={() => fetchSingleDriver(driver.driver_id)}>
+                                <Eye className="mr-2 h-4 w-4" />
+                                View details
+                              </DropdownMenuItem>
+                              {isSuper && (
+                                <>
+                                  <DropdownMenuItem onClick={() => openEditDialog(driver)}>
+                                    <Pencil className="mr-2 h-4 w-4" />
+                                    Edit driver
+                                  </DropdownMenuItem>
+                                  <DropdownMenuItem
+                                    onClick={() => {
+                                      setSelectedDriver(driver)
+                                      setIsDeleteDialogOpen(true)
+                                    }}
+                                    className="text-destructive"
+                                  >
+                                    <Trash2 className="mr-2 h-4 w-4" />
+                                    Delete driver
+                                  </DropdownMenuItem>
+                                </>
+                              )}
+                            </DropdownMenuContent>
+                          </DropdownMenu>
                         </TableCell>
                       </TableRow>
                     ))
