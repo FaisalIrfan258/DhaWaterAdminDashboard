@@ -1,7 +1,7 @@
 "use client"
 
 import { useEffect, useState } from "react"
-import { Bell, User, Mail, Shield } from "lucide-react"
+import { Bell, User, Mail, Shield, FileText } from "lucide-react"
 import { Avatar, AvatarFallback } from "@/components/ui/avatar"
 import { Button } from "@/components/ui/button"
 import {
@@ -70,6 +70,12 @@ export default function TopBar() {
           <Link href="/dashboard/notifications">
             <Button variant="ghost" size="icon" className="relative">
               <Bell className="h-5 w-5" />
+            </Button>
+          </Link>
+
+          <Link href="/dashboard/system-logs">
+            <Button variant="ghost" size="icon" className="relative">
+              <FileText className="h-5 w-5" />
             </Button>
           </Link>
 
