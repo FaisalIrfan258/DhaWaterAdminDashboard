@@ -187,62 +187,16 @@ const UserDetailsPage = () => {
         </motion.div>
       </div>
 
-      {/* Tank Level Details + Recent Bookings Side by Side */}
+    
       <div className="flex flex-col md:flex-row gap-6">
-        {/* Tank Level Details */}
+   
         <motion.div
           className="flex-1"
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.5, delay: 0.6 }}
         >
-          <Card className="shadow-lg hover:shadow-xl transition-shadow duration-300 w-full">
-            <CardHeader>
-              <CardTitle className="text-indigo-700">
-                Tank Level Details
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              {loading ? (
-                <Skeleton className="w-full h-12" />
-              ) : (
-                <div className="overflow-x-auto">
-                  <table className="w-full border-collapse">
-                    <thead>
-                      <tr className="bg-indigo-100">
-                        <th className="px-4 py-3 text-left text-xs font-medium text-indigo-700 uppercase">
-                          Level
-                        </th>
-                        <th className="px-4 py-3 text-left text-xs font-medium text-indigo-700 uppercase">
-                          Time
-                        </th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {user.WaterTanks.map((tank, index) => (
-                        <tr key={index} className="border-b border-indigo-200">
-                          <td className="px-4 py-3">
-                            <Badge
-                              variant={
-                                tank.water_level > 50 ? "success" : "warning"
-                              }
-                            >
-                              {(tank.water_level || 0).toFixed(1)}%
-                            </Badge>
-                          </td>
-                          <td className="px-4 py-3 text-indigo-800">
-                            {new Date(
-                              tank.WaterTankStatuses[0].status_date
-                            ).toLocaleDateString()}
-                          </td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                </div>
-              )}
-            </CardContent>
-          </Card>
+          
         </motion.div>
 
         {/* Recent Bookings */}
