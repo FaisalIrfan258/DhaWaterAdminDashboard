@@ -29,6 +29,8 @@ import {
   Eye,
   Pencil,
   Trash2,
+  ChevronLeft,
+  ChevronRight,
 } from "lucide-react";
 import { SensorModal } from "@/components/sensors/sensor-modal";
 import { Input } from "@/components/ui/input";
@@ -62,8 +64,45 @@ export default function DevicesPage() {
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [statusFilter, setStatusFilter] = useState("All");
   const [isSuper, setIsSuper] = useState(false);
+  // Pagination states
+  const [currentPage, setCurrentPage] = useState(1);
+  const [itemsPerPage, setItemsPerPage] = useState(10);
+  const [paginatedDevices, setPaginatedDevices] = useState([]);
+  const [totalPages, setTotalPages] = useState(1);
 
   const baseUrl = process.env.NEXT_PUBLIC_BASE_URL;
+
+  // Apply pagination whenever devices or pagination settings change
+  useEffect(() => {
+    paginateDevices();
+  }, [filteredDevices, currentPage, itemsPerPage]);
+
+  // Paginate devices function
+  const paginateDevices = () => {
+    const indexOfLastItem = currentPage * itemsPerPage;
+    const indexOfFirstItem = indexOfLastItem - itemsPerPage;
+    const currentDevices = filteredDevices.slice(indexOfFirstItem, indexOfLastItem);
+    
+    setPaginatedDevices(currentDevices);
+    setTotalPages(Math.ceil(filteredDevices.length / itemsPerPage));
+  };
+
+  const goToNextPage = () => {
+    if (currentPage < totalPages) {
+      setCurrentPage(currentPage + 1);
+    }
+  };
+
+  const goToPreviousPage = () => {
+    if (currentPage > 1) {
+      setCurrentPage(currentPage - 1);
+    }
+  };
+
+  const handleItemsPerPageChange = (value) => {
+    setItemsPerPage(Number(value));
+    setCurrentPage(1); // Reset to first page when changing items per page
+  };
 
   // Fetch all sensors
   const fetchDevices = async () => {
@@ -358,97 +397,145 @@ export default function DevicesPage() {
                 <RefreshCw className="h-8 w-8 animate-spin text-muted-foreground" />
               </div>
             ) : (
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>Sensor ID</TableHead>
-                    <TableHead>Name</TableHead>
-                    <TableHead>Details</TableHead>
-                    <TableHead>Manufacturing Date</TableHead>
-                    <TableHead>Status</TableHead>
-                    <TableHead>Actions</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {filteredDevices.length === 0 ? (
+              <>
+                <Table>
+                  <TableHeader>
                     <TableRow>
-                      <TableCell
-                        colSpan={6}
-                        className="text-center py-8 text-muted-foreground"
-                      >
-                        {searchQuery
-                          ? "No devices found matching your search"
-                          : "No devices found"}
-                      </TableCell>
+                      <TableHead>Sensor ID</TableHead>
+                      <TableHead>Name</TableHead>
+                      <TableHead>Details</TableHead>
+                      <TableHead>Manufacturing Date</TableHead>
+                      <TableHead>Status</TableHead>
+                      <TableHead>Actions</TableHead>
                     </TableRow>
-                  ) : (
-                    filteredDevices.map((device) => (
-                      <TableRow key={device.sensor_id || Math.random()}>
-                        <TableCell className="font-medium">
-                          {device.sensor_id}
-                        </TableCell>
-                        <TableCell>{device.sensor_name}</TableCell>
-                        <TableCell>{device.sensor_details}</TableCell>
-                        <TableCell>
-                          {device.manufacturing_date
-                            ? new Date(
-                                device.manufacturing_date
-                              ).toLocaleDateString()
-                            : "N/A"}
-                        </TableCell>
-                        <TableCell>
-                          <Badge
-                            variant={
-                              device.status === "Assigned"
-                                ? "success"
-                                : "destructive"
-                            }
-                          >
-                            {device.status || "Unknown"}
-                          </Badge>
-                        </TableCell>
-                        <TableCell>
-                          <DropdownMenu>
-                            <DropdownMenuTrigger asChild>
-                              <Button variant="ghost" size="sm">
-                                <MoreHorizontal className="h-4 w-4" />
-                                <span className="sr-only">Open menu</span>
-                              </Button>
-                            </DropdownMenuTrigger>
-                            <DropdownMenuContent align="end">
-                              <DropdownMenuItem
-                                onClick={() => openModal("view", device)}
-                              >
-                                <Eye className="mr-2 h-4 w-4" />
-                                View details
-                              </DropdownMenuItem>
-                              {isSuper && (
-                                <>
-                                  <DropdownMenuItem
-                                    onClick={() => openModal("edit", device)}
-                                  >
-                                    <Pencil className="mr-2 h-4 w-4" />
-                                    Edit device
-                                  </DropdownMenuItem>
-                                  <DropdownMenuItem
-                                    onClick={() =>
-                                      handleDeleteDevice(device.sensor_id)
-                                    }
-                                    className="text-destructive"
-                                  >
-                                    <Trash2 className="mr-2 h-4 w-4" />
-                                    Delete device
-                                  </DropdownMenuItem>
-                                </>
-                              )}
-                            </DropdownMenuContent>
-                          </DropdownMenu>
+                  </TableHeader>
+                  <TableBody>
+                    {paginatedDevices.length === 0 ? (
+                      <TableRow>
+                        <TableCell
+                          colSpan={6}
+                          className="text-center py-8 text-muted-foreground"
+                        >
+                          {searchQuery
+                            ? "No devices found matching your search"
+                            : "No devices found"}
                         </TableCell>
                       </TableRow>
-                    ))
-                  )}
-                </TableBody>
-              </Table>
+                    ) : (
+                      paginatedDevices.map((device) => (
+                        <TableRow key={device.sensor_id || Math.random()}>
+                          <TableCell className="font-medium">
+                            {device.sensor_id}
+                          </TableCell>
+                          <TableCell>{device.sensor_name}</TableCell>
+                          <TableCell>{device.sensor_details}</TableCell>
+                          <TableCell>
+                            {device.manufacturing_date
+                              ? new Date(
+                                  device.manufacturing_date
+                                ).toLocaleDateString()
+                              : "N/A"}
+                          </TableCell>
+                          <TableCell>
+                            <Badge
+                              variant={
+                                device.status === "Assigned"
+                                  ? "success"
+                                  : "destructive"
+                              }
+                            >
+                              {device.status || "Unknown"}
+                            </Badge>
+                          </TableCell>
+                          <TableCell>
+                            <DropdownMenu>
+                              <DropdownMenuTrigger asChild>
+                                <Button variant="ghost" size="sm">
+                                  <MoreHorizontal className="h-4 w-4" />
+                                  <span className="sr-only">Open menu</span>
+                                </Button>
+                              </DropdownMenuTrigger>
+                              <DropdownMenuContent align="end">
+                                <DropdownMenuItem
+                                  onClick={() => openModal("view", device)}
+                                >
+                                  <Eye className="mr-2 h-4 w-4" />
+                                  View details
+                                </DropdownMenuItem>
+                                {isSuper && (
+                                  <>
+                                    <DropdownMenuItem
+                                      onClick={() => openModal("edit", device)}
+                                    >
+                                      <Pencil className="mr-2 h-4 w-4" />
+                                      Edit device
+                                    </DropdownMenuItem>
+                                    <DropdownMenuItem
+                                      onClick={() =>
+                                        handleDeleteDevice(device.sensor_id)
+                                      }
+                                      className="text-destructive"
+                                    >
+                                      <Trash2 className="mr-2 h-4 w-4" />
+                                      Delete device
+                                    </DropdownMenuItem>
+                                  </>
+                                )}
+                              </DropdownMenuContent>
+                            </DropdownMenu>
+                          </TableCell>
+                        </TableRow>
+                      ))
+                    )}
+                  </TableBody>
+                </Table>
+                
+                {/* Pagination Controls */}
+                <div className="flex items-center justify-between mt-6">
+                  <div className="flex items-center space-x-2">
+                    <p className="text-sm text-muted-foreground">
+                      Showing {paginatedDevices.length} of {filteredDevices.length} devices
+                    </p>
+                    <Select 
+                      value={itemsPerPage.toString()} 
+                      onValueChange={handleItemsPerPageChange}
+                    >
+                      <SelectTrigger className="h-8 w-[70px]">
+                        <SelectValue placeholder={itemsPerPage} />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="5">5</SelectItem>
+                        <SelectItem value="10">10</SelectItem>
+                        <SelectItem value="20">20</SelectItem>
+                        <SelectItem value="50">50</SelectItem>
+                      </SelectContent>
+                    </Select>
+                    <p className="text-sm text-muted-foreground">per page</p>
+                  </div>
+                  
+                  <div className="flex items-center space-x-2">
+                    <Button
+                      variant="outline"
+                      size="icon"
+                      onClick={goToPreviousPage}
+                      disabled={currentPage === 1}
+                    >
+                      <ChevronLeft className="h-4 w-4" />
+                    </Button>
+                    <p className="text-sm text-muted-foreground">
+                      Page {currentPage} of {totalPages}
+                    </p>
+                    <Button
+                      variant="outline"
+                      size="icon"
+                      onClick={goToNextPage}
+                      disabled={currentPage === totalPages}
+                    >
+                      <ChevronRight className="h-4 w-4" />
+                    </Button>
+                  </div>
+                </div>
+              </>
             )}
           </CardContent>
         </Card>

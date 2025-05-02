@@ -9,7 +9,7 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import { PlusCircle } from "lucide-react"
+import { PlusCircle, ChevronLeft, ChevronRight } from "lucide-react"
 
 export default function AdminManagementPage() {
   const [fullName, setFullName] = useState("")
@@ -20,6 +20,11 @@ export default function AdminManagementPage() {
   const [selectedAdmin, setSelectedAdmin] = useState(null)
   const [isModalOpen, setIsModalOpen] = useState(false)
   const [isLoading, setIsLoading] = useState(false)
+  // Pagination states
+  const [currentPage, setCurrentPage] = useState(1)
+  const [itemsPerPage, setItemsPerPage] = useState(10)
+  const [paginatedAdmins, setPaginatedAdmins] = useState([])
+  const [totalPages, setTotalPages] = useState(1)
 
   // Define the base URL
   const baseUrl = process.env.NEXT_PUBLIC_BASE_URL;
@@ -28,6 +33,37 @@ export default function AdminManagementPage() {
   useEffect(() => {
     fetchAdmins();
   }, []);
+
+  // Apply pagination whenever admins list or pagination settings change
+  useEffect(() => {
+    paginateAdmins();
+  }, [admins, currentPage, itemsPerPage]);
+
+  const paginateAdmins = () => {
+    const indexOfLastItem = currentPage * itemsPerPage;
+    const indexOfFirstItem = indexOfLastItem - itemsPerPage;
+    const currentAdmins = admins.slice(indexOfFirstItem, indexOfLastItem);
+    
+    setPaginatedAdmins(currentAdmins);
+    setTotalPages(Math.ceil(admins.length / itemsPerPage));
+  };
+
+  const goToNextPage = () => {
+    if (currentPage < totalPages) {
+      setCurrentPage(currentPage + 1);
+    }
+  };
+
+  const goToPreviousPage = () => {
+    if (currentPage > 1) {
+      setCurrentPage(currentPage - 1);
+    }
+  };
+
+  const handleItemsPerPageChange = (value) => {
+    setItemsPerPage(Number(value));
+    setCurrentPage(1); // Reset to first page when changing items per page
+  };
 
   const fetchAdmins = async () => {
     setIsLoading(true);
@@ -186,11 +222,59 @@ export default function AdminManagementPage() {
         <CardContent>
           {isLoading && <div className="flex justify-center py-6">Loading administrators...</div>}
           {!isLoading && (
-            <AdminList 
-              admins={admins} 
-              onEdit={handleOpenEditModal} 
-              onDelete={handleDeleteAdmin} 
-            />
+            <>
+              <AdminList 
+                admins={paginatedAdmins} 
+                onEdit={handleOpenEditModal} 
+                onDelete={handleDeleteAdmin} 
+              />
+              
+              {/* Pagination Controls */}
+              <div className="flex items-center justify-between mt-6">
+                <div className="flex items-center space-x-2">
+                  <p className="text-sm text-muted-foreground">
+                    Showing {paginatedAdmins.length} of {admins.length} admins
+                  </p>
+                  <Select 
+                    value={itemsPerPage.toString()} 
+                    onValueChange={handleItemsPerPageChange}
+                  >
+                    <SelectTrigger className="h-8 w-[70px]">
+                      <SelectValue placeholder={itemsPerPage} />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="5">5</SelectItem>
+                      <SelectItem value="10">10</SelectItem>
+                      <SelectItem value="20">20</SelectItem>
+                      <SelectItem value="50">50</SelectItem>
+                    </SelectContent>
+                  </Select>
+                  <p className="text-sm text-muted-foreground">per page</p>
+                </div>
+                
+                <div className="flex items-center space-x-2">
+                  <Button
+                    variant="outline"
+                    size="icon"
+                    onClick={goToPreviousPage}
+                    disabled={currentPage === 1}
+                  >
+                    <ChevronLeft className="h-4 w-4" />
+                  </Button>
+                  <p className="text-sm text-muted-foreground">
+                    Page {currentPage} of {totalPages}
+                  </p>
+                  <Button
+                    variant="outline"
+                    size="icon"
+                    onClick={goToNextPage}
+                    disabled={currentPage === totalPages}
+                  >
+                    <ChevronRight className="h-4 w-4" />
+                  </Button>
+                </div>
+              </div>
+            </>
           )}
         </CardContent>
       </Card>

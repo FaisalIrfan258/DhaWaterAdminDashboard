@@ -7,7 +7,7 @@ import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { Badge } from "@/components/ui/badge"
-import { Car, Search, RefreshCw, X, Plus, Pencil, Eye, MoreHorizontal, Trash2 } from "lucide-react"
+import { Car, Search, RefreshCw, X, Plus, Pencil, Eye, MoreHorizontal, Trash2, ChevronLeft, ChevronRight } from "lucide-react"
 import { Input } from "@/components/ui/input"
 import { toast } from "sonner"
 import {
@@ -52,7 +52,10 @@ export default function DriversPage() {
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false)
   const [selectedDriver, setSelectedDriver] = useState(null)
   const [statusFilter, setStatusFilter] = useState("All")
-  const baseUrl = process.env.NEXT_PUBLIC_BASE_URL
+  const [currentPage, setCurrentPage] = useState(1)
+  const [itemsPerPage, setItemsPerPage] = useState(10)
+  const [paginatedDrivers, setPaginatedDrivers] = useState([])
+  const [totalPages, setTotalPages] = useState(1)
 
   // Form states for create
   const [fullName, setFullName] = useState("")
@@ -71,18 +74,47 @@ export default function DriversPage() {
   const [editStatus, setEditStatus] = useState("")
 
   const [isSuper, setIsSuper] = useState(false)
+  const baseUrl = process.env.NEXT_PUBLIC_BASE_URL
 
   useEffect(() => {
     fetchDrivers()
   }, [])
 
-  // Check if user is super admin
+  useEffect(() => {
+    paginateDrivers()
+  }, [filteredDrivers, currentPage, itemsPerPage])
+
   useEffect(() => {
     const userType = Cookies.get("user_type");
     setIsSuper(userType === "superAdmin");
   }, []);
 
-  // Fetch all drivers
+  const paginateDrivers = () => {
+    const indexOfLastItem = currentPage * itemsPerPage;
+    const indexOfFirstItem = indexOfLastItem - itemsPerPage;
+    const currentDrivers = filteredDrivers.slice(indexOfFirstItem, indexOfLastItem);
+    
+    setPaginatedDrivers(currentDrivers);
+    setTotalPages(Math.ceil(filteredDrivers.length / itemsPerPage));
+  };
+
+  const goToNextPage = () => {
+    if (currentPage < totalPages) {
+      setCurrentPage(currentPage + 1);
+    }
+  };
+
+  const goToPreviousPage = () => {
+    if (currentPage > 1) {
+      setCurrentPage(currentPage - 1);
+    }
+  };
+
+  const handleItemsPerPageChange = (value) => {
+    setItemsPerPage(Number(value));
+    setCurrentPage(1);
+  };
+
   const fetchDrivers = async () => {
     setLoading(true)
     try {
@@ -111,7 +143,6 @@ export default function DriversPage() {
     }
   }
 
-  // Fetch single driver
   const fetchSingleDriver = async (id) => {
     try {
       setLoading(true)
@@ -136,7 +167,6 @@ export default function DriversPage() {
     }
   }
 
-  // Handle search
   const handleSearch = (e) => {
     const query = e.target.value.toLowerCase()
     setSearchQuery(query)
@@ -159,7 +189,6 @@ export default function DriversPage() {
     applyStatusFilter(filtered, statusFilter)
   }
 
-  // Apply status filter
   const applyStatusFilter = (driversArray, status) => {
     if (status === "All") {
       setFilteredDrivers(driversArray)
@@ -168,7 +197,6 @@ export default function DriversPage() {
     }
   }
 
-  // Handle status filter change
   const handleStatusFilterChange = (value) => {
     setStatusFilter(value)
 
@@ -189,15 +217,12 @@ export default function DriversPage() {
     }
   }
 
-  // Sort drivers in descending order by created_at date
   const sortedDrivers = [...drivers].sort((a, b) => new Date(b.created_at) - new Date(a.created_at))
 
-  // Update filtered drivers to use sorted drivers
   useEffect(() => {
     applyStatusFilter(sortedDrivers, statusFilter)
   }, [drivers, statusFilter])
 
-  // Handle refresh
   const handleRefresh = async () => {
     setIsRefreshing(true)
     try {
@@ -211,7 +236,6 @@ export default function DriversPage() {
     }
   }
 
-  // Handle create driver
   const handleCreateDriver = async () => {
     if (
       !fullName.trim() ||
@@ -261,7 +285,6 @@ export default function DriversPage() {
     }
   }
 
-  // Handle delete driver
   const handleDeleteDriver = async () => {
     if (!selectedDriver) return
 
@@ -284,7 +307,6 @@ export default function DriversPage() {
     }
   }
 
-  // Handle update driver
   const handleUpdateDriver = async () => {
     if (
       !selectedDriver ||
@@ -329,7 +351,6 @@ export default function DriversPage() {
     }
   }
 
-  // Open edit dialog
   const openEditDialog = (driver) => {
     setSelectedDriver(driver)
     setEditFullName(driver.full_name)
@@ -341,7 +362,6 @@ export default function DriversPage() {
     setIsEditDialogOpen(true)
   }
 
-  // Format date function
   const formatDate = (dateString) => {
     return new Date(dateString).toLocaleString("en-US", {
       year: "numeric",
@@ -352,7 +372,6 @@ export default function DriversPage() {
     })
   }
 
-  // Get status badge variant
   const getStatusBadgeVariant = (status) => {
     return status === "Available" ? "success" : "destructive"
   }
@@ -499,88 +518,134 @@ export default function DriversPage() {
                 <RefreshCw className="h-8 w-8 animate-spin text-muted-foreground" />
               </div>
             ) : (
-              <Table className="w-full">
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>ID</TableHead>
-                    <TableHead>Name</TableHead>
-                    <TableHead>Contact</TableHead>
-                    <TableHead>License</TableHead>
-                    <TableHead>Username</TableHead>
-                    <TableHead>Status</TableHead>
-                    <TableHead>Actions</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {filteredDrivers.length === 0 ? (
+              <>
+                <Table className="w-full">
+                  <TableHeader>
                     <TableRow>
-                      <TableCell colSpan={7} className="text-center py-8 text-muted-foreground">
-                        {searchQuery ? "No drivers found matching your search" : "No drivers found"}
-                      </TableCell>
+                      <TableHead>ID</TableHead>
+                      <TableHead>Name</TableHead>
+                      <TableHead>Contact</TableHead>
+                      <TableHead>License</TableHead>
+                      <TableHead>Username</TableHead>
+                      <TableHead>Status</TableHead>
+                      <TableHead>Actions</TableHead>
                     </TableRow>
-                  ) : (
-                    filteredDrivers.map((driver) => (
-                      <TableRow key={driver.driver_id}>
-                        <TableCell className="font-medium">#{driver.driver_id}</TableCell>
-                        <TableCell>{driver.full_name}</TableCell>
-                        <TableCell>
-                          <div className="flex flex-col">
-                            <span>{driver.phone_number}</span>
-                            <span className="text-xs text-muted-foreground">{driver.email}</span>
-                          </div>
-                        </TableCell>
-                        <TableCell>{driver.license_number}</TableCell>
-                        <TableCell>{driver.username}</TableCell>
-                        <TableCell>
-                          <Badge variant={getStatusBadgeVariant(driver.availability_status)}>
-                            {driver.availability_status}
-                          </Badge>
-                        </TableCell>
-                        <TableCell>
-                          <DropdownMenu>
-                            <DropdownMenuTrigger asChild>
-                              <Button variant="ghost" size="sm">
-                                <MoreHorizontal className="h-4 w-4" />
-                                <span className="sr-only">Open menu</span>
-                              </Button>
-                            </DropdownMenuTrigger>
-                            <DropdownMenuContent align="end">
-                              <DropdownMenuItem onClick={() => fetchSingleDriver(driver.driver_id)}>
-                                <Eye className="mr-2 h-4 w-4" />
-                                View details
-                              </DropdownMenuItem>
-                              {isSuper && (
-                                <>
-                                  <DropdownMenuItem onClick={() => openEditDialog(driver)}>
-                                    <Pencil className="mr-2 h-4 w-4" />
-                                    Edit driver
-                                  </DropdownMenuItem>
-                                  <DropdownMenuItem
-                                    onClick={() => {
-                                      setSelectedDriver(driver)
-                                      setIsDeleteDialogOpen(true)
-                                    }}
-                                    className="text-destructive"
-                                  >
-                                    <Trash2 className="mr-2 h-4 w-4" />
-                                    Delete driver
-                                  </DropdownMenuItem>
-                                </>
-                              )}
-                            </DropdownMenuContent>
-                          </DropdownMenu>
+                  </TableHeader>
+                  <TableBody>
+                    {paginatedDrivers.length === 0 ? (
+                      <TableRow>
+                        <TableCell colSpan={7} className="text-center py-8 text-muted-foreground">
+                          {searchQuery ? "No drivers found matching your search" : "No drivers found"}
                         </TableCell>
                       </TableRow>
-                    ))
-                  )}
-                </TableBody>
-              </Table>
+                    ) : (
+                      paginatedDrivers.map((driver) => (
+                        <TableRow key={driver.driver_id}>
+                          <TableCell className="font-medium">#{driver.driver_id}</TableCell>
+                          <TableCell>{driver.full_name}</TableCell>
+                          <TableCell>
+                            <div className="flex flex-col">
+                              <span>{driver.phone_number}</span>
+                              <span className="text-xs text-muted-foreground">{driver.email}</span>
+                            </div>
+                          </TableCell>
+                          <TableCell>{driver.license_number}</TableCell>
+                          <TableCell>{driver.username}</TableCell>
+                          <TableCell>
+                            <Badge variant={getStatusBadgeVariant(driver.availability_status)}>
+                              {driver.availability_status}
+                            </Badge>
+                          </TableCell>
+                          <TableCell>
+                            <DropdownMenu>
+                              <DropdownMenuTrigger asChild>
+                                <Button variant="ghost" size="sm">
+                                  <MoreHorizontal className="h-4 w-4" />
+                                  <span className="sr-only">Open menu</span>
+                                </Button>
+                              </DropdownMenuTrigger>
+                              <DropdownMenuContent align="end">
+                                <DropdownMenuItem onClick={() => fetchSingleDriver(driver.driver_id)}>
+                                  <Eye className="mr-2 h-4 w-4" />
+                                  View details
+                                </DropdownMenuItem>
+                                {isSuper && (
+                                  <>
+                                    <DropdownMenuItem onClick={() => openEditDialog(driver)}>
+                                      <Pencil className="mr-2 h-4 w-4" />
+                                      Edit driver
+                                    </DropdownMenuItem>
+                                    <DropdownMenuItem
+                                      onClick={() => {
+                                        setSelectedDriver(driver)
+                                        setIsDeleteDialogOpen(true)
+                                      }}
+                                      className="text-destructive"
+                                    >
+                                      <Trash2 className="mr-2 h-4 w-4" />
+                                      Delete driver
+                                    </DropdownMenuItem>
+                                  </>
+                                )}
+                              </DropdownMenuContent>
+                            </DropdownMenu>
+                          </TableCell>
+                        </TableRow>
+                      ))
+                    )}
+                  </TableBody>
+                </Table>
+
+                <div className="flex items-center justify-between mt-6">
+                  <div className="flex items-center space-x-2">
+                    <p className="text-sm text-muted-foreground">
+                      Showing {paginatedDrivers.length} of {filteredDrivers.length} drivers
+                    </p>
+                    <Select 
+                      value={itemsPerPage.toString()} 
+                      onValueChange={handleItemsPerPageChange}
+                    >
+                      <SelectTrigger className="h-8 w-[70px]">
+                        <SelectValue placeholder={itemsPerPage} />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="5">5</SelectItem>
+                        <SelectItem value="10">10</SelectItem>
+                        <SelectItem value="20">20</SelectItem>
+                        <SelectItem value="50">50</SelectItem>
+                      </SelectContent>
+                    </Select>
+                    <p className="text-sm text-muted-foreground">per page</p>
+                  </div>
+                  
+                  <div className="flex items-center space-x-2">
+                    <Button
+                      variant="outline"
+                      size="icon"
+                      onClick={goToPreviousPage}
+                      disabled={currentPage === 1}
+                    >
+                      <ChevronLeft className="h-4 w-4" />
+                    </Button>
+                    <p className="text-sm text-muted-foreground">
+                      Page {currentPage} of {totalPages}
+                    </p>
+                    <Button
+                      variant="outline"
+                      size="icon"
+                      onClick={goToNextPage}
+                      disabled={currentPage === totalPages}
+                    >
+                      <ChevronRight className="h-4 w-4" />
+                    </Button>
+                  </div>
+                </div>
+              </>
             )}
           </CardContent>
         </Card>
       </div>
 
-      {/* View Driver Dialog */}
       <Dialog open={isViewDialogOpen} onOpenChange={setIsViewDialogOpen}>
         <DialogContent className="sm:max-w-[500px]">
           <DialogHeader>
@@ -635,7 +700,6 @@ export default function DriversPage() {
         </DialogContent>
       </Dialog>
 
-      {/* Edit Driver Dialog */}
       <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
         <DialogContent className="sm:max-w-[500px]">
           <DialogHeader>
@@ -719,7 +783,6 @@ export default function DriversPage() {
         </DialogContent>
       </Dialog>
 
-      {/* Delete Confirmation Dialog */}
       <AlertDialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
         <AlertDialogContent>
           <AlertDialogHeader>

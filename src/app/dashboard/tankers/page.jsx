@@ -7,7 +7,7 @@ import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { Badge } from "@/components/ui/badge"
-import { Truck, Search, RefreshCw, Plus, MoreHorizontal, Trash2 } from "lucide-react"
+import { Truck, Search, RefreshCw, Plus, MoreHorizontal, Trash2, ChevronLeft, ChevronRight } from "lucide-react"
 import { Input } from "@/components/ui/input"
 import { toast } from "sonner"
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"
@@ -33,6 +33,12 @@ export default function TankersPage() {
   const [statusFilter, setStatusFilter] = useState("All")
   const [isSuper, setIsSuper] = useState(false)
   const [isDeleting, setIsDeleting] = useState(false)
+  // Pagination states
+  const [currentPage, setCurrentPage] = useState(1)
+  const [itemsPerPage, setItemsPerPage] = useState(10)
+  const [paginatedTankers, setPaginatedTankers] = useState([])
+  const [totalPages, setTotalPages] = useState(1)
+  
   const baseUrl = process.env.NEXT_PUBLIC_BASE_URL
 
   // Check if user is a super admin
@@ -40,6 +46,38 @@ export default function TankersPage() {
     const userType = Cookies.get("user_type")
     setIsSuper(userType === "superAdmin")
   }, [])
+
+  // Apply pagination whenever tankers or pagination settings change
+  useEffect(() => {
+    paginateTankers()
+  }, [filteredTankers, currentPage, itemsPerPage])
+
+  // Paginate tankers function
+  const paginateTankers = () => {
+    const indexOfLastItem = currentPage * itemsPerPage
+    const indexOfFirstItem = indexOfLastItem - itemsPerPage
+    const currentTankers = filteredTankers.slice(indexOfFirstItem, indexOfLastItem)
+    
+    setPaginatedTankers(currentTankers)
+    setTotalPages(Math.ceil(filteredTankers.length / itemsPerPage))
+  }
+
+  const goToNextPage = () => {
+    if (currentPage < totalPages) {
+      setCurrentPage(currentPage + 1)
+    }
+  }
+
+  const goToPreviousPage = () => {
+    if (currentPage > 1) {
+      setCurrentPage(currentPage - 1)
+    }
+  }
+
+  const handleItemsPerPageChange = (value) => {
+    setItemsPerPage(Number(value))
+    setCurrentPage(1) // Reset to first page when changing items per page
+  }
 
   const getStatusBadgeVariant = (status) => {
     switch (status) {
@@ -303,74 +341,121 @@ export default function TankersPage() {
                   <RefreshCw className="h-8 w-8 animate-spin text-muted-foreground" />
                 </div>
               ) : (
-                <Table>
-                  <TableHeader>
-                    <TableRow>
-                      <TableHead className="w-[80px]">ID</TableHead>
-                      <TableHead>Name</TableHead>
-                      <TableHead>Plate Number</TableHead>
-                      <TableHead className="text-right">Capacity (G)</TableHead>
-                      <TableHead className="text-right">Price/Gallon</TableHead>
-                      <TableHead className="text-right">Cost</TableHead>
-                      <TableHead>Status</TableHead>
-                      <TableHead>Driver</TableHead>
-                      <TableHead className="w-[100px]">Actions</TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {filteredTankers.length === 0 ? (
+                <>
+                  <Table>
+                    <TableHeader>
                       <TableRow>
-                        <TableCell colSpan={9} className="text-center py-8 text-muted-foreground">
-                          {searchQuery ? "No tankers found matching your search" : "No tankers found"}
-                        </TableCell>
+                        <TableHead className="w-[80px]">ID</TableHead>
+                        <TableHead>Name</TableHead>
+                        <TableHead>Plate Number</TableHead>
+                        <TableHead className="text-right">Capacity (G)</TableHead>
+                        <TableHead className="text-right">Price/Gallon</TableHead>
+                        <TableHead className="text-right">Cost</TableHead>
+                        <TableHead>Status</TableHead>
+                        <TableHead>Driver</TableHead>
+                        <TableHead className="w-[100px]">Actions</TableHead>
                       </TableRow>
-                    ) : (
-                      filteredTankers.map((tanker) => (
-                        <TableRow key={tanker.tanker_id}>
-                          <TableCell className="font-medium">#{tanker.tanker_id}</TableCell>
-                          <TableCell>{tanker.tanker_name}</TableCell>
-                          <TableCell>{tanker.plate_number}</TableCell>
-                          <TableCell className="text-right">{tanker.capacity.toLocaleString()}</TableCell>
-                          <TableCell className="text-right">Rs. {Number(tanker.price_per_liter).toFixed(2)}</TableCell>
-                          <TableCell className="text-right">Rs. {Number(tanker.cost).toFixed(2)}</TableCell>
-                          <TableCell>
-                            <Badge variant={getStatusBadgeVariant(tanker.availability_status)}>
-                              {tanker.availability_status}
-                            </Badge>
-                          </TableCell>
-                          <TableCell>{tanker.Driver?.full_name || "—"}</TableCell>
-                          <TableCell>
-                            <DropdownMenu>
-                              <DropdownMenuTrigger asChild>
-                                <Button variant="ghost" size="sm">
-                                  <MoreHorizontal className="h-4 w-4" />
-                                  <span className="sr-only">Open menu</span>
-                                </Button>
-                              </DropdownMenuTrigger>
-                              <DropdownMenuContent align="end">
-                                <DropdownMenuItem onClick={() => handleViewDetails(tanker.tanker_id)}>
-                                  View Details
-                                </DropdownMenuItem>
-                                {isSuper && (
-                                  <>
-                                    <DropdownMenuItem onClick={() => handleEdit(tanker)}>Edit Tanker</DropdownMenuItem>
-                                    <DropdownMenuItem
-                                      onClick={() => handleDelete(tanker)}
-                                      className="text-destructive focus:text-destructive"
-                                    >
-                                     
-                                      Delete Tanker
-                                    </DropdownMenuItem>
-                                  </>
-                                )}
-                              </DropdownMenuContent>
-                            </DropdownMenu>
+                    </TableHeader>
+                    <TableBody>
+                      {paginatedTankers.length === 0 ? (
+                        <TableRow>
+                          <TableCell colSpan={9} className="text-center py-8 text-muted-foreground">
+                            {searchQuery ? "No tankers found matching your search" : "No tankers found"}
                           </TableCell>
                         </TableRow>
-                      ))
-                    )}
-                  </TableBody>
-                </Table>
+                      ) : (
+                        paginatedTankers.map((tanker) => (
+                          <TableRow key={tanker.tanker_id}>
+                            <TableCell className="font-medium">#{tanker.tanker_id}</TableCell>
+                            <TableCell>{tanker.tanker_name}</TableCell>
+                            <TableCell>{tanker.plate_number}</TableCell>
+                            <TableCell className="text-right">{tanker.capacity.toLocaleString()}</TableCell>
+                            <TableCell className="text-right">Rs. {Number(tanker.price_per_liter).toFixed(2)}</TableCell>
+                            <TableCell className="text-right">Rs. {Number(tanker.cost).toFixed(2)}</TableCell>
+                            <TableCell>
+                              <Badge variant={getStatusBadgeVariant(tanker.availability_status)}>
+                                {tanker.availability_status}
+                              </Badge>
+                            </TableCell>
+                            <TableCell>{tanker.Driver?.full_name || "—"}</TableCell>
+                            <TableCell>
+                              <DropdownMenu>
+                                <DropdownMenuTrigger asChild>
+                                  <Button variant="ghost" size="sm">
+                                    <MoreHorizontal className="h-4 w-4" />
+                                    <span className="sr-only">Open menu</span>
+                                  </Button>
+                                </DropdownMenuTrigger>
+                                <DropdownMenuContent align="end">
+                                  <DropdownMenuItem onClick={() => handleViewDetails(tanker.tanker_id)}>
+                                    View Details
+                                  </DropdownMenuItem>
+                                  {isSuper && (
+                                    <>
+                                      <DropdownMenuItem onClick={() => handleEdit(tanker)}>Edit Tanker</DropdownMenuItem>
+                                      <DropdownMenuItem
+                                        onClick={() => handleDelete(tanker)}
+                                        className="text-destructive focus:text-destructive"
+                                      >
+                                        Delete Tanker
+                                      </DropdownMenuItem>
+                                    </>
+                                  )}
+                                </DropdownMenuContent>
+                              </DropdownMenu>
+                            </TableCell>
+                          </TableRow>
+                        ))
+                      )}
+                    </TableBody>
+                  </Table>
+
+                  {/* Pagination Controls */}
+                  <div className="flex items-center justify-between mt-6">
+                    <div className="flex items-center space-x-2">
+                      <p className="text-sm text-muted-foreground">
+                        Showing {paginatedTankers.length} of {filteredTankers.length} tankers
+                      </p>
+                      <Select 
+                        value={itemsPerPage.toString()} 
+                        onValueChange={handleItemsPerPageChange}
+                      >
+                        <SelectTrigger className="h-8 w-[70px]">
+                          <SelectValue placeholder={itemsPerPage} />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="5">5</SelectItem>
+                          <SelectItem value="10">10</SelectItem>
+                          <SelectItem value="20">20</SelectItem>
+                          <SelectItem value="50">50</SelectItem>
+                        </SelectContent>
+                      </Select>
+                      <p className="text-sm text-muted-foreground">per page</p>
+                    </div>
+                    
+                    <div className="flex items-center space-x-2">
+                      <Button
+                        variant="outline"
+                        size="icon"
+                        onClick={goToPreviousPage}
+                        disabled={currentPage === 1}
+                      >
+                        <ChevronLeft className="h-4 w-4" />
+                      </Button>
+                      <p className="text-sm text-muted-foreground">
+                        Page {currentPage} of {totalPages}
+                      </p>
+                      <Button
+                        variant="outline"
+                        size="icon"
+                        onClick={goToNextPage}
+                        disabled={currentPage === totalPages}
+                      >
+                        <ChevronRight className="h-4 w-4" />
+                      </Button>
+                    </div>
+                  </div>
+                </>
               )}
             </div>
           </CardContent>

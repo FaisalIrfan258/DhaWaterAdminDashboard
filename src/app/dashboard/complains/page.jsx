@@ -20,7 +20,7 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
-import { MessageSquare, Search, RefreshCw } from "lucide-react";
+import { MessageSquare, Search, RefreshCw, ChevronLeft, ChevronRight } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { toast } from "sonner";
 import {
@@ -55,6 +55,12 @@ export default function ComplaintsPage() {
   const [isUpdateDialogOpen, setIsUpdateDialogOpen] = useState(false);
   const [selectedComplaint, setSelectedComplaint] = useState(null);
   const [remarks, setRemarks] = useState("");
+  // Pagination states
+  const [currentPage, setCurrentPage] = useState(1);
+  const [itemsPerPage, setItemsPerPage] = useState(10);
+  const [paginatedComplaints, setPaginatedComplaints] = useState([]);
+  const [totalPages, setTotalPages] = useState(1);
+  
   const baseUrl = process.env.NEXT_PUBLIC_BASE_URL;
 
   useEffect(() => {
@@ -62,6 +68,38 @@ export default function ComplaintsPage() {
     const id = Cookies.get("admin_id");
     setAdminId(id);
   }, []);
+
+  // Apply pagination whenever complaints or pagination settings change
+  useEffect(() => {
+    paginateComplaints();
+  }, [filteredComplaints, currentPage, itemsPerPage]);
+
+  // Paginate complaints function
+  const paginateComplaints = () => {
+    const indexOfLastItem = currentPage * itemsPerPage;
+    const indexOfFirstItem = indexOfLastItem - itemsPerPage;
+    const currentComplaints = filteredComplaints.slice(indexOfFirstItem, indexOfLastItem);
+    
+    setPaginatedComplaints(currentComplaints);
+    setTotalPages(Math.ceil(filteredComplaints.length / itemsPerPage));
+  };
+
+  const goToNextPage = () => {
+    if (currentPage < totalPages) {
+      setCurrentPage(currentPage + 1);
+    }
+  };
+
+  const goToPreviousPage = () => {
+    if (currentPage > 1) {
+      setCurrentPage(currentPage - 1);
+    }
+  };
+
+  const handleItemsPerPageChange = (value) => {
+    setItemsPerPage(Number(value));
+    setCurrentPage(1); // Reset to first page when changing items per page
+  };
 
   // Fetch all complaints
   const fetchComplaints = async () => {
@@ -276,74 +314,122 @@ export default function ComplaintsPage() {
                 <RefreshCw className="h-8 w-8 animate-spin text-muted-foreground" />
               </div>
             ) : (
-              <Table className="w-full">
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>Complaint ID</TableHead>
-                    <TableHead>Customer</TableHead>
-                    <TableHead>Date</TableHead>
-                    <TableHead>Description</TableHead>
-                    <TableHead>Status</TableHead>
-                    <TableHead>Actions</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {filteredComplaints.length === 0 ? (
+              <>
+                <Table className="w-full">
+                  <TableHeader>
                     <TableRow>
-                      <TableCell
-                        colSpan={6}
-                        className="text-center py-8 text-muted-foreground"
-                      >
-                        {searchQuery
-                          ? "No complaints found matching your search"
-                          : "No complaints found"}
-                      </TableCell>
+                      <TableHead>Complaint ID</TableHead>
+                      <TableHead>Customer</TableHead>
+                      <TableHead>Date</TableHead>
+                      <TableHead>Description</TableHead>
+                      <TableHead>Status</TableHead>
+                      <TableHead>Actions</TableHead>
                     </TableRow>
-                  ) : (
-                    filteredComplaints.map((complaint) => (
-                      <TableRow key={complaint.complain_id}>
-                        <TableCell className="font-medium">
-                          #{complaint.complain_id}
-                        </TableCell>
-                        <TableCell>
-                          <div className="flex flex-col">
-                            <span className="font-medium">
-                              {complaint.Customer.full_name}
-                            </span>
-                            <span className="text-sm text-muted-foreground">
-                              {complaint.Customer.phone_number}
-                            </span>
-                          </div>
-                        </TableCell>
-                        <TableCell>
-                          {formatDate(complaint.complain_date)}
-                        </TableCell>
-                        <TableCell className="max-w-[200px] truncate">
-                          {complaint.complain_description}
-                        </TableCell>
-                        <TableCell>
-                          <Badge
-                            variant={getStatusBadgeVariant(complaint.status)}
-                          >
-                            {complaint.status}
-                          </Badge>
-                        </TableCell>
-                        <TableCell>
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            onClick={() => handleViewDetails(complaint)}
-                          >
-                            {complaint.status === "Resolved"
-                              ? "View Details"
-                              : "Resolve"}
-                          </Button>
+                  </TableHeader>
+                  <TableBody>
+                    {paginatedComplaints.length === 0 ? (
+                      <TableRow>
+                        <TableCell
+                          colSpan={6}
+                          className="text-center py-8 text-muted-foreground"
+                        >
+                          {searchQuery
+                            ? "No complaints found matching your search"
+                            : "No complaints found"}
                         </TableCell>
                       </TableRow>
-                    ))
-                  )}
-                </TableBody>
-              </Table>
+                    ) : (
+                      paginatedComplaints.map((complaint) => (
+                        <TableRow key={complaint.complain_id}>
+                          <TableCell className="font-medium">
+                            #{complaint.complain_id}
+                          </TableCell>
+                          <TableCell>
+                            <div className="flex flex-col">
+                              <span className="font-medium">
+                                {complaint.Customer.full_name}
+                              </span>
+                              <span className="text-sm text-muted-foreground">
+                                {complaint.Customer.phone_number}
+                              </span>
+                            </div>
+                          </TableCell>
+                          <TableCell>
+                            {formatDate(complaint.complain_date)}
+                          </TableCell>
+                          <TableCell className="max-w-[200px] truncate">
+                            {complaint.complain_description}
+                          </TableCell>
+                          <TableCell>
+                            <Badge
+                              variant={getStatusBadgeVariant(complaint.status)}
+                            >
+                              {complaint.status}
+                            </Badge>
+                          </TableCell>
+                          <TableCell>
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={() => handleViewDetails(complaint)}
+                            >
+                              {complaint.status === "Resolved"
+                                ? "View Details"
+                                : "Resolve"}
+                            </Button>
+                          </TableCell>
+                        </TableRow>
+                      ))
+                    )}
+                  </TableBody>
+                </Table>
+
+                {/* Pagination Controls */}
+                <div className="flex items-center justify-between mt-6">
+                  <div className="flex items-center space-x-2">
+                    <p className="text-sm text-muted-foreground">
+                      Showing {paginatedComplaints.length} of {filteredComplaints.length} complaints
+                    </p>
+                    <Select 
+                      value={itemsPerPage.toString()} 
+                      onValueChange={handleItemsPerPageChange}
+                    >
+                      <SelectTrigger className="h-8 w-[70px]">
+                        <SelectValue placeholder={itemsPerPage} />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="5">5</SelectItem>
+                        <SelectItem value="10">10</SelectItem>
+                        <SelectItem value="20">20</SelectItem>
+                        <SelectItem value="50">50</SelectItem>
+                      </SelectContent>
+                    </Select>
+                    <p className="text-sm text-muted-foreground">per page</p>
+                  </div>
+                  
+                  <div className="flex items-center space-x-2">
+                    <Button
+                      variant="outline"
+                      size="icon"
+                      onClick={goToPreviousPage}
+                      disabled={currentPage === 1}
+                    >
+                      <ChevronLeft className="h-4 w-4" />
+                    </Button>
+                    <p className="text-sm text-muted-foreground">
+                      Page {currentPage} of {totalPages}
+                    </p>
+                    <Button
+                      variant="outline"
+                      size="icon"
+                      onClick={goToNextPage}
+                      disabled={currentPage === totalPages}
+                    >
+                      <ChevronRight className="h-4 w-4" />
+                    </Button>
+                  </div>
+                </div>
+              </>
             )}
           </CardContent>
         </Card>

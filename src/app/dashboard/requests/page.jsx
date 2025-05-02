@@ -20,7 +20,7 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
-import { Droplets, Search, RefreshCw } from "lucide-react";
+import { Droplets, Search, RefreshCw, ChevronLeft, ChevronRight } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { toast } from "sonner";
 import {
@@ -60,6 +60,12 @@ export default function RequestsPage() {
   const [statusFilter, setStatusFilter] = useState("All");
   const [rejectReason, setRejectReason] = useState("hydrant closed");
   const [notificationTitle, setNotificationTitle] = useState("");
+  // Pagination states
+  const [currentPage, setCurrentPage] = useState(1);
+  const [itemsPerPage, setItemsPerPage] = useState(10);
+  const [paginatedRequests, setPaginatedRequests] = useState([]);
+  const [totalPages, setTotalPages] = useState(1);
+  
   const baseUrl = process.env.NEXT_PUBLIC_BASE_URL;
 
   useEffect(() => {
@@ -67,6 +73,38 @@ export default function RequestsPage() {
     const id = Cookies.get("admin_id");
     setAdminId(id);
   }, []);
+
+  // Apply pagination whenever requests or pagination settings change
+  useEffect(() => {
+    paginateRequests();
+  }, [filteredRequests, currentPage, itemsPerPage]);
+
+  // Paginate requests function
+  const paginateRequests = () => {
+    const indexOfLastItem = currentPage * itemsPerPage;
+    const indexOfFirstItem = indexOfLastItem - itemsPerPage;
+    const currentRequests = filteredRequests.slice(indexOfFirstItem, indexOfLastItem);
+    
+    setPaginatedRequests(currentRequests);
+    setTotalPages(Math.ceil(filteredRequests.length / itemsPerPage));
+  };
+
+  const goToNextPage = () => {
+    if (currentPage < totalPages) {
+      setCurrentPage(currentPage + 1);
+    }
+  };
+
+  const goToPreviousPage = () => {
+    if (currentPage > 1) {
+      setCurrentPage(currentPage - 1);
+    }
+  };
+
+  const handleItemsPerPageChange = (value) => {
+    setItemsPerPage(Number(value));
+    setCurrentPage(1); // Reset to first page when changing items per page
+  };
 
   // Fetch all requests
   const fetchRequests = async () => {
@@ -332,106 +370,154 @@ export default function RequestsPage() {
                 <RefreshCw className="h-8 w-8 animate-spin text-muted-foreground" />
               </div>
             ) : (
-              <Table className="w-full">
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>Request ID</TableHead>
-                    <TableHead>Customer</TableHead>
-                    <TableHead>Request Date</TableHead>
-                    <TableHead>Water Amount</TableHead>
-                    {/* <TableHead>Payment Mode</TableHead> */}
-                    <TableHead>Status</TableHead>
-                    <TableHead>Actions</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {filteredRequests.length === 0 ? (
+              <>
+                <Table className="w-full">
+                  <TableHeader>
                     <TableRow>
-                      <TableCell
-                        colSpan={7}
-                        className="text-center py-8 text-muted-foreground"
-                      >
-                        {searchQuery
-                          ? "No requests found matching your search"
-                          : "No requests found"}
-                      </TableCell>
+                      <TableHead>Request ID</TableHead>
+                      <TableHead>Customer</TableHead>
+                      <TableHead>Request Date</TableHead>
+                      <TableHead>Water Amount</TableHead>
+                      {/* <TableHead>Payment Mode</TableHead> */}
+                      <TableHead>Status</TableHead>
+                      <TableHead>Actions</TableHead>
                     </TableRow>
-                  ) : (
-                    filteredRequests.map((request) => (
-                      <TableRow key={request.request_id}>
-                        <TableCell className="font-medium">
-                          #{request.request_id}
-                        </TableCell>
-                        <TableCell>
-                          <div className="flex flex-col">
-                            <span className="font-medium">
-                              {request.Customer.full_name}
-                            </span>
-                            <span className="text-sm text-muted-foreground">
-                              ID: {request.Customer.customer_id}
-                            </span>
-                          </div>
-                        </TableCell>
-                        <TableCell>
-                          {formatDate(request.request_date)}
-                        </TableCell>
-                        <TableCell>
-                          {request.requested_liters.toLocaleString()} G
-                        </TableCell>
-                        {/* <TableCell>
-                          {request.description.replace('Payment Mode:', '').trim()}
-                        </TableCell> */}
-                        <TableCell>
-                          <Badge
-                            variant={getStatusBadgeVariant(
-                              request.request_status
-                            )}
-                          >
-                            {request.request_status}
-                          </Badge>
-                        </TableCell>
-                        <TableCell>
-                          <div className="flex items-center gap-2">
-                            <Button
-                              variant="success"
-                              size="sm"
-                              onClick={() =>
-                                handleAcceptClick(
-                                  request.request_id,
-                                  request.Customer.customer_id
-                                )
-                              }
-                              disabled={
-                                request.request_status.toLowerCase() !==
-                                "in progress"
-                              }
-                            >
-                              Accept
-                            </Button>
-                            <Button
-                              variant="destructive"
-                              size="sm"
-                              onClick={() => {
-                                setSelectedRequestId(request.request_id);
-                                setSelectedCustomerId(
-                                  request.Customer.customer_id
-                                );
-                                setRejectDialogOpen(true);
-                              }}
-                              disabled={
-                                request.request_status.toLowerCase() !==
-                                "in progress"
-                              }
-                            >
-                              Reject
-                            </Button>
-                          </div>
+                  </TableHeader>
+                  <TableBody>
+                    {paginatedRequests.length === 0 ? (
+                      <TableRow>
+                        <TableCell
+                          colSpan={7}
+                          className="text-center py-8 text-muted-foreground"
+                        >
+                          {searchQuery
+                            ? "No requests found matching your search"
+                            : "No requests found"}
                         </TableCell>
                       </TableRow>
-                    ))
-                  )}
-                </TableBody>
-              </Table>
+                    ) : (
+                      paginatedRequests.map((request) => (
+                        <TableRow key={request.request_id}>
+                          <TableCell className="font-medium">
+                            #{request.request_id}
+                          </TableCell>
+                          <TableCell>
+                            <div className="flex flex-col">
+                              <span className="font-medium">
+                                {request.Customer.full_name}
+                              </span>
+                              <span className="text-sm text-muted-foreground">
+                                ID: {request.Customer.customer_id}
+                              </span>
+                            </div>
+                          </TableCell>
+                          <TableCell>
+                            {formatDate(request.request_date)}
+                          </TableCell>
+                          <TableCell>
+                            {request.requested_liters.toLocaleString()} G
+                          </TableCell>
+                          {/* <TableCell>
+                            {request.description.replace('Payment Mode:', '').trim()}
+                          </TableCell> */}
+                          <TableCell>
+                            <Badge
+                              variant={getStatusBadgeVariant(
+                                request.request_status
+                              )}
+                            >
+                              {request.request_status}
+                            </Badge>
+                          </TableCell>
+                          <TableCell>
+                            <div className="flex items-center gap-2">
+                              <Button
+                                variant="success"
+                                size="sm"
+                                onClick={() =>
+                                  handleAcceptClick(
+                                    request.request_id,
+                                    request.Customer.customer_id
+                                  )
+                                }
+                                disabled={
+                                  request.request_status.toLowerCase() !==
+                                  "in progress"
+                                }
+                              >
+                                Accept
+                              </Button>
+                              <Button
+                                variant="destructive"
+                                size="sm"
+                                onClick={() => {
+                                  setSelectedRequestId(request.request_id);
+                                  setSelectedCustomerId(
+                                    request.Customer.customer_id
+                                  );
+                                  setRejectDialogOpen(true);
+                                }}
+                                disabled={
+                                  request.request_status.toLowerCase() !==
+                                  "in progress"
+                                }
+                              >
+                                Reject
+                              </Button>
+                            </div>
+                          </TableCell>
+                        </TableRow>
+                      ))
+                    )}
+                  </TableBody>
+                </Table>
+
+                {/* Pagination Controls */}
+                <div className="flex items-center justify-between mt-6">
+                  <div className="flex items-center space-x-2">
+                    <p className="text-sm text-muted-foreground">
+                      Showing {paginatedRequests.length} of {filteredRequests.length} requests
+                    </p>
+                    <Select 
+                      value={itemsPerPage.toString()} 
+                      onValueChange={handleItemsPerPageChange}
+                    >
+                      <SelectTrigger className="h-8 w-[70px]">
+                        <SelectValue placeholder={itemsPerPage} />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="5">5</SelectItem>
+                        <SelectItem value="10">10</SelectItem>
+                        <SelectItem value="20">20</SelectItem>
+                        <SelectItem value="50">50</SelectItem>
+                      </SelectContent>
+                    </Select>
+                    <p className="text-sm text-muted-foreground">per page</p>
+                  </div>
+                  
+                  <div className="flex items-center space-x-2">
+                    <Button
+                      variant="outline"
+                      size="icon"
+                      onClick={goToPreviousPage}
+                      disabled={currentPage === 1}
+                    >
+                      <ChevronLeft className="h-4 w-4" />
+                    </Button>
+                    <p className="text-sm text-muted-foreground">
+                      Page {currentPage} of {totalPages}
+                    </p>
+                    <Button
+                      variant="outline"
+                      size="icon"
+                      onClick={goToNextPage}
+                      disabled={currentPage === totalPages}
+                    >
+                      <ChevronRight className="h-4 w-4" />
+                    </Button>
+                  </div>
+                </div>
+              </>
             )}
           </CardContent>
         </Card>

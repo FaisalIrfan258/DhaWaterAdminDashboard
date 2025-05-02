@@ -20,7 +20,7 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
-import { Calendar, Search, RefreshCw, MoreHorizontal } from "lucide-react";
+import { Calendar, Search, RefreshCw, MoreHorizontal, ChevronLeft, ChevronRight } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { toast } from "sonner";
 import {
@@ -63,6 +63,12 @@ export default function BookingsPage() {
   const [selectedBooking, setSelectedBooking] = useState(null);
   const [statusFilter, setStatusFilter] = useState("All");
   const [isSuper, setIsSuper] = useState(false);
+  // Pagination states
+  const [currentPage, setCurrentPage] = useState(1);
+  const [itemsPerPage, setItemsPerPage] = useState(10);
+  const [paginatedBookings, setPaginatedBookings] = useState([]);
+  const [totalPages, setTotalPages] = useState(1);
+  
   const baseUrl = process.env.NEXT_PUBLIC_BASE_URL;
 
   // Check if user is super admin
@@ -70,6 +76,38 @@ export default function BookingsPage() {
     const userType = Cookies.get("user_type");
     setIsSuper(userType === "superAdmin");
   }, []);
+
+  // Apply pagination whenever bookings or pagination settings change
+  useEffect(() => {
+    paginateBookings();
+  }, [filteredBookings, currentPage, itemsPerPage]);
+
+  // Paginate bookings function
+  const paginateBookings = () => {
+    const indexOfLastItem = currentPage * itemsPerPage;
+    const indexOfFirstItem = indexOfLastItem - itemsPerPage;
+    const currentBookings = filteredBookings.slice(indexOfFirstItem, indexOfLastItem);
+    
+    setPaginatedBookings(currentBookings);
+    setTotalPages(Math.ceil(filteredBookings.length / itemsPerPage));
+  };
+
+  const goToNextPage = () => {
+    if (currentPage < totalPages) {
+      setCurrentPage(currentPage + 1);
+    }
+  };
+
+  const goToPreviousPage = () => {
+    if (currentPage > 1) {
+      setCurrentPage(currentPage - 1);
+    }
+  };
+
+  const handleItemsPerPageChange = (value) => {
+    setItemsPerPage(Number(value));
+    setCurrentPage(1); // Reset to first page when changing items per page
+  };
 
   const fetchBookings = async () => {
     setLoading(true);
@@ -251,89 +289,137 @@ export default function BookingsPage() {
                 <RefreshCw className="h-8 w-8 animate-spin text-muted-foreground" />
               </div>
             ) : (
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead> ID </TableHead>
-                    <TableHead>Customer Name</TableHead>
-                    <TableHead>Tanker Name</TableHead>
-                    <TableHead>Admin Name</TableHead>
-                    <TableHead>Status</TableHead>
-                    <TableHead>Scheduled Date</TableHead>
-                    <TableHead>Actions</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {filteredBookings.length === 0 ? (
+              <>
+                <Table>
+                  <TableHeader>
                     <TableRow>
-                      <TableCell
-                        colSpan={5}
-                        className="text-center py-8 text-muted-foreground"
-                      >
-                        {searchQuery
-                          ? "No bookings found matching your search"
-                          : "No bookings found"}
-                      </TableCell>
+                      <TableHead> ID </TableHead>
+                      <TableHead>Customer Name</TableHead>
+                      <TableHead>Tanker Name</TableHead>
+                      <TableHead>Admin Name</TableHead>
+                      <TableHead>Status</TableHead>
+                      <TableHead>Scheduled Date</TableHead>
+                      <TableHead>Actions</TableHead>
                     </TableRow>
-                  ) : (
-                    filteredBookings.map((booking) => (
-                      <TableRow key={booking.booking_id}>
-                        <TableCell>{booking.booking_id}</TableCell>
-                        <TableCell>{booking.Customer.full_name}</TableCell>
-                        <TableCell>{booking.Tanker.tanker_name}</TableCell>
-                        <TableCell>{booking.Admin.full_name}</TableCell>
-                        <TableCell>
-                          <Badge
-                            variant={
-                              booking.status === "Pending"
-                                ? "default"
-                                : "success"
-                            }
-                          >
-                            {booking.status}
-                          </Badge>
-                        </TableCell>
-                        <TableCell>
-                          {new Date(booking.scheduled_date).toLocaleString()}
-                        </TableCell>
-
-                        <TableCell>
-                          <DropdownMenu>
-                            <DropdownMenuTrigger asChild>
-                              <Button variant="ghost" size="sm">
-                                <MoreHorizontal className="h-4 w-4" />
-                                <span className="sr-only">Open menu</span>
-                              </Button>
-                            </DropdownMenuTrigger>
-                            <DropdownMenuContent align="end">
-                              <DropdownMenuItem
-                                onClick={() => handleViewBooking(booking)}
-                              >
-                                View Details
-                              </DropdownMenuItem>
-                              {isSuper && (
-                                <>
-                                  <DropdownMenuItem
-                                    onClick={() => handleEditBooking(booking)}
-                                  >
-                                    Edit Booking
-                                  </DropdownMenuItem>
-                                  <DropdownMenuItem
-                                    onClick={() => handleDeleteBooking(booking)}
-                                    className="text-destructive"
-                                  >
-                                    Delete Booking
-                                  </DropdownMenuItem>
-                                </>
-                              )}
-                            </DropdownMenuContent>
-                          </DropdownMenu>
+                  </TableHeader>
+                  <TableBody>
+                    {paginatedBookings.length === 0 ? (
+                      <TableRow>
+                        <TableCell
+                          colSpan={7}
+                          className="text-center py-8 text-muted-foreground"
+                        >
+                          {searchQuery
+                            ? "No bookings found matching your search"
+                            : "No bookings found"}
                         </TableCell>
                       </TableRow>
-                    ))
-                  )}
-                </TableBody>
-              </Table>
+                    ) : (
+                      paginatedBookings.map((booking) => (
+                        <TableRow key={booking.booking_id}>
+                          <TableCell>{booking.booking_id}</TableCell>
+                          <TableCell>{booking.Customer.full_name}</TableCell>
+                          <TableCell>{booking.Tanker.tanker_name}</TableCell>
+                          <TableCell>{booking.Admin.full_name}</TableCell>
+                          <TableCell>
+                            <Badge
+                              variant={
+                                booking.status === "Pending"
+                                  ? "default"
+                                  : "success"
+                              }
+                            >
+                              {booking.status}
+                            </Badge>
+                          </TableCell>
+                          <TableCell>
+                            {new Date(booking.scheduled_date).toLocaleString()}
+                          </TableCell>
+
+                          <TableCell>
+                            <DropdownMenu>
+                              <DropdownMenuTrigger asChild>
+                                <Button variant="ghost" size="sm">
+                                  <MoreHorizontal className="h-4 w-4" />
+                                  <span className="sr-only">Open menu</span>
+                                </Button>
+                              </DropdownMenuTrigger>
+                              <DropdownMenuContent align="end">
+                                <DropdownMenuItem
+                                  onClick={() => handleViewBooking(booking)}
+                                >
+                                  View Details
+                                </DropdownMenuItem>
+                                {isSuper && (
+                                  <>
+                                    <DropdownMenuItem
+                                      onClick={() => handleEditBooking(booking)}
+                                    >
+                                      Edit Booking
+                                    </DropdownMenuItem>
+                                    <DropdownMenuItem
+                                      onClick={() => handleDeleteBooking(booking)}
+                                      className="text-destructive"
+                                    >
+                                      Delete Booking
+                                    </DropdownMenuItem>
+                                  </>
+                                )}
+                              </DropdownMenuContent>
+                            </DropdownMenu>
+                          </TableCell>
+                        </TableRow>
+                      ))
+                    )}
+                  </TableBody>
+                </Table>
+
+                {/* Pagination Controls */}
+                <div className="flex items-center justify-between mt-6">
+                  <div className="flex items-center space-x-2">
+                    <p className="text-sm text-muted-foreground">
+                      Showing {paginatedBookings.length} of {filteredBookings.length} bookings
+                    </p>
+                    <Select 
+                      value={itemsPerPage.toString()} 
+                      onValueChange={handleItemsPerPageChange}
+                    >
+                      <SelectTrigger className="h-8 w-[70px]">
+                        <SelectValue placeholder={itemsPerPage} />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="5">5</SelectItem>
+                        <SelectItem value="10">10</SelectItem>
+                        <SelectItem value="20">20</SelectItem>
+                        <SelectItem value="50">50</SelectItem>
+                      </SelectContent>
+                    </Select>
+                    <p className="text-sm text-muted-foreground">per page</p>
+                  </div>
+                  
+                  <div className="flex items-center space-x-2">
+                    <Button
+                      variant="outline"
+                      size="icon"
+                      onClick={goToPreviousPage}
+                      disabled={currentPage === 1}
+                    >
+                      <ChevronLeft className="h-4 w-4" />
+                    </Button>
+                    <p className="text-sm text-muted-foreground">
+                      Page {currentPage} of {totalPages}
+                    </p>
+                    <Button
+                      variant="outline"
+                      size="icon"
+                      onClick={goToNextPage}
+                      disabled={currentPage === totalPages}
+                    >
+                      <ChevronRight className="h-4 w-4" />
+                    </Button>
+                  </div>
+                </div>
+              </>
             )}
           </div>
         </CardContent>

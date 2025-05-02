@@ -19,7 +19,7 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
-import { FileText, RefreshCw, Search } from "lucide-react";
+import { FileText, RefreshCw, Search, ChevronLeft, ChevronRight } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
@@ -38,6 +38,7 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { ScrollArea } from "@/components/ui/scroll-area";
+import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from "@/components/ui/select";
 
 export default function SystemLogsPage() {
   const [logs, setLogs] = useState([]);
@@ -47,7 +48,45 @@ export default function SystemLogsPage() {
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [viewingLog, setViewingLog] = useState(null);
   const [isViewModalOpen, setIsViewModalOpen] = useState(false);
+  // Pagination states
+  const [currentPage, setCurrentPage] = useState(1);
+  const [itemsPerPage, setItemsPerPage] = useState(10);
+  const [paginatedLogs, setPaginatedLogs] = useState([]);
+  const [totalPages, setTotalPages] = useState(1);
+  
   const baseUrl = process.env.NEXT_PUBLIC_BASE_URL;
+
+  // Apply pagination whenever logs or pagination settings change
+  useEffect(() => {
+    paginateLogs();
+  }, [filteredLogs, currentPage, itemsPerPage]);
+
+  // Paginate logs function
+  const paginateLogs = () => {
+    const indexOfLastItem = currentPage * itemsPerPage;
+    const indexOfFirstItem = indexOfLastItem - itemsPerPage;
+    const currentLogs = filteredLogs.slice(indexOfFirstItem, indexOfLastItem);
+    
+    setPaginatedLogs(currentLogs);
+    setTotalPages(Math.ceil(filteredLogs.length / itemsPerPage));
+  };
+
+  const goToNextPage = () => {
+    if (currentPage < totalPages) {
+      setCurrentPage(currentPage + 1);
+    }
+  };
+
+  const goToPreviousPage = () => {
+    if (currentPage > 1) {
+      setCurrentPage(currentPage - 1);
+    }
+  };
+
+  const handleItemsPerPageChange = (value) => {
+    setItemsPerPage(Number(value));
+    setCurrentPage(1); // Reset to first page when changing items per page
+  };
 
   // Fetch audit logs
   const fetchLogs = async () => {
@@ -194,72 +233,120 @@ export default function SystemLogsPage() {
                 No logs found.
               </div>
             ) : (
-              <div className="rounded-md border">
-                <Table>
-                  <TableHeader>
-                    <TableRow>
-                      <TableHead>ID</TableHead>
-                      <TableHead>Summary</TableHead>
-                      <TableHead>Table</TableHead>
-                      <TableHead>Operation</TableHead>
-                      <TableHead>Changed By</TableHead>
-                      <TableHead>Time</TableHead>
-                      <TableHead className="w-[80px]"></TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {filteredLogs.map((log) => (
-                      <TableRow key={log.id}>
-                        <TableCell className="font-medium">
-                          {log.id}
-                        </TableCell>
-                        <TableCell className="max-w-xs truncate">
-                          {formatLogSummary(log)}
-                        </TableCell>
-                        <TableCell>
-                          <Badge variant="outline">{log.table_name}</Badge>
-                        </TableCell>
-                        <TableCell>
-                          <Badge
-                            variant={
-                              log.operation_type === "INSERT"
-                                ? "success"
-                                : log.operation_type === "UPDATE"
-                                ? "warning"
-                                : "destructive"
-                            }
-                          >
-                            {log.operation_type}
-                          </Badge>
-                        </TableCell>
-                        <TableCell>{log.changed_by}</TableCell>
-                        <TableCell>{formatDate(log.changed_at)}</TableCell>
-                        <TableCell>
-                          <DropdownMenu>
-                            <DropdownMenuTrigger asChild>
-                              <Button
-                                variant="ghost"
-                                className="h-8 w-8 p-0"
-                              >
-                                <span className="sr-only">Open menu</span>
-                                <MoreHorizontal className="h-4 w-4" />
-                              </Button>
-                            </DropdownMenuTrigger>
-                            <DropdownMenuContent align="end">
-                              <DropdownMenuItem
-                                onClick={() => handleViewLog(log)}
-                              >
-                                <Eye className="mr-2 h-4 w-4" />
-                                View Details
-                              </DropdownMenuItem>
-                            </DropdownMenuContent>
-                          </DropdownMenu>
-                        </TableCell>
+              <>
+                <div className="rounded-md border">
+                  <Table>
+                    <TableHeader>
+                      <TableRow>
+                        <TableHead>ID</TableHead>
+                        <TableHead>Summary</TableHead>
+                        <TableHead>Table</TableHead>
+                        <TableHead>Operation</TableHead>
+                        <TableHead>Changed By</TableHead>
+                        <TableHead>Time</TableHead>
+                        <TableHead className="w-[80px]"></TableHead>
                       </TableRow>
-                    ))}
-                  </TableBody>
-                </Table>
-              </div>
+                    </TableHeader>
+                    <TableBody>
+                      {paginatedLogs.map((log) => (
+                        <TableRow key={log.id}>
+                          <TableCell className="font-medium">
+                            {log.id}
+                          </TableCell>
+                          <TableCell className="max-w-xs truncate">
+                            {formatLogSummary(log)}
+                          </TableCell>
+                          <TableCell>
+                            <Badge variant="outline">{log.table_name}</Badge>
+                          </TableCell>
+                          <TableCell>
+                            <Badge
+                              variant={
+                                log.operation_type === "INSERT"
+                                  ? "success"
+                                  : log.operation_type === "UPDATE"
+                                  ? "warning"
+                                  : "destructive"
+                              }
+                            >
+                              {log.operation_type}
+                            </Badge>
+                          </TableCell>
+                          <TableCell>{log.changed_by}</TableCell>
+                          <TableCell>{formatDate(log.changed_at)}</TableCell>
+                          <TableCell>
+                            <DropdownMenu>
+                              <DropdownMenuTrigger asChild>
+                                <Button
+                                  variant="ghost"
+                                  className="h-8 w-8 p-0"
+                                >
+                                  <span className="sr-only">Open menu</span>
+                                  <MoreHorizontal className="h-4 w-4" />
+                                </Button>
+                              </DropdownMenuTrigger>
+                              <DropdownMenuContent align="end">
+                                <DropdownMenuItem
+                                  onClick={() => handleViewLog(log)}
+                                >
+                                  <Eye className="mr-2 h-4 w-4" />
+                                  View Details
+                                </DropdownMenuItem>
+                              </DropdownMenuContent>
+                            </DropdownMenu>
+                          </TableCell>
+                        </TableRow>
+                      ))}
+                    </TableBody>
+                  </Table>
+                </div>
+
+                {/* Pagination Controls */}
+                <div className="flex items-center justify-between mt-6">
+                  <div className="flex items-center space-x-2">
+                    <p className="text-sm text-muted-foreground">
+                      Showing {paginatedLogs.length} of {filteredLogs.length} logs
+                    </p>
+                    <Select 
+                      value={itemsPerPage.toString()} 
+                      onValueChange={handleItemsPerPageChange}
+                    >
+                      <SelectTrigger className="h-8 w-[70px]">
+                        <SelectValue placeholder={itemsPerPage} />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="5">5</SelectItem>
+                        <SelectItem value="10">10</SelectItem>
+                        <SelectItem value="20">20</SelectItem>
+                        <SelectItem value="50">50</SelectItem>
+                      </SelectContent>
+                    </Select>
+                    <p className="text-sm text-muted-foreground">per page</p>
+                  </div>
+                  
+                  <div className="flex items-center space-x-2">
+                    <Button
+                      variant="outline"
+                      size="icon"
+                      onClick={goToPreviousPage}
+                      disabled={currentPage === 1}
+                    >
+                      <ChevronLeft className="h-4 w-4" />
+                    </Button>
+                    <p className="text-sm text-muted-foreground">
+                      Page {currentPage} of {totalPages}
+                    </p>
+                    <Button
+                      variant="outline"
+                      size="icon"
+                      onClick={goToNextPage}
+                      disabled={currentPage === totalPages}
+                    >
+                      <ChevronRight className="h-4 w-4" />
+                    </Button>
+                  </div>
+                </div>
+              </>
             )}
           </CardContent>
         </Card>

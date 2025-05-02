@@ -6,7 +6,7 @@ import { DashboardHeader } from "@/components/dashboard/dashboard-header"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
-import { Bell, Search, RefreshCw, X, Plus, Pencil, Eye } from "lucide-react"
+import { Bell, Search, RefreshCw, X, Plus, Pencil, Eye, ChevronLeft, ChevronRight } from "lucide-react"
 import { Input } from "@/components/ui/input"
 import { toast } from "sonner"
 import {
@@ -32,6 +32,7 @@ import {
 } from "@/components/ui/alert-dialog"
 import Cookies from "js-cookie"
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"
+import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from "@/components/ui/select"
 
 export default function NotificationsPage() {
   const [adminId, setAdminId] = useState(null)
@@ -51,6 +52,12 @@ export default function NotificationsPage() {
   const [customerId, setCustomerId] = useState("")
   const [editTitle, setEditTitle] = useState("")
   const [editMessage, setEditMessage] = useState("")
+  // Pagination states
+  const [currentPage, setCurrentPage] = useState(1)
+  const [itemsPerPage, setItemsPerPage] = useState(10)
+  const [paginatedNotifications, setPaginatedNotifications] = useState([])
+  const [totalPages, setTotalPages] = useState(1)
+  
   const baseUrl = process.env.NEXT_PUBLIC_BASE_URL
 
   useEffect(() => {
@@ -59,6 +66,38 @@ export default function NotificationsPage() {
     setAdminId(id)
     fetchNotifications()
   }, [])
+
+  // Apply pagination whenever notifications or pagination settings change
+  useEffect(() => {
+    paginateNotifications()
+  }, [filteredNotifications, currentPage, itemsPerPage])
+
+  // Paginate notifications function
+  const paginateNotifications = () => {
+    const indexOfLastItem = currentPage * itemsPerPage
+    const indexOfFirstItem = indexOfLastItem - itemsPerPage
+    const currentNotifications = filteredNotifications.slice(indexOfFirstItem, indexOfLastItem)
+    
+    setPaginatedNotifications(currentNotifications)
+    setTotalPages(Math.ceil(filteredNotifications.length / itemsPerPage))
+  }
+
+  const goToNextPage = () => {
+    if (currentPage < totalPages) {
+      setCurrentPage(currentPage + 1)
+    }
+  }
+
+  const goToPreviousPage = () => {
+    if (currentPage > 1) {
+      setCurrentPage(currentPage - 1)
+    }
+  }
+
+  const handleItemsPerPageChange = (value) => {
+    setItemsPerPage(Number(value))
+    setCurrentPage(1) // Reset to first page when changing items per page
+  }
 
   // Fetch all notifications
   const fetchNotifications = async () => {
@@ -425,65 +464,113 @@ export default function NotificationsPage() {
                 <RefreshCw className="h-8 w-8 animate-spin text-muted-foreground" />
               </div>
             ) : (
-              <Table className="w-full">
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>ID</TableHead>
-                    <TableHead>Title</TableHead>
-                    <TableHead>Message</TableHead>
-                    <TableHead>Date</TableHead>
-                    <TableHead>Admin</TableHead>
-                    <TableHead>Actions</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {filteredNotifications.length === 0 ? (
+              <>
+                <Table className="w-full">
+                  <TableHeader>
                     <TableRow>
-                      <TableCell colSpan={6} className="text-center py-8 text-muted-foreground">
-                        {searchQuery ? "No notifications found matching your search" : "No notifications found"}
-                      </TableCell>
+                      <TableHead>ID</TableHead>
+                      <TableHead>Title</TableHead>
+                      <TableHead>Message</TableHead>
+                      <TableHead>Date</TableHead>
+                      <TableHead>Admin</TableHead>
+                      <TableHead>Actions</TableHead>
                     </TableRow>
-                  ) : (
-                    filteredNotifications.map((notification) => (
-                      <TableRow key={notification.notification_id}>
-                        <TableCell className="font-medium">#{notification.notification_id}</TableCell>
-                        <TableCell>{notification.title}</TableCell>
-                        <TableCell className="max-w-[200px] truncate">{notification.message}</TableCell>
-                        <TableCell>{formatDate(notification.created_at)}</TableCell>
-                        <TableCell>
-                          <div className="flex flex-col">
-                            <span className="font-medium">{notification.Admin?.full_name}</span>
-                            <span className="text-xs text-muted-foreground">{notification.Admin?.email}</span>
-                          </div>
-                        </TableCell>
-                        <TableCell>
-                          <DropdownMenu>
-                            <DropdownMenuTrigger asChild>
-                              <Button variant="ghost">...</Button>
-                            </DropdownMenuTrigger>
-                            <DropdownMenuContent>
-                              <DropdownMenuItem onClick={() => fetchSingleNotification(notification.notification_id)}>
-                                View
-                              </DropdownMenuItem>
-                              <DropdownMenuItem onClick={() => openEditDialog(notification)}>
-                                Edit
-                              </DropdownMenuItem>
-                              <DropdownMenuItem
-                                onClick={() => {
-                                  setSelectedNotification(notification)
-                                  setIsDeleteDialogOpen(true)
-                                }}
-                              >
-                                Delete
-                              </DropdownMenuItem>
-                            </DropdownMenuContent>
-                          </DropdownMenu>
+                  </TableHeader>
+                  <TableBody>
+                    {paginatedNotifications.length === 0 ? (
+                      <TableRow>
+                        <TableCell colSpan={6} className="text-center py-8 text-muted-foreground">
+                          {searchQuery ? "No notifications found matching your search" : "No notifications found"}
                         </TableCell>
                       </TableRow>
-                    ))
-                  )}
-                </TableBody>
-              </Table>
+                    ) : (
+                      paginatedNotifications.map((notification) => (
+                        <TableRow key={notification.notification_id}>
+                          <TableCell className="font-medium">#{notification.notification_id}</TableCell>
+                          <TableCell>{notification.title}</TableCell>
+                          <TableCell className="max-w-[200px] truncate">{notification.message}</TableCell>
+                          <TableCell>{formatDate(notification.created_at)}</TableCell>
+                          <TableCell>
+                            <div className="flex flex-col">
+                              <span className="font-medium">{notification.Admin?.full_name}</span>
+                              <span className="text-xs text-muted-foreground">{notification.Admin?.email}</span>
+                            </div>
+                          </TableCell>
+                          <TableCell>
+                            <DropdownMenu>
+                              <DropdownMenuTrigger asChild>
+                                <Button variant="ghost">...</Button>
+                              </DropdownMenuTrigger>
+                              <DropdownMenuContent>
+                                <DropdownMenuItem onClick={() => fetchSingleNotification(notification.notification_id)}>
+                                  View
+                                </DropdownMenuItem>
+                                <DropdownMenuItem onClick={() => openEditDialog(notification)}>
+                                  Edit
+                                </DropdownMenuItem>
+                                <DropdownMenuItem
+                                  onClick={() => {
+                                    setSelectedNotification(notification)
+                                    setIsDeleteDialogOpen(true)
+                                  }}
+                                >
+                                  Delete
+                                </DropdownMenuItem>
+                              </DropdownMenuContent>
+                            </DropdownMenu>
+                          </TableCell>
+                        </TableRow>
+                      ))
+                    )}
+                  </TableBody>
+                </Table>
+
+                {/* Pagination Controls */}
+                <div className="flex items-center justify-between mt-6">
+                  <div className="flex items-center space-x-2">
+                    <p className="text-sm text-muted-foreground">
+                      Showing {paginatedNotifications.length} of {filteredNotifications.length} notifications
+                    </p>
+                    <Select 
+                      value={itemsPerPage.toString()} 
+                      onValueChange={handleItemsPerPageChange}
+                    >
+                      <SelectTrigger className="h-8 w-[70px]">
+                        <SelectValue placeholder={itemsPerPage} />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="5">5</SelectItem>
+                        <SelectItem value="10">10</SelectItem>
+                        <SelectItem value="20">20</SelectItem>
+                        <SelectItem value="50">50</SelectItem>
+                      </SelectContent>
+                    </Select>
+                    <p className="text-sm text-muted-foreground">per page</p>
+                  </div>
+                  
+                  <div className="flex items-center space-x-2">
+                    <Button
+                      variant="outline"
+                      size="icon"
+                      onClick={goToPreviousPage}
+                      disabled={currentPage === 1}
+                    >
+                      <ChevronLeft className="h-4 w-4" />
+                    </Button>
+                    <p className="text-sm text-muted-foreground">
+                      Page {currentPage} of {totalPages}
+                    </p>
+                    <Button
+                      variant="outline"
+                      size="icon"
+                      onClick={goToNextPage}
+                      disabled={currentPage === totalPages}
+                    >
+                      <ChevronRight className="h-4 w-4" />
+                    </Button>
+                  </div>
+                </div>
+              </>
             )}
           </CardContent>
         </Card>
