@@ -16,12 +16,15 @@ import { useForm, Controller } from "react-hook-form"
 
 export function TankerModal({ open, onClose, tanker, onSubmit }) {
   const [drivers, setDrivers] = useState([])
+  const [phases, setPhases] = useState([])
 
   const {
     register,
     handleSubmit,
     control,
     reset,
+    watch,
+    setValue,
     formState: { errors },
   } = useForm({
     defaultValues: {
@@ -37,6 +40,18 @@ export function TankerModal({ open, onClose, tanker, onSubmit }) {
   })
   const API_BASE_URL = process.env.NEXT_PUBLIC_BASE_URL
 
+  // Watch price_per_liter and capacity to calculate cost
+  const price_per_liter = watch("price_per_liter")
+  const capacity = watch("capacity")
+
+  // Calculate cost when price or capacity changes
+  useEffect(() => {
+    if (price_per_liter && capacity) {
+      const calculatedCost = parseFloat(price_per_liter) * parseFloat(capacity)
+      setValue("cost", calculatedCost.toFixed(2))
+    }
+  }, [price_per_liter, capacity, setValue])
+
   // Reset form when tanker prop changes
   useEffect(() => {
     if (tanker) {
@@ -47,7 +62,7 @@ export function TankerModal({ open, onClose, tanker, onSubmit }) {
         price_per_liter: tanker.price_per_liter,
         cost: tanker.cost,
         availability_status: tanker.availability_status,
-        phase_id: tanker.phase_id,
+        phase_id: tanker.phase_id ? String(tanker.phase_id) : "",
         assigned_driver_id: tanker.assigned_driver_id
           ? String(tanker.assigned_driver_id)
           : "",
@@ -83,10 +98,28 @@ export function TankerModal({ open, onClose, tanker, onSubmit }) {
       .catch((err) => console.error("Failed to load drivers", err))
   }, [open])
 
+  // Fetch phases when modal opens
+  useEffect(() => {
+    if (!open) return
+
+    fetch(`${API_BASE_URL}/api/phase`)
+      .then((res) => res.json())
+      .then((data) => {
+        setPhases(data.phases)
+        console.log("Phases:", data.phases) // Debug log
+      })
+      .catch((err) => console.error("Failed to load phases", err))
+  }, [open])
+
   const onSubmitHandler = (data) => {
     // Convert assigned_driver_id from string to number if it exists
     if (data.assigned_driver_id) {
       data.assigned_driver_id = Number(data.assigned_driver_id);
+    }
+    
+    // Convert phase_id from string to number
+    if (data.phase_id) {
+      data.phase_id = Number(data.phase_id);
     }
     
     console.log("Submitting data:", data);
@@ -165,6 +198,7 @@ export function TankerModal({ open, onClose, tanker, onSubmit }) {
                 type="number"
                 step="0.01"
                 {...register("cost", { required: true })}
+                readOnly
               />
               {errors.cost && (
                 <p className="text-red-500">Cost is required</p>
@@ -204,14 +238,34 @@ export function TankerModal({ open, onClose, tanker, onSubmit }) {
 
             {/* Phase ID */}
             <div>
-              <Label>Phase ID</Label>
-              <Input
-                className="mt-2"
-                type="number"
-                {...register("phase_id", { required: true })}
+              <Label>Phase</Label>
+              <Controller
+                name="phase_id"
+                control={control}
+                rules={{ required: true }}
+                render={({ field }) => (
+                  <Select
+                    onValueChange={field.onChange}
+                    value={field.value}
+                  >
+                    <SelectTrigger className="mt-2">
+                      <SelectValue placeholder="Select Phase" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {phases.map((phase) => (
+                        <SelectItem
+                          key={phase.phase_id}
+                          value={String(phase.phase_id)}
+                        >
+                          {phase.phase_name}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                )}
               />
               {errors.phase_id && (
-                <p className="text-red-500">Phase ID is required</p>
+                <p className="text-red-500">Phase is required</p>
               )}
             </div>
 
