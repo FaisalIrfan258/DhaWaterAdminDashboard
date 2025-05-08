@@ -11,10 +11,21 @@ import { Button } from "@/components/ui/button"
 export function ViewUserModal({ isOpen, onClose, user, sensors = [] }) {
   if (!user) return null;
   
-  // Find the sensor name if available
-  const sensorName = user.device_id 
-    ? sensors.find(s => s.sensor_id.toString() === user.device_id.toString())?.sensor_name || `Sensor ID: ${user.device_id}`
-    : "No sensor assigned";
+  // Find the sensor name if available (prioritize sensor_name from WaterTanks)
+  let sensorName = "No sensor assigned";
+  
+  if (user.WaterTanks && user.WaterTanks.length > 0 && user.WaterTanks[0].sensor_name) {
+    // Use the sensor_name from WaterTanks if available
+    sensorName = user.WaterTanks[0].sensor_name;
+  } else if (user.device_id) {
+    // Fall back to looking it up in the sensors array
+    sensorName = sensors.find(s => s.sensor_id.toString() === user.device_id.toString())?.sensor_name || `Sensor ID: ${user.device_id}`;
+  }
+
+  // Format address display
+  const formattedAddress = user.street_address 
+    ? `${user.street_address}${user.phase_number ? ` Phase ${user.phase_number}` : ''}`
+    : user.home_address || "N/A";
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
@@ -44,7 +55,7 @@ export function ViewUserModal({ isOpen, onClose, user, sensors = [] }) {
           
           <div className="grid grid-cols-4 items-center gap-4">
             <div className="text-right font-medium">Address:</div>
-            <div className="col-span-3">{user.home_address || "N/A"}</div>
+            <div className="col-span-3">{formattedAddress}</div>
           </div>
           
           <div className="grid grid-cols-4 items-center gap-4">

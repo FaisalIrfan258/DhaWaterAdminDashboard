@@ -115,21 +115,34 @@ export default function UsersPage() {
       );
 
       // Update to include all relevant fields
-      const formattedUsers = sortedUsers.map((user) => ({
-        customer_id: user.customer_id,
-        full_name: user.full_name,
-        email: user.email,
-        phone_number: user.phone_number,
-        home_address: user.home_address,
-        username: user.username,
-        balance: user.balance, // Include balance
-        created_at: user.created_at,
-        WaterTanks: user.WaterTanks.map((tank) => ({
-          sensor_id: tank.sensor_id, // Map sensor_id from WaterTanks
-        })),
-        userType: user.UserType.type, // Include user type
-        userTypeDescription: user.UserType.description, // Include user type description
-      }));
+      const formattedUsers = sortedUsers.map((user) => {
+        // Format the address by combining street_address and phase_number if available
+        let displayAddress = user.street_address || user.home_address || '';
+        if (user.phase_number) {
+          displayAddress += ` Phase ${user.phase_number}`;
+        } else if (user.Phase && user.Phase.phase_name) {
+          displayAddress += ` Phase ${user.Phase.phase_name}`;
+        }
+        
+        return {
+          customer_id: user.customer_id,
+          full_name: user.full_name,
+          email: user.email,
+          phone_number: user.phone_number,
+          home_address: displayAddress, // Use the combined address for display
+          street_address: user.street_address,
+          phase_number: user.phase_number,
+          username: user.username,
+          balance: user.balance, // Include balance
+          created_at: user.created_at,
+          WaterTanks: user.WaterTanks.map((tank) => ({
+            sensor_id: tank.sensor_id, // Map sensor_id from WaterTanks
+            sensor_name: tank.Sensor?.sensor_name || `Sensor ${tank.sensor_id}` // Include sensor name
+          })),
+          userType: user.UserType.type, // Include user type
+          userTypeDescription: user.UserType.description, // Include user type description
+        };
+      });
 
       setUsers(formattedUsers);
       setFilteredUsers(formattedUsers); // Initialize filtered users with all users
@@ -172,6 +185,8 @@ export default function UsersPage() {
         user.email?.toLowerCase().includes(query) ||
         user.phone_number?.includes(query) ||
         user.home_address?.toLowerCase().includes(query) ||
+        user.street_address?.toLowerCase().includes(query) ||
+        (user.phase_number && user.phase_number.toString().includes(query)) ||
         user.username?.toLowerCase().includes(query) ||
         user.customer_id?.toString().includes(query)
     );
@@ -186,15 +201,27 @@ export default function UsersPage() {
     const loadingToast = toast.loading("Creating user...");
 
     try {
+      // Format the request body according to the new API structure
+      const requestBody = {
+        full_name: userData.full_name,
+        email: userData.email,
+        phone_number: userData.phone_number,
+        street_address: userData.street_address,
+        phase_number: userData.phase_number,
+        username: userData.username,
+        password: userData.password,
+        tank_capacity: userData.tank_capacity,
+        balance: userData.balance,
+        device_id: userData.device_id,
+        category: userData.category
+      };
+
       const response = await fetch(`${baseUrl}/api/users/signup`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
         },
-        body: JSON.stringify({
-          ...userData,
-          category: userData.category, // Include category
-        }),
+        body: JSON.stringify(requestBody),
       });
 
       if (!response.ok) {
@@ -230,12 +257,18 @@ export default function UsersPage() {
       // Ensure customer_id is included
       userData.customer_id = editingUser.customer_id;
 
+      // Format the home_address from street_address and phase_number for backward compatibility
+      const requestBody = {
+        ...userData,
+        home_address: userData.street_address + (userData.phase_number ? ` Phase ${userData.phase_number}` : "")
+      };
+
       const response = await fetch(`${baseUrl}/api/customer/update`, {
         method: "PUT",
         headers: {
           "Content-Type": "application/json",
         },
-        body: JSON.stringify(userData),
+        body: JSON.stringify(requestBody),
       });
 
       if (!response.ok) {
@@ -276,20 +309,46 @@ export default function UsersPage() {
 
       const data = await response.json();
 
+      // Extract street_address and phase_number from home_address if they're not provided
+      let streetAddress = data.street_address || "";
+      let phaseNumber = data.phase_number || "";
+      
+      // If Phase data is available, use that
+      if (data.Phase && data.Phase.phase_id) {
+        phaseNumber = data.Phase.phase_id;
+      } else if (!streetAddress && data.home_address) {
+        // Try to extract phase from the address if it contains "Phase"
+        const phaseMatch = data.home_address.match(/Phase\s*(\d+)/i);
+        if (phaseMatch) {
+          phaseNumber = phaseMatch[1];
+          streetAddress = data.home_address.replace(/Phase\s*\d+/i, '').trim();
+        } else {
+          streetAddress = data.home_address;
+        }
+      }
+
+      // Get the sensor information
+      const sensorInfo = data.WaterTanks && data.WaterTanks.length > 0 ? {
+        sensor_id: data.WaterTanks[0].sensor_id,
+        sensor_name: data.WaterTanks[0].Sensor?.sensor_name || `Sensor ${data.WaterTanks[0].sensor_id}`
+      } : null;
+
       // Format the user data for the modal
       const formattedUser = {
         customer_id: data.customer_id,
         full_name: data.full_name,
         email: data.email,
         phone_number: data.phone_number,
-        home_address: data.home_address,
+        street_address: streetAddress,
+        phase_number: phaseNumber,
         username: data.username,
         password: "", // Clear password when editing
         balance: data.balance || 0,
         created_at: data.created_at,
         tank_capacity: data.WaterTanks[0]?.tank_id || 0, // Assuming tank_capacity is represented by tank_id
         water_level: data.WaterTanks[0]?.WaterTankStatuses[0]?.water_level || 0, // Extract water level
-        device_id: data.device_id, // Assuming device_id is part of the response
+        device_id: data.WaterTanks[0]?.sensor_id?.toString() || "", // Use sensor_id from WaterTanks
+        sensor_name: sensorInfo?.sensor_name // Store the sensor name for display
       };
 
       setEditingUser(formattedUser);
@@ -471,7 +530,7 @@ export default function UsersPage() {
                   <TableHead>Name</TableHead>
                   <TableHead>Contact</TableHead>
                   <TableHead>Address</TableHead>
-                  <TableHead>Sensor ID</TableHead>
+                  <TableHead>Sensor</TableHead>
                   <TableHead>Joined</TableHead>
                   <TableHead className="w-[50px]"></TableHead>
                 </TableRow>
@@ -511,7 +570,7 @@ export default function UsersPage() {
                           <div className="flex gap-1 flex-wrap">
                             {user.WaterTanks.map((tank, index) => (
                               <Badge key={index} variant="secondary">
-                                {tank.sensor_id}
+                                {tank.sensor_name || tank.sensor_id}
                               </Badge>
                             ))}
                           </div>

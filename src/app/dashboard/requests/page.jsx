@@ -377,7 +377,7 @@ export default function RequestsPage() {
                       <TableHead>Request ID</TableHead>
                       <TableHead>Customer</TableHead>
                       <TableHead>Request Date</TableHead>
-                      <TableHead>Water Amount</TableHead>
+                      
                       {/* <TableHead>Payment Mode</TableHead> */}
                       <TableHead>Status</TableHead>
                       <TableHead>Actions</TableHead>
@@ -414,9 +414,7 @@ export default function RequestsPage() {
                           <TableCell>
                             {formatDate(request.request_date)}
                           </TableCell>
-                          <TableCell>
-                            {request.requested_liters.toLocaleString()} G
-                          </TableCell>
+                          
                           {/* <TableCell>
                             {request.description.replace('Payment Mode:', '').trim()}
                           </TableCell> */}

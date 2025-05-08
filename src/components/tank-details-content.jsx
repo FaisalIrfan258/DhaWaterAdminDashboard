@@ -13,6 +13,9 @@ const TankDetailsContent = () => {
   const [waterLevelFeet, setWaterLevelFeet] = useState(0);
   const [loading, setLoading] = useState(true);
   const baseUrl = process.env.NEXT_PUBLIC_BASE_URL; // Ensure this is set in your environment variables
+  const totalCapacity = 85718; // Total capacity in US gallons
+  const totalHeight = 15; // Total height in feet
+  const gallonsPerFoot = totalCapacity / totalHeight; // Calculation for gallons per foot
 
   useEffect(() => {
     const fetchTankData = async () => {
@@ -35,7 +38,7 @@ const TankDetailsContent = () => {
         setWaterLevelGallons(parseInt(gallons) || 0);
         
         // Calculate water level in feet
-        const feetValue = level / parseInt(gallons);
+        const feetValue = parseInt(gallons) / gallonsPerFoot;
         setWaterLevelFeet(feetValue);
       } catch (error) {
         console.error('Error fetching tank data:', error);
@@ -93,7 +96,68 @@ const TankDetailsContent = () => {
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.5, delay: 0.6 }}
+          className="w-full max-w-4xl"
         >
+          <Card className="shadow-lg hover:shadow-xl transition-shadow duration-300 w-full">
+            <CardHeader>
+              <CardTitle className="text-xl font-bold text-indigo-800">Tank Specifications</CardTitle>
+            </CardHeader>
+            <CardContent className="grid grid-cols-1 md:grid-cols-2 gap-6 p-6">
+              <div className="bg-indigo-100 p-4 rounded-xl shadow-sm">
+                <h3 className="text-lg font-semibold text-indigo-800 mb-1">Total Capacity</h3>
+                <p className="text-3xl font-bold text-indigo-600">
+                  {totalCapacity.toLocaleString()} <span className="text-xl text-indigo-500">gallons</span>
+                </p>
+                <p className="mt-1 text-indigo-600">at {totalHeight} feet height</p>
+              </div>
+              <div className="bg-indigo-100 p-4 rounded-xl shadow-sm">
+                <h3 className="text-lg font-semibold text-indigo-800 mb-1">Gallons Per Foot</h3>
+                <p className="text-3xl font-bold text-indigo-600">
+                  {gallonsPerFoot.toLocaleString(undefined, {maximumFractionDigits: 1})} <span className="text-xl text-indigo-500">gallons/ft</span>
+                </p>
+              </div>
+            </CardContent>
+          </Card>
+        </motion.div>
+
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.5, delay: 0.8 }}
+          className="w-full max-w-4xl"
+        >
+          <Card className="shadow-lg hover:shadow-xl transition-shadow duration-300 w-full bg-gradient-to-r from-blue-50 to-indigo-50">
+            <CardHeader>
+              <CardTitle className="text-xl font-bold text-indigo-800">Tank Capacity Overview</CardTitle>
+            </CardHeader>
+            <CardContent className="p-6">
+              <div className="flex flex-col md:flex-row items-center justify-between gap-6">
+                <div className="flex items-center justify-center w-32 h-32 rounded-full bg-indigo-100 shadow-inner">
+                  <div className="text-center">
+                    <div className="text-4xl font-bold text-indigo-700">{Math.floor(waterLevel)}%</div>
+                    <div className="text-sm text-indigo-600">Filled</div>
+                  </div>
+                </div>
+                <div className="flex-1 space-y-4">
+                  <div className="flex justify-between items-center">
+                    <span className="text-indigo-700 font-medium">Total Capacity:</span>
+                    <span className="text-indigo-900 font-bold">{totalCapacity.toLocaleString()} gallons</span>
+                  </div>
+                  <div className="flex justify-between items-center">
+                    <span className="text-indigo-700 font-medium">Current Volume:</span>
+                    <span className="text-indigo-900 font-bold">{waterLevelGallons.toLocaleString()} gallons</span>
+                  </div>
+                  <div className="flex justify-between items-center">
+                    <span className="text-indigo-700 font-medium">Remaining Capacity:</span>
+                    <span className="text-indigo-900 font-bold">{(totalCapacity - waterLevelGallons).toLocaleString()} gallons</span>
+                  </div>
+                  <div className="w-full bg-gray-200 rounded-full h-2.5 mt-2">
+                    <div className="bg-indigo-600 h-2.5 rounded-full" style={{ width: `${waterLevel}%` }}></div>
+                  </div>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
         </motion.div>
       </div>
     </div>

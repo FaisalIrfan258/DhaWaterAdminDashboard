@@ -29,7 +29,8 @@ export function UserModal({
     full_name: "",
     email: "",
     phone_number: "",
-    home_address: "",
+    street_address: "",
+    phase_number: "",
     username: "",
     password: "",
     tank_capacity: "",
@@ -46,8 +47,26 @@ export function UserModal({
 
   useEffect(() => {
     if (mode === "edit" && user) {
+      // For editing, if we receive home_address, split it into street_address and phase_number
+      let streetAddress = ""
+      let phaseNumber = ""
+      
+      if (user.home_address) {
+        // Try to extract phase from the address if it contains "Phase"
+        const phaseMatch = user.home_address.match(/Phase\s*(\d+)/i)
+        if (phaseMatch) {
+          phaseNumber = phaseMatch[1]
+          streetAddress = user.home_address.replace(/Phase\s*\d+/i, '').trim()
+        } else {
+          streetAddress = user.home_address
+          phaseNumber = ""
+        }
+      }
+      
       setFormData({
         ...user,
+        street_address: streetAddress,
+        phase_number: phaseNumber,
         device_id: user.WaterTanks?.[0]?.sensor_id?.toString() || "",
         password: "" // Clear password when editing
       })
@@ -84,7 +103,8 @@ export function UserModal({
       tank_capacity: Number(formData.tank_capacity),
       balance: Number(formData.balance),
       device_id: Number(formData.device_id),
-      category: formData.category
+      category: formData.category,
+      phase_number: Number(formData.phase_number)
     }
 
     if (mode === "edit") {
@@ -164,13 +184,28 @@ export function UserModal({
             </div>
 
             <div className="grid grid-cols-4 items-center gap-4">
-              <Label htmlFor="home_address" className="text-right">
-                Address
+              <Label htmlFor="street_address" className="text-right">
+                Street Address
               </Label>
               <Input
-                id="home_address"
-                value={formData.home_address}
-                onChange={(e) => setFormData({ ...formData, home_address: e.target.value })}
+                id="street_address"
+                value={formData.street_address}
+                onChange={(e) => setFormData({ ...formData, street_address: e.target.value })}
+                className="col-span-3"
+                disabled={isViewOnly}
+                required
+              />
+            </div>
+
+            <div className="grid grid-cols-4 items-center gap-4">
+              <Label htmlFor="phase_number" className="text-right">
+                Phase Number
+              </Label>
+              <Input
+                id="phase_number"
+                type="number"
+                value={formData.phase_number}
+                onChange={(e) => setFormData({ ...formData, phase_number: e.target.value })}
                 className="col-span-3"
                 disabled={isViewOnly}
                 required
