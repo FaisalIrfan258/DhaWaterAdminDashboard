@@ -365,7 +365,7 @@ export default function TankersPage() {
                       ) : (
                         paginatedTankers.map((tanker) => (
                           <TableRow key={tanker.tanker_id}>
-                            <TableCell className="font-medium">#{tanker.tanker_id}</TableCell>
+                            
                             <TableCell>{tanker.tanker_name}</TableCell>
                             <TableCell>{tanker.plate_number}</TableCell>
                             <TableCell className="text-right">{tanker.capacity.toLocaleString()}</TableCell>
