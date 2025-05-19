@@ -51,8 +51,9 @@ const CustomSidebar = () => {
 
   return (
     <div className="w-64 fixed top-0 left-0 z-50 h-screen bg-gradient-to-b from-[#004D77] to-[#43A2B3] text-white">
-      <div className="flex items-center justify-center h-24 px-6">
-        <Image src="/assets/water.png" alt="logo" width={100} height={100} priority={true} className="rounded-full" />
+      <div className="flex items-center justify-center h-24 px-6 gap-4">
+        <Image src="/assets/dhalogo.png" alt="DHA Logo" width={80} height={80} priority={true}  />
+        <Image src="/assets/dhasrviceslogo.jpg" alt="DHA Services Logo" width={80} height={80} priority={true}  />
       </div>
       <div className="p-4 mt-4">
         <div className="space-y-2">

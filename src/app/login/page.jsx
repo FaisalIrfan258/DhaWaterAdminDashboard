@@ -8,14 +8,25 @@ export default function LoginPage() {
       <div className="hidden lg:flex lg:w-1/2 flex-col justify-center items-center bg-gradient-to-br from-cyan-600 to-blue-700 p-12 text-white">
         <div className="max-w-md space-y-8">
           <div className="flex items-center gap-3">
-            <div className="relative h-12 w-12">
-              <Image
-                src="/assets/water.png"
-                alt="HydraTank Logo"
-                fill
-                className="object-contain"
-                priority
-              />
+            <div className="flex items-center gap-2">
+              <div className="relative h-12 w-12">
+                <Image
+                  src="/assets/dhalogo.png"
+                  alt="DHA Logo"
+                  fill
+                  className="object-contain"
+                  priority
+                />
+              </div>
+              <div className="relative h-12 w-12">
+                <Image
+                  src="/assets/dhasrviceslogo.jpg"
+                  alt="DHA Services Logo"
+                  fill
+                  className="object-contain"
+                  priority
+                />
+              </div>
             </div>
             <h1 className="text-3xl font-bold">HydraTank</h1>
           </div>
