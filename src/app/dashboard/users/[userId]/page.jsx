@@ -271,7 +271,7 @@ const UserDetailsPage = () => {
                       <p className="text-sm text-slate-500">Balance</p>
                       <p className="font-medium text-slate-800">
                         <Badge variant="outline" className="bg-blue-50 text-blue-700 border-blue-200">
-                          ${user.balance?.toLocaleString() || 0}
+                          {user.balance?.toLocaleString() || 0}
                         </Badge>
                       </p>
                     </div>
