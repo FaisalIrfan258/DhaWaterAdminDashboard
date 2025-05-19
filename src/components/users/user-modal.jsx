@@ -48,28 +48,25 @@ export function UserModal({
   useEffect(() => {
     if (mode === "edit" && user) {
       // For editing, if we receive home_address, split it into street_address and phase_number
-      let streetAddress = ""
-      let phaseNumber = ""
+      let streetAddress = user.street_address || ""
+      let phaseNumber = user.Phase?.phase_id || user.phase_number || ""
       
-      if (user.home_address) {
-        // Try to extract phase from the address if it contains "Phase"
-        const phaseMatch = user.home_address.match(/Phase\s*(\d+)/i)
-        if (phaseMatch) {
-          phaseNumber = phaseMatch[1]
-          streetAddress = user.home_address.replace(/Phase\s*\d+/i, '').trim()
-        } else {
-          streetAddress = user.home_address
-          phaseNumber = ""
-        }
-      }
+      // Get the sensor ID from WaterTanks if available
+      const sensorId = user.WaterTanks?.[0]?.sensor_id?.toString() || ""
       
       setFormData({
         ...user,
         street_address: streetAddress,
         phase_number: phaseNumber,
-        device_id: user.WaterTanks?.[0]?.sensor_id?.toString() || "",
+        device_id: sensorId, // Set the sensor ID from WaterTanks
+        tank_capacity: user.WaterTanks?.[0]?.capacity?.toString() || "",
         password: "" // Clear password when editing
       })
+
+      // If we have a sensor ID, fetch available sensors to show it in the dropdown
+      if (sensorId) {
+        fetchAvailableSensors()
+      }
     } else if (mode === "add") {
       setFormData(defaultFormData)
     }
@@ -81,9 +78,22 @@ export function UserModal({
       if (!response.ok) throw new Error("Failed to fetch available sensors")
       
       const data = await response.json()
-      // Filter sensors to only include those that are "Not Assigned"
-      const notAssignedSensors = data.sensors.filter(sensor => sensor.status === "Not Assigned")
-      setSensors(notAssignedSensors) // Set the available sensors
+      // Include both available sensors and the current user's sensor
+      const allSensors = data.sensors || []
+      const currentSensor = user?.WaterTanks?.[0]?.sensor_id
+      
+      // If we have a current sensor, make sure it's included in the list
+      if (currentSensor) {
+        const currentSensorExists = allSensors.some(s => s.sensor_id === currentSensor)
+        if (!currentSensorExists) {
+          allSensors.push({
+            sensor_id: currentSensor,
+            status: "Assigned"
+          })
+        }
+      }
+      
+      setSensors(allSensors)
     } catch (error) {
       console.error("Error fetching available sensors:", error)
     }
@@ -98,24 +108,41 @@ export function UserModal({
 
   const handleSubmit = (e) => {
     e.preventDefault()
+    
+    // Format the data according to the API requirements
     const submitData = {
       ...formData,
       tank_capacity: Number(formData.tank_capacity),
       balance: Number(formData.balance),
-      device_id: Number(formData.device_id),
+      device_id: Number(formData.device_id), // Ensure device_id is a number
       category: formData.category,
       phase_number: Number(formData.phase_number)
     }
 
     if (mode === "edit") {
-      submitData.customer_id = user.customer_id
-      // Only include password if it was changed
-      if (!submitData.password) {
-        delete submitData.password
+      // For update API, we need to format the data differently
+      const updateData = {
+        customer_id: user.customer_id,
+        full_name: submitData.full_name,
+        email: submitData.email,
+        phone_number: submitData.phone_number,
+        home_address: `${submitData.street_address}${submitData.phase_number ? ` Phase ${submitData.phase_number}` : ""}`,
+        username: submitData.username,
+        tank_capacity: submitData.tank_capacity,
+        balance: submitData.balance,
+        device_id: submitData.device_id // Include the sensor ID in the update
       }
-    }
 
-    onSubmit(submitData)
+      // Only include password if it was changed
+      if (submitData.password) {
+        updateData.password = submitData.password
+      }
+
+      onSubmit(updateData)
+    } else {
+      // For create API, we can use the data as is
+      onSubmit(submitData)
+    }
   }
 
   const isViewOnly = mode === "view"
@@ -288,8 +315,12 @@ export function UserModal({
                 </SelectTrigger>
                 <SelectContent>
                   {sensors.map((sensor) => (
-                    <SelectItem key={sensor.sensor_id} value={sensor.sensor_id.toString()}>
-                      {sensor.sensor_id}
+                    <SelectItem 
+                      key={sensor.sensor_id} 
+                      value={sensor.sensor_id.toString()}
+                      disabled={sensor.status === "Assigned" && sensor.sensor_id.toString() !== formData.device_id}
+                    >
+                      {sensor.sensor_id} {sensor.status === "Assigned" ? "(Assigned)" : ""}
                     </SelectItem>
                   ))}
                 </SelectContent>

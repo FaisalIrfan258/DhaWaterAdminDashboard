@@ -201,27 +201,12 @@ export default function UsersPage() {
     const loadingToast = toast.loading("Creating user...");
 
     try {
-      // Format the request body according to the new API structure
-      const requestBody = {
-        full_name: userData.full_name,
-        email: userData.email,
-        phone_number: userData.phone_number,
-        street_address: userData.street_address,
-        phase_number: userData.phase_number,
-        username: userData.username,
-        password: userData.password,
-        tank_capacity: userData.tank_capacity,
-        balance: userData.balance,
-        device_id: userData.device_id,
-        category: userData.category
-      };
-
       const response = await fetch(`${baseUrl}/api/users/signup`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
         },
-        body: JSON.stringify(requestBody),
+        body: JSON.stringify(userData),
       });
 
       if (!response.ok) {
@@ -254,21 +239,12 @@ export default function UsersPage() {
     const loadingToast = toast.loading("Updating user...");
 
     try {
-      // Ensure customer_id is included
-      userData.customer_id = editingUser.customer_id;
-
-      // Format the home_address from street_address and phase_number for backward compatibility
-      const requestBody = {
-        ...userData,
-        home_address: userData.street_address + (userData.phase_number ? ` Phase ${userData.phase_number}` : "")
-      };
-
       const response = await fetch(`${baseUrl}/api/customer/update`, {
         method: "PUT",
         headers: {
           "Content-Type": "application/json",
         },
-        body: JSON.stringify(requestBody),
+        body: JSON.stringify(userData),
       });
 
       if (!response.ok) {
@@ -309,46 +285,23 @@ export default function UsersPage() {
 
       const data = await response.json();
 
-      // Extract street_address and phase_number from home_address if they're not provided
-      let streetAddress = data.street_address || "";
-      let phaseNumber = data.phase_number || "";
-      
-      // If Phase data is available, use that
-      if (data.Phase && data.Phase.phase_id) {
-        phaseNumber = data.Phase.phase_id;
-      } else if (!streetAddress && data.home_address) {
-        // Try to extract phase from the address if it contains "Phase"
-        const phaseMatch = data.home_address.match(/Phase\s*(\d+)/i);
-        if (phaseMatch) {
-          phaseNumber = phaseMatch[1];
-          streetAddress = data.home_address.replace(/Phase\s*\d+/i, '').trim();
-        } else {
-          streetAddress = data.home_address;
-        }
-      }
-
-      // Get the sensor information
-      const sensorInfo = data.WaterTanks && data.WaterTanks.length > 0 ? {
-        sensor_id: data.WaterTanks[0].sensor_id,
-        sensor_name: data.WaterTanks[0].Sensor?.sensor_name || `Sensor ${data.WaterTanks[0].sensor_id}`
-      } : null;
-
       // Format the user data for the modal
       const formattedUser = {
         customer_id: data.customer_id,
         full_name: data.full_name,
         email: data.email,
         phone_number: data.phone_number,
-        street_address: streetAddress,
-        phase_number: phaseNumber,
+        street_address: data.street_address,
+        phase_number: data.Phase?.phase_id || data.phase_number,
         username: data.username,
         password: "", // Clear password when editing
         balance: data.balance || 0,
         created_at: data.created_at,
-        tank_capacity: data.WaterTanks[0]?.tank_id || 0, // Assuming tank_capacity is represented by tank_id
-        water_level: data.WaterTanks[0]?.WaterTankStatuses[0]?.water_level || 0, // Extract water level
-        device_id: data.WaterTanks[0]?.sensor_id?.toString() || "", // Use sensor_id from WaterTanks
-        sensor_name: sensorInfo?.sensor_name // Store the sensor name for display
+        tank_capacity: data.WaterTanks?.[0]?.capacity || 0,
+        device_id: data.WaterTanks?.[0]?.sensor_id?.toString() || "", // Ensure sensor ID is properly passed
+        category: data.UserType?.type === "C" ? "Corporate" : 
+                 data.UserType?.type === "E" ? "DHAEmployee" : "Civil",
+        WaterTanks: data.WaterTanks // Include the full WaterTanks data
       };
 
       setEditingUser(formattedUser);

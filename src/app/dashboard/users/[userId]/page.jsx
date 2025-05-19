@@ -284,6 +284,12 @@ const UserDetailsPage = () => {
                       </p>
                     </div>
                     <div>
+                      <p className="text-sm text-slate-500">Tank Capacity</p>
+                      <p className="font-medium text-slate-800">
+                        {user.WaterTanks?.[0]?.capacity?.toLocaleString() || "N/A"} Gallons
+                      </p>
+                    </div>
+                    <div>
                       <p className="text-sm text-slate-500">Account Created</p>
                       <p className="font-medium text-slate-800">
                         {new Date(user.created_at).toLocaleDateString(undefined, {
@@ -500,7 +506,7 @@ const UserDetailsPage = () => {
                           Status
                         </th>
                         <th className="px-4 py-3 text-left text-xs font-medium uppercase tracking-wider">
-                          Requested Liters
+                          Requested Gallons
                         </th>
                       </tr>
                     </thead>
@@ -526,7 +532,7 @@ const UserDetailsPage = () => {
                             </Badge>
                           </td>
                           <td className="px-4 py-3 whitespace-nowrap text-slate-700">
-                            {booking.Request?.requested_liters || "N/A"} liters
+                            {booking.Request?.requested_liters || "N/A"} Gallons
                           </td>
                         </tr>
                       ))}
