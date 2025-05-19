@@ -13,7 +13,7 @@ const TankDetailsContent = () => {
   const [waterLevelFeet, setWaterLevelFeet] = useState(0);
   const [loading, setLoading] = useState(true);
   const baseUrl = process.env.NEXT_PUBLIC_BASE_URL; // Ensure this is set in your environment variables
-  const totalCapacity = 85718; // Total capacity in US gallons
+  const totalCapacity = 1285777; // Total capacity in US gallons
   const totalHeight = 15; // Total height in feet
   const gallonsPerFoot = totalCapacity / totalHeight; // Calculation for gallons per foot
 
