@@ -15,7 +15,7 @@ const TankDetailsContent = () => {
   const baseUrl = process.env.NEXT_PUBLIC_BASE_URL; // Ensure this is set in your environment variables
   const totalCapacity = 1285777; // Total capacity in US gallons
   const totalHeight = 15; // Total height in feet
-  const gallonsPerFoot = totalCapacity / totalHeight; // Calculation for gallons per foot
+  const gallonsPerFeet = totalCapacity / totalHeight; // Calculation for gallons per feet
 
   useEffect(() => {
     const fetchTankData = async () => {
@@ -38,7 +38,7 @@ const TankDetailsContent = () => {
         setWaterLevelGallons(parseInt(gallons) || 0);
         
         // Calculate water level in feet
-        const feetValue = parseInt(gallons) / gallonsPerFoot;
+        const feetValue = parseInt(gallons) / gallonsPerFeet;
         setWaterLevelFeet(feetValue);
       } catch (error) {
         console.error('Error fetching tank data:', error);
