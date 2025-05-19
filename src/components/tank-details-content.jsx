@@ -30,7 +30,7 @@ const TankDetailsContent = () => {
         setWaterLevel(level);
         
         // Fetch water level in gallons
-        const gallonsResponse = await fetch(`${baseUrl}/api/tankStatus/latest-water-level-gallons/?tank_id=1`);
+        const gallonsResponse = await fetch(`${baseUrl}/api/tankStatus/latest-water-level-gallons/?tank_id=2`);
         if (!gallonsResponse.ok) {
           throw new Error('Failed to fetch tank gallons data');
         }
@@ -111,9 +111,9 @@ const TankDetailsContent = () => {
                 <p className="mt-1 text-indigo-600">at {totalHeight} feet height</p>
               </div>
               <div className="bg-indigo-100 p-4 rounded-xl shadow-sm">
-                <h3 className="text-lg font-semibold text-indigo-800 mb-1">Gallons Per Foot</h3>
+                <h3 className="text-lg font-semibold text-indigo-800 mb-1">Gallons Per Feet</h3>
                 <p className="text-3xl font-bold text-indigo-600">
-                  {gallonsPerFoot.toLocaleString(undefined, {maximumFractionDigits: 1})} <span className="text-xl text-indigo-500">gallons/ft</span>
+                  {gallonsPerFeet.toLocaleString(undefined, {maximumFractionDigits: 1})} <span className="text-xl text-indigo-500">gallons/ft</span>
                 </p>
               </div>
             </CardContent>
