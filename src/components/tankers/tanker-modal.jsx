@@ -12,11 +12,12 @@ import {
   SelectItem,
   SelectValue,
 } from "@/components/ui/select"
+import { Checkbox } from "@/components/ui/checkbox"
 import { useForm, Controller } from "react-hook-form"
 
 export function TankerModal({ open, onClose, tanker, onSubmit }) {
   const [drivers, setDrivers] = useState([])
-  const [phases, setPhases] = useState([])
+  const [selectedPhases, setSelectedPhases] = useState([])
 
   const {
     register,
@@ -34,7 +35,7 @@ export function TankerModal({ open, onClose, tanker, onSubmit }) {
       price_per_liter: "",
       cost: "",
       availability_status: "Available",
-      phase_id: "",
+      phase_id: [],
       assigned_driver_id: "",
     },
   })
@@ -55,6 +56,10 @@ export function TankerModal({ open, onClose, tanker, onSubmit }) {
   // Reset form when tanker prop changes
   useEffect(() => {
     if (tanker) {
+      // Convert phase_id to array if it exists
+      const phaseIds = tanker.phase_id ? (Array.isArray(tanker.phase_id) ? tanker.phase_id : [tanker.phase_id]) : []
+      setSelectedPhases(phaseIds)
+      
       reset({
         tanker_name: tanker.tanker_name,
         plate_number: tanker.plate_number,
@@ -62,12 +67,13 @@ export function TankerModal({ open, onClose, tanker, onSubmit }) {
         price_per_liter: tanker.price_per_liter,
         cost: tanker.cost,
         availability_status: tanker.availability_status,
-        phase_id: tanker.phase_id ? String(tanker.phase_id) : "",
+        phase_id: phaseIds,
         assigned_driver_id: tanker.assigned_driver_id
           ? String(tanker.assigned_driver_id)
           : "",
       })
     } else {
+      setSelectedPhases([])
       reset({
         tanker_name: "",
         plate_number: "",
@@ -75,7 +81,7 @@ export function TankerModal({ open, onClose, tanker, onSubmit }) {
         price_per_liter: "",
         cost: "",
         availability_status: "Available",
-        phase_id: "",
+        phase_id: [],
         assigned_driver_id: "",
       })
     }
@@ -98,18 +104,15 @@ export function TankerModal({ open, onClose, tanker, onSubmit }) {
       .catch((err) => console.error("Failed to load drivers", err))
   }, [open])
 
-  // Fetch phases when modal opens
-  useEffect(() => {
-    if (!open) return
-
-    fetch(`${API_BASE_URL}/api/phase`)
-      .then((res) => res.json())
-      .then((data) => {
-        setPhases(data.phases)
-        console.log("Phases:", data.phases) // Debug log
-      })
-      .catch((err) => console.error("Failed to load phases", err))
-  }, [open])
+  // Handle phase selection
+  const handlePhaseChange = (phaseId) => {
+    const updatedPhases = selectedPhases.includes(phaseId)
+      ? selectedPhases.filter(id => id !== phaseId)
+      : [...selectedPhases, phaseId];
+    
+    setSelectedPhases(updatedPhases);
+    setValue("phase_id", updatedPhases);
+  };
 
   const onSubmitHandler = (data) => {
     // Convert assigned_driver_id from string to number if it exists
@@ -117,10 +120,8 @@ export function TankerModal({ open, onClose, tanker, onSubmit }) {
       data.assigned_driver_id = Number(data.assigned_driver_id);
     }
     
-    // Convert phase_id from string to number
-    if (data.phase_id) {
-      data.phase_id = Number(data.phase_id);
-    }
+    // Use the selectedPhases array for phase_id
+    data.phase_id = selectedPhases;
     
     console.log("Submitting data:", data);
     onSubmit(data);
@@ -236,36 +237,25 @@ export function TankerModal({ open, onClose, tanker, onSubmit }) {
               )}
             </div>
 
-            {/* Phase ID */}
+            {/* Phase ID - Multi-select with checkboxes */}
             <div>
-              <Label>Phase</Label>
-              <Controller
-                name="phase_id"
-                control={control}
-                rules={{ required: true }}
-                render={({ field }) => (
-                  <Select
-                    onValueChange={field.onChange}
-                    value={field.value}
-                  >
-                    <SelectTrigger className="mt-2">
-                      <SelectValue placeholder="Select Phase" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {phases.map((phase) => (
-                        <SelectItem
-                          key={phase.phase_id}
-                          value={String(phase.phase_id)}
-                        >
-                          {phase.phase_name}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                )}
-              />
+              <Label>Phases</Label>
+              <div className="mt-2 grid grid-cols-2 gap-2 border rounded-md p-3">
+                {[1, 2, 3, 4, 5, 6, 7, 8].map(phaseId => (
+                  <div key={phaseId} className="flex items-center space-x-2">
+                    <Checkbox 
+                      id={`phase-${phaseId}`}
+                      checked={selectedPhases.includes(phaseId)}
+                      onCheckedChange={() => handlePhaseChange(phaseId)}
+                    />
+                    <Label htmlFor={`phase-${phaseId}`} className="cursor-pointer">
+                      Phase {phaseId}
+                    </Label>
+                  </div>
+                ))}
+              </div>
               {errors.phase_id && (
-                <p className="text-red-500">Phase is required</p>
+                <p className="text-red-500">At least one phase must be selected</p>
               )}
             </div>
 

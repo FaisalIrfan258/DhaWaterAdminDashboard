@@ -2,8 +2,38 @@
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 import { Button } from "@/components/ui/button"
 import { Label } from "@/components/ui/label"
+import { Badge } from "@/components/ui/badge"
 
 export function TankerDetailsModal({ open, onClose, tanker }) {
+  // Function to display phases
+  const renderPhases = () => {
+    if (!tanker?.phase_id) return "—";
+    
+    // Handle both array format and TankerPhaseRelations format
+    if (Array.isArray(tanker.phase_id)) {
+      return (
+        <div className="flex flex-wrap gap-1 justify-end">
+          {tanker.phase_id.map(phaseId => (
+            <Badge key={phaseId} variant="outline">Phase {phaseId}</Badge>
+          ))}
+        </div>
+      );
+    } else if (tanker.TankerPhaseRelations && tanker.TankerPhaseRelations.length > 0) {
+      return (
+        <div className="flex flex-wrap gap-1 justify-end">
+          {tanker.TankerPhaseRelations.map(relation => (
+            <Badge key={relation.phase_id} variant="outline">
+              {relation.Phase?.phase_name || `Phase ${relation.phase_id}`}
+            </Badge>
+          ))}
+        </div>
+      );
+    }
+    
+    // Fallback to single phase display
+    return tanker.phase_id ? `Phase ${tanker.phase_id}` : "—";
+  };
+
   return (
     <Dialog open={open} onOpenChange={onClose}>
       <DialogContent className="w-full max-w-xl">
@@ -36,12 +66,8 @@ export function TankerDetailsModal({ open, onClose, tanker }) {
             <div className="text-right">{tanker?.availability_status || "—"}</div>
           </div>
           <div className="flex items-center justify-between">
-            <Label className="font-medium">Phase:</Label>
-            <div className="text-right">
-              {tanker?.TankerPhaseRelations && tanker.TankerPhaseRelations[0]?.Phase?.phase_name 
-                ? `${tanker.TankerPhaseRelations[0].Phase.phase_name}`
-                : "—"}
-            </div>
+            <Label className="font-medium">Phases:</Label>
+            {renderPhases()}
           </div>
           <div className="flex items-center justify-between">
             <Label className="font-medium">Assigned Driver:</Label>

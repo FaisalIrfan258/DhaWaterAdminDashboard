@@ -122,7 +122,7 @@ export default function TankersPage() {
         price_per_liter: data.price_per_liter,
         cost: data.cost,
         assigned_driver_id: data.assigned_driver_id ? Number.parseInt(data.assigned_driver_id) : null,
-        phase_id: Number.parseInt(data.phase_id),
+        phase_id: data.phase_id, // Now sending an array of phase IDs instead of a single ID
       }
 
       const response = await fetch(`${baseUrl}/api/tankers`, {
@@ -160,7 +160,7 @@ export default function TankersPage() {
         price_per_liter: data.price_per_liter,
         cost: data.cost,
         assigned_driver_id: data.assigned_driver_id ? Number.parseInt(data.assigned_driver_id) : null,
-        phase_id: Number.parseInt(data.phase_id),
+        phase_id: data.phase_id, // Now sending an array of phase IDs instead of a single ID
       }
 
       const response = await fetch(`${baseUrl}/api/tankers/${editingTanker.tanker_id}`, {
