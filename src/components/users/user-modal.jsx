@@ -340,7 +340,7 @@ export function UserModal({
               >
                 <option value="Corporate">Corporate</option>
                 <option value="Civil">Civil</option>
-                <option value="DHAEmployee">DHA Employees</option>
+                <option value="DHA Employee">DHA Employees</option>
 
               </select>
             </div>
