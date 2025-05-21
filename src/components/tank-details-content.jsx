@@ -76,7 +76,7 @@ const TankDetailsContent = () => {
               </div>
               <div className="flex flex-col gap-4 ml-0 md:ml-4">
                 <div className="bg-blue-100 p-4 rounded-xl shadow-sm">
-                  <h3 className="text-lg font-semibold text-blue-800 mb-1">Water Capacity</h3>
+                  <h3 className="text-lg font-semibold text-blue-800 mb-1">Current Volume</h3>
                   <p className="text-3xl font-bold text-blue-600">
                     {waterLevelGallons.toLocaleString()} <span className="text-xl text-blue-500">gallons</span>
                   </p>
