@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -9,9 +9,12 @@ import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import jsPDF from "jspdf";
 import autoTable from "jspdf-autotable";
+import { toast } from "sonner";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 
 export default function ReportsPage() {
   const [activeTab, setActiveTab] = useState("hydrant");
+  const baseUrl = process.env.NEXT_PUBLIC_BASE_URL;
   
   // Hydrant Summary Form State
   const [hydrantData, setHydrantData] = useState({
@@ -65,6 +68,141 @@ export default function ReportsPage() {
     levelAtEnd: "",
     roPlant: "540"
   });
+
+  // Driver Deliveries State
+  const [driverData, setDriverData] = useState({
+    driverId: "",
+    date: new Date().toISOString().split('T')[0], // Default to today
+    deliveries: []
+  });
+  const [drivers, setDrivers] = useState([]);
+  const [isLoadingDrivers, setIsLoadingDrivers] = useState(false);
+  const [isLoadingDeliveries, setIsLoadingDeliveries] = useState(false);
+  
+  // Fetch drivers on component mount
+  useEffect(() => {
+    fetchDrivers();
+  }, []);
+  
+  // Fetch drivers function
+  const fetchDrivers = async () => {
+    setIsLoadingDrivers(true);
+    try {
+      const response = await fetch(`${baseUrl}/api/driver/all`, {
+        headers: {
+          "Content-Type": "application/json",
+        },
+      });
+
+      if (!response.ok) {
+        throw new Error("Failed to fetch drivers");
+      }
+
+      const data = await response.json();
+      setDrivers(data || []);
+    } catch (err) {
+      console.error("Error fetching drivers:", err);
+      toast.error("Failed to load drivers");
+    } finally {
+      setIsLoadingDrivers(false);
+    }
+  };
+  
+  // Fetch driver deliveries
+  const fetchDriverDeliveries = async () => {
+    if (!driverData.driverId) {
+      toast.error("Please select a driver");
+      return;
+    }
+    
+    setIsLoadingDeliveries(true);
+    try {
+      // Fetch bookings and filter by driver and date
+      const response = await fetch(`${baseUrl}/api/bookings/all-bookings`);
+      if (!response.ok) throw new Error("Failed to fetch bookings");
+      
+      const allBookings = await response.json();
+      
+      // Filter bookings by driver ID and date
+      const driverDeliveries = allBookings.filter(booking => 
+        booking.driver_id === parseInt(driverData.driverId) && 
+        booking.scheduled_date.split('T')[0] === driverData.date &&
+        booking.status === "Delivered"
+      );
+      
+      setDriverData({
+        ...driverData,
+        deliveries: driverDeliveries
+      });
+      
+    } catch (err) {
+      console.error("Error fetching driver deliveries:", err);
+      toast.error("Failed to load deliveries");
+    } finally {
+      setIsLoadingDeliveries(false);
+    }
+  };
+  
+  // Generate PDF for driver deliveries
+  const generateDriverDeliveriesPDF = () => {
+    if (driverData.deliveries.length === 0) {
+      toast.error("No deliveries to generate report for");
+      return;
+    }
+    
+    const selectedDriver = drivers.find(driver => driver.driver_id === parseInt(driverData.driverId));
+    if (!selectedDriver) return;
+    
+    const doc = new jsPDF();
+    let yPosition = 20; // Starting position
+    
+    // Title
+    doc.setFontSize(18);
+    doc.text("DRIVER DELIVERY REPORT", 105, yPosition, { align: "center" });
+    doc.setFontSize(12);
+    
+    // Header Info
+    yPosition = 40;
+    doc.text(`Driver: ${selectedDriver.full_name}`, 20, yPosition);
+    doc.text(`Date: ${driverData.date}`, 150, yPosition);
+    
+    // Deliveries Table
+    const deliveriesData = driverData.deliveries.map(delivery => [
+      delivery.booking_id,
+      delivery.customer_name || "N/A",
+      delivery.tanker_id || "N/A",
+      delivery.scheduled_time || "N/A",
+      delivery.gallons || "N/A",
+      delivery.amount || "N/A"
+    ]);
+    
+    // Calculate totals
+    const totalGallons = driverData.deliveries.reduce((sum, d) => sum + (Number(d.gallons) || 0), 0);
+    const totalAmount = driverData.deliveries.reduce((sum, d) => sum + (Number(d.amount) || 0), 0);
+    
+    // Add total row
+    deliveriesData.push(['Total', '', '', '', totalGallons.toString(), totalAmount.toString()]);
+    
+    yPosition = 50;
+    autoTable(doc, {
+      startY: yPosition,
+      head: [['Booking ID', 'Customer', 'Tanker ID', 'Time', 'Gallons', 'Amount']],
+      body: deliveriesData,
+      theme: 'grid',
+      styles: { fontSize: 10 },
+      headStyles: { fillColor: [200, 200, 200], textColor: [0, 0, 0] }
+    });
+    
+    // Summary
+    yPosition = doc.lastAutoTable.finalY + 20;
+    doc.text(`Total Deliveries: ${driverData.deliveries.length}`, 20, yPosition);
+    yPosition += 10;
+    doc.text(`Total Gallons: ${totalGallons}`, 20, yPosition);
+    yPosition += 10;
+    doc.text(`Total Amount: ${totalAmount}`, 20, yPosition);
+    
+    doc.save(`driver-deliveries-${selectedDriver.full_name}-${driverData.date}.pdf`);
+  };
 
   const updateHydrantDistribution = (index, field, value) => {
     const newDistributions = [...hydrantData.distributions];
@@ -375,9 +513,10 @@ export default function ReportsPage() {
       <h1 className="text-3xl font-bold mb-8">Generate Reports</h1>
       
       <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-        <TabsList className="grid w-full grid-cols-2">
+        <TabsList className="grid w-full grid-cols-3">
           <TabsTrigger value="hydrant">Hydrant Summary</TabsTrigger>
           <TabsTrigger value="shift">Shift Closing Report</TabsTrigger>
+          <TabsTrigger value="driver">Driver Deliveries</TabsTrigger>
         </TabsList>
         
         <TabsContent value="hydrant">
@@ -702,6 +841,117 @@ export default function ReportsPage() {
               </div>
               
               <Button className="w-full" onClick={generateShiftPDF}>Generate Shift Closing Report PDF</Button>
+            </CardContent>
+          </Card>
+        </TabsContent>
+        
+        <TabsContent value="driver">
+          <Card>
+            <CardHeader>
+              <CardTitle>Driver Delivery Report</CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-6">
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label htmlFor="driverSelect">Select Driver</Label>
+                  <Select 
+                    value={driverData.driverId} 
+                    onValueChange={(value) => setDriverData({...driverData, driverId: value})}
+                  >
+                    <SelectTrigger id="driverSelect" disabled={isLoadingDrivers}>
+                      <SelectValue placeholder="Select a driver" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {drivers.map((driver) => (
+                        <SelectItem key={driver.driver_id} value={driver.driver_id.toString()}>
+                          {driver.full_name}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="deliveryDate">Date</Label>
+                  <Input 
+                    id="deliveryDate" 
+                    type="date"
+                    value={driverData.date}
+                    onChange={(e) => setDriverData({...driverData, date: e.target.value})}
+                  />
+                </div>
+              </div>
+              
+              <Button 
+                className="w-full" 
+                onClick={fetchDriverDeliveries}
+                disabled={isLoadingDeliveries || !driverData.driverId}
+              >
+                {isLoadingDeliveries ? "Loading..." : "View Deliveries"}
+              </Button>
+              
+              {driverData.deliveries.length > 0 ? (
+                <div className="space-y-4">
+                  <div className="border rounded-md">
+                    <Table>
+                      <TableHeader>
+                        <TableRow>
+                          <TableHead>Booking ID</TableHead>
+                          <TableHead>Customer</TableHead>
+                          <TableHead>Tanker ID</TableHead>
+                          <TableHead>Time</TableHead>
+                          <TableHead>Gallons</TableHead>
+                          <TableHead>Amount</TableHead>
+                        </TableRow>
+                      </TableHeader>
+                      <TableBody>
+                        {driverData.deliveries.map((delivery) => (
+                          <TableRow key={delivery.booking_id}>
+                            <TableCell>{delivery.booking_id}</TableCell>
+                            <TableCell>{delivery.customer_name || "N/A"}</TableCell>
+                            <TableCell>{delivery.tanker_id || "N/A"}</TableCell>
+                            <TableCell>{delivery.scheduled_time || "N/A"}</TableCell>
+                            <TableCell>{delivery.gallons || "N/A"}</TableCell>
+                            <TableCell>{delivery.amount || "N/A"}</TableCell>
+                          </TableRow>
+                        ))}
+                      </TableBody>
+                    </Table>
+                  </div>
+                  
+                  <div className="bg-muted p-4 rounded-md">
+                    <div className="grid grid-cols-3 gap-4">
+                      <div>
+                        <p className="text-sm font-medium">Total Deliveries</p>
+                        <p className="text-2xl font-bold">{driverData.deliveries.length}</p>
+                      </div>
+                      <div>
+                        <p className="text-sm font-medium">Total Gallons</p>
+                        <p className="text-2xl font-bold">
+                          {driverData.deliveries.reduce((sum, d) => sum + (Number(d.gallons) || 0), 0)}
+                        </p>
+                      </div>
+                      <div>
+                        <p className="text-sm font-medium">Total Amount</p>
+                        <p className="text-2xl font-bold">
+                          {driverData.deliveries.reduce((sum, d) => sum + (Number(d.amount) || 0), 0)}
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+                  
+                  <Button className="w-full" onClick={generateDriverDeliveriesPDF}>
+                    Generate Driver Delivery PDF
+                  </Button>
+                </div>
+              ) : (
+                <div className="text-center p-8 border rounded-md">
+                  {isLoadingDeliveries ? (
+                    <p>Loading deliveries...</p>
+                  ) : (
+                    <p>No deliveries found for the selected driver and date</p>
+                  )}
+                </div>
+              )}
             </CardContent>
           </Card>
         </TabsContent>
