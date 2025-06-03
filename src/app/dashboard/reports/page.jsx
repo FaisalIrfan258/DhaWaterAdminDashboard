@@ -18,7 +18,7 @@ export default function ReportsPage() {
   
   // Hydrant Summary Form State
   const [hydrantData, setHydrantData] = useState({
-    date: "",
+    date: new Date().toISOString().split('T')[0], // Default to today
     startingLevel: "",
     distributions: [
       { name: "SHIFT A", gallons: "", cashSale: "", creditSale: "" },
@@ -51,7 +51,7 @@ export default function ReportsPage() {
 
   // Shift Closing Form State
   const [shiftData, setShiftData] = useState({
-    date: "",
+    date: new Date().toISOString().split('T')[0], // Default to today
     shiftTiming: "03 PM To 11 PM",
     levelAtStart: "",
     outstandingCRs: "NIL",
@@ -72,7 +72,8 @@ export default function ReportsPage() {
   // Driver Deliveries State
   const [driverData, setDriverData] = useState({
     driverId: "",
-    date: new Date().toISOString().split('T')[0], // Default to today
+    startDate: new Date().toISOString().split('T')[0], // Default to today
+    endDate: new Date().toISOString().split('T')[0], // Default to today
     deliveries: []
   });
   const [drivers, setDrivers] = useState([]);
@@ -117,23 +118,20 @@ export default function ReportsPage() {
     
     setIsLoadingDeliveries(true);
     try {
-      // Fetch bookings and filter by driver and date
-      const response = await fetch(`${baseUrl}/api/bookings/all-bookings`);
-      if (!response.ok) throw new Error("Failed to fetch bookings");
+      const response = await fetch(`${baseUrl}/api/driver/delivery-report/${driverData.driverId}?start_date=${driverData.startDate}&end_date=${driverData.endDate}`);
       
-      const allBookings = await response.json();
+      if (!response.ok) throw new Error("Failed to fetch deliveries");
       
-      // Filter bookings by driver ID and date
-      const driverDeliveries = allBookings.filter(booking => 
-        booking.driver_id === parseInt(driverData.driverId) && 
-        booking.scheduled_date.split('T')[0] === driverData.date &&
-        booking.status === "Delivered"
-      );
+      const responseData = await response.json();
       
-      setDriverData({
-        ...driverData,
-        deliveries: driverDeliveries
-      });
+      if (responseData.status === "success" && Array.isArray(responseData.data)) {
+        setDriverData({
+          ...driverData,
+          deliveries: responseData.data || []
+        });
+      } else {
+        throw new Error("Invalid response format");
+      }
       
     } catch (err) {
       console.error("Error fetching driver deliveries:", err);
@@ -153,6 +151,19 @@ export default function ReportsPage() {
     const selectedDriver = drivers.find(driver => driver.driver_id === parseInt(driverData.driverId));
     if (!selectedDriver) return;
     
+    // Format dates for display
+    const startDateFormatted = new Date(driverData.startDate).toLocaleDateString('en-US', {
+      year: 'numeric', 
+      month: 'short', 
+      day: 'numeric'
+    });
+    
+    const endDateFormatted = new Date(driverData.endDate).toLocaleDateString('en-US', {
+      year: 'numeric', 
+      month: 'short', 
+      day: 'numeric'
+    });
+    
     const doc = new jsPDF();
     let yPosition = 20; // Starting position
     
@@ -164,29 +175,32 @@ export default function ReportsPage() {
     // Header Info
     yPosition = 40;
     doc.text(`Driver: ${selectedDriver.full_name}`, 20, yPosition);
-    doc.text(`Date: ${driverData.date}`, 150, yPosition);
+    doc.text(`Period: ${startDateFormatted} to ${endDateFormatted}`, 140, yPosition);
     
     // Deliveries Table
-    const deliveriesData = driverData.deliveries.map(delivery => [
-      delivery.booking_id,
-      delivery.customer_name || "N/A",
-      delivery.tanker_id || "N/A",
-      delivery.scheduled_time || "N/A",
-      delivery.gallons || "N/A",
-      delivery.amount || "N/A"
-    ]);
-    
-    // Calculate totals
-    const totalGallons = driverData.deliveries.reduce((sum, d) => sum + (Number(d.gallons) || 0), 0);
-    const totalAmount = driverData.deliveries.reduce((sum, d) => sum + (Number(d.amount) || 0), 0);
+    const deliveriesData = driverData.deliveries.map(delivery => {
+      const customer = delivery.Customer || {};
+      const address = customer.street_address ? 
+        `${customer.street_address}, Phase ${customer.Phase?.phase_name || 'N/A'}` : 
+        `Phase ${customer.Phase?.phase_name || 'N/A'}`;
+        
+      return [
+        delivery.booking_id,
+        customer.full_name || "N/A",
+        delivery.Tanker?.tanker_name || "N/A",
+        delivery.scheduled_date || "N/A",
+        address,
+        delivery.status || "N/A"
+      ];
+    });
     
     // Add total row
-    deliveriesData.push(['Total', '', '', '', totalGallons.toString(), totalAmount.toString()]);
+    deliveriesData.push(['Total Deliveries: ' + driverData.deliveries.length, '', '', '', '', '']);
     
     yPosition = 50;
     autoTable(doc, {
       startY: yPosition,
-      head: [['Booking ID', 'Customer', 'Tanker ID', 'Time', 'Gallons', 'Amount']],
+      head: [['Booking ID', 'Customer', 'Tanker', 'Date', 'Address', 'Status']],
       body: deliveriesData,
       theme: 'grid',
       styles: { fontSize: 10 },
@@ -195,13 +209,9 @@ export default function ReportsPage() {
     
     // Summary
     yPosition = doc.lastAutoTable.finalY + 20;
-    doc.text(`Total Deliveries: ${driverData.deliveries.length}`, 20, yPosition);
-    yPosition += 10;
-    doc.text(`Total Gallons: ${totalGallons}`, 20, yPosition);
-    yPosition += 10;
-    doc.text(`Total Amount: ${totalAmount}`, 20, yPosition);
+    doc.text(`Report Generated: ${new Date().toLocaleDateString()}`, 20, yPosition);
     
-    doc.save(`driver-deliveries-${selectedDriver.full_name}-${driverData.date}.pdf`);
+    doc.save(`driver-deliveries-${selectedDriver.full_name}-${startDateFormatted}-to-${endDateFormatted}.pdf`.replace(/\s+/g, '_').replace(/,/g, ''));
   };
 
   const updateHydrantDistribution = (index, field, value) => {
@@ -220,6 +230,13 @@ export default function ReportsPage() {
     const doc = new jsPDF();
     let yPosition = 20; // Starting position
     
+    // Format date for display
+    const formattedDate = new Date(hydrantData.date).toLocaleDateString('en-US', {
+      year: 'numeric', 
+      month: 'long', 
+      day: 'numeric'
+    });
+    
     // Title
     doc.setFontSize(18);
     doc.text("HYDRANT SUMMARY", 105, yPosition, { align: "center" });
@@ -228,7 +245,7 @@ export default function ReportsPage() {
     // Header Info
     yPosition = 40;
     doc.text(`1. Level at 7 AM Starting: ${hydrantData.startingLevel}`, 20, yPosition);
-    doc.text(`DATE: ${hydrantData.date}`, 150, yPosition);
+    doc.text(`DATE: ${formattedDate}`, 150, yPosition);
     
     yPosition = 50;
     doc.text("2. Water Distribution", 20, yPosition);
@@ -388,6 +405,13 @@ export default function ReportsPage() {
     const doc = new jsPDF();
     let yPosition = 20; // Starting position
     
+    // Format date for display
+    const formattedDate = new Date(shiftData.date).toLocaleDateString('en-US', {
+      year: 'numeric', 
+      month: 'long', 
+      day: 'numeric'
+    });
+    
     // Header
     doc.setFontSize(14);
     doc.text("Defence Housing Authority Services – Karachi", 105, yPosition, { align: "center" });
@@ -421,7 +445,7 @@ export default function ReportsPage() {
     doc.rect(20, yPosition, 50, 15);
     doc.text("Date:", 25, yPosition + 10);
     doc.rect(20, yPosition + 15, 50, 15);
-    doc.text(shiftData.date, 25, yPosition + 25);
+    doc.text(formattedDate, 25, yPosition + 25);
     
     // Shift Timing Box
     yPosition = 110;
@@ -530,9 +554,9 @@ export default function ReportsPage() {
                   <Label htmlFor="hDate">Date</Label>
                   <Input 
                     id="hDate" 
+                    type="date"
                     value={hydrantData.date}
                     onChange={(e) => setHydrantData({...hydrantData, date: e.target.value})}
-                    placeholder="MM/DD/YYYY"
                   />
                 </div>
                 <div className="space-y-2">
@@ -731,9 +755,9 @@ export default function ReportsPage() {
                   <Label htmlFor="sDate">Date</Label>
                   <Input 
                     id="sDate" 
+                    type="date"
                     value={shiftData.date}
                     onChange={(e) => setShiftData({...shiftData, date: e.target.value})}
-                    placeholder="MM-DD-YYYY"
                   />
                 </div>
                 <div className="space-y-2">
@@ -851,7 +875,7 @@ export default function ReportsPage() {
               <CardTitle>Driver Delivery Report</CardTitle>
             </CardHeader>
             <CardContent className="space-y-6">
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 gap-4">
                 <div className="space-y-2">
                   <Label htmlFor="driverSelect">Select Driver</Label>
                   <Select 
@@ -870,13 +894,25 @@ export default function ReportsPage() {
                     </SelectContent>
                   </Select>
                 </div>
+              </div>
+              
+              <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-2">
-                  <Label htmlFor="deliveryDate">Date</Label>
+                  <Label htmlFor="startDate">Start Date</Label>
                   <Input 
-                    id="deliveryDate" 
+                    id="startDate" 
                     type="date"
-                    value={driverData.date}
-                    onChange={(e) => setDriverData({...driverData, date: e.target.value})}
+                    value={driverData.startDate}
+                    onChange={(e) => setDriverData({...driverData, startDate: e.target.value})}
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="endDate">End Date</Label>
+                  <Input 
+                    id="endDate" 
+                    type="date"
+                    value={driverData.endDate}
+                    onChange={(e) => setDriverData({...driverData, endDate: e.target.value})}
                   />
                 </div>
               </div>
@@ -897,43 +933,52 @@ export default function ReportsPage() {
                         <TableRow>
                           <TableHead>Booking ID</TableHead>
                           <TableHead>Customer</TableHead>
-                          <TableHead>Tanker ID</TableHead>
-                          <TableHead>Time</TableHead>
-                          <TableHead>Gallons</TableHead>
-                          <TableHead>Amount</TableHead>
+                          <TableHead>Tanker</TableHead>
+                          <TableHead>Date</TableHead>
+                          <TableHead>Address</TableHead>
+                          <TableHead>Status</TableHead>
                         </TableRow>
                       </TableHeader>
                       <TableBody>
-                        {driverData.deliveries.map((delivery) => (
-                          <TableRow key={delivery.booking_id}>
-                            <TableCell>{delivery.booking_id}</TableCell>
-                            <TableCell>{delivery.customer_name || "N/A"}</TableCell>
-                            <TableCell>{delivery.tanker_id || "N/A"}</TableCell>
-                            <TableCell>{delivery.scheduled_time || "N/A"}</TableCell>
-                            <TableCell>{delivery.gallons || "N/A"}</TableCell>
-                            <TableCell>{delivery.amount || "N/A"}</TableCell>
-                          </TableRow>
-                        ))}
+                        {driverData.deliveries.map((delivery) => {
+                          const customer = delivery.Customer || {};
+                          const address = customer.street_address ? 
+                            `${customer.street_address}, Phase ${customer.Phase?.phase_name || 'N/A'}` : 
+                            `Phase ${customer.Phase?.phase_name || 'N/A'}`;
+                            
+                          return (
+                            <TableRow key={delivery.booking_id}>
+                              <TableCell>{delivery.booking_id}</TableCell>
+                              <TableCell>{customer.full_name || "N/A"}</TableCell>
+                              <TableCell>{delivery.Tanker?.tanker_name || "N/A"}</TableCell>
+                              <TableCell>{delivery.scheduled_date || "N/A"}</TableCell>
+                              <TableCell>{address}</TableCell>
+                              <TableCell>{delivery.status || "N/A"}</TableCell>
+                            </TableRow>
+                          );
+                        })}
                       </TableBody>
                     </Table>
                   </div>
                   
                   <div className="bg-muted p-4 rounded-md">
-                    <div className="grid grid-cols-3 gap-4">
+                    <div className="grid grid-cols-2 gap-4">
                       <div>
                         <p className="text-sm font-medium">Total Deliveries</p>
                         <p className="text-2xl font-bold">{driverData.deliveries.length}</p>
                       </div>
                       <div>
-                        <p className="text-sm font-medium">Total Gallons</p>
-                        <p className="text-2xl font-bold">
-                          {driverData.deliveries.reduce((sum, d) => sum + (Number(d.gallons) || 0), 0)}
-                        </p>
-                      </div>
-                      <div>
-                        <p className="text-sm font-medium">Total Amount</p>
-                        <p className="text-2xl font-bold">
-                          {driverData.deliveries.reduce((sum, d) => sum + (Number(d.amount) || 0), 0)}
+                        <p className="text-sm font-medium">Date Range</p>
+                        <p className="text-lg font-medium">
+                          {new Date(driverData.startDate).toLocaleDateString('en-US', {
+                            year: 'numeric', 
+                            month: 'short', 
+                            day: 'numeric'
+                          })} to {new Date(driverData.endDate).toLocaleDateString('en-US', {
+                            year: 'numeric', 
+                            month: 'short', 
+                            day: 'numeric'
+                          })}
                         </p>
                       </div>
                     </div>

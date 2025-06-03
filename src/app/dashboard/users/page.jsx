@@ -135,6 +135,7 @@ export default function UsersPage() {
           username: user.username,
           balance: user.balance, // Include balance
           created_at: user.created_at,
+          category: user.category, // Include category field
           WaterTanks: user.WaterTanks.map((tank) => ({
             sensor_id: tank.sensor_id, // Map sensor_id from WaterTanks
             sensor_name: tank.Sensor?.sensor_name || `Sensor ${tank.sensor_id}` // Include sensor name
@@ -483,6 +484,7 @@ export default function UsersPage() {
                   <TableHead>Name</TableHead>
                   <TableHead>Contact</TableHead>
                   <TableHead>Address</TableHead>
+                  <TableHead>Category</TableHead>
                   <TableHead>Sensor</TableHead>
                   <TableHead>Joined</TableHead>
                   <TableHead className="w-[50px]"></TableHead>
@@ -492,7 +494,7 @@ export default function UsersPage() {
                 {paginatedUsers.length === 0 ? (
                   <TableRow>
                     <TableCell
-                      colSpan={7}
+                      colSpan={8}
                       className="text-center py-8 text-muted-foreground"
                     >
                       {searchQuery
@@ -517,6 +519,15 @@ export default function UsersPage() {
                       </TableCell>
                       <TableCell className="max-w-[200px] truncate">
                         {user.home_address}
+                      </TableCell>
+                      <TableCell>
+                        {user.category ? (
+                          <Badge variant="outline" className="bg-green-50 text-green-700 border-green-200">
+                            {user.category}
+                          </Badge>
+                        ) : (
+                          <span className="text-muted-foreground text-sm">N/A</span>
+                        )}
                       </TableCell>
                       <TableCell>
                         {user.WaterTanks && user.WaterTanks.length > 0 ? (

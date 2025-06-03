@@ -27,6 +27,15 @@ export default function LoginPage() {
                   priority
                 />
               </div>
+              <div className="relative h-12 w-12">
+                <Image
+                  src="/assets/suffa.png"
+                  alt="DHA Services Logo"
+                  fill
+                  className="object-contain"
+                  priority
+                />
+              </div>
             </div>
             <h1 className="text-3xl font-bold">HydraTank</h1>
           </div>

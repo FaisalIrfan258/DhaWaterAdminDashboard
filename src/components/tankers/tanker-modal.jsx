@@ -32,7 +32,7 @@ export function TankerModal({ open, onClose, tanker, onSubmit }) {
       tanker_name: "",
       plate_number: "",
       capacity: "",
-      price_per_liter: "",
+      price_per_gallon: "",
       cost: "",
       availability_status: "Available",
       phase_id: [],
@@ -41,17 +41,17 @@ export function TankerModal({ open, onClose, tanker, onSubmit }) {
   })
   const API_BASE_URL = process.env.NEXT_PUBLIC_BASE_URL
 
-  // Watch price_per_liter and capacity to calculate cost
-  const price_per_liter = watch("price_per_liter")
+  // Watch price_per_gallon and capacity to calculate cost
+  const price_per_gallon = watch("price_per_gallon")
   const capacity = watch("capacity")
 
   // Calculate cost when price or capacity changes
   useEffect(() => {
-    if (price_per_liter && capacity) {
-      const calculatedCost = parseFloat(price_per_liter) * parseFloat(capacity)
+    if (price_per_gallon && capacity) {
+      const calculatedCost = parseFloat(price_per_gallon) * parseFloat(capacity)
       setValue("cost", calculatedCost.toFixed(2))
     }
-  }, [price_per_liter, capacity, setValue])
+  }, [price_per_gallon, capacity, setValue])
 
   // Reset form when tanker prop changes
   useEffect(() => {
@@ -64,9 +64,9 @@ export function TankerModal({ open, onClose, tanker, onSubmit }) {
         tanker_name: tanker.tanker_name,
         plate_number: tanker.plate_number,
         capacity: tanker.capacity,
-        price_per_liter: tanker.price_per_liter,
+        price_per_gallon: tanker.price_per_gallon,
         cost: tanker.cost,
-        availability_status: tanker.availability_status,
+        availability_status: tanker.availability_status || tanker.availability || "Available",
         phase_id: phaseIds,
         assigned_driver_id: tanker.assigned_driver_id
           ? String(tanker.assigned_driver_id)
@@ -78,7 +78,7 @@ export function TankerModal({ open, onClose, tanker, onSubmit }) {
         tanker_name: "",
         plate_number: "",
         capacity: "",
-        price_per_liter: "",
+        price_per_gallon: "",
         cost: "",
         availability_status: "Available",
         phase_id: [],
@@ -122,6 +122,11 @@ export function TankerModal({ open, onClose, tanker, onSubmit }) {
     
     // Use the selectedPhases array for phase_id
     data.phase_id = selectedPhases;
+
+    // For PUT requests, we need to handle "availability" vs "availability_status"
+    if (tanker) {
+      data.availability = data.availability_status;
+    }
     
     console.log("Submitting data:", data);
     onSubmit(data);
@@ -182,9 +187,9 @@ export function TankerModal({ open, onClose, tanker, onSubmit }) {
                 className="mt-2"
                 type="number"
                 step="0.01"
-                {...register("price_per_liter", { required: true })}
+                {...register("price_per_gallon", { required: true })}
               />
-              {errors.price_per_liter && (
+              {errors.price_per_gallon && (
                 <p className="text-red-500">
                   Price per Gallon is required
                 </p>

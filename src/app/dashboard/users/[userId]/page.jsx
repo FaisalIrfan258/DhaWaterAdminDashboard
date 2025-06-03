@@ -284,6 +284,14 @@ const UserDetailsPage = () => {
                       </p>
                     </div>
                     <div>
+                      <p className="text-sm text-slate-500">Category</p>
+                      <p className="font-medium text-slate-800">
+                        <Badge variant="outline" className="bg-green-50 text-green-700 border-green-200">
+                          {user.category || "N/A"}
+                        </Badge>
+                      </p>
+                    </div>
+                    <div>
                       <p className="text-sm text-slate-500">Tank Capacity</p>
                       <p className="font-medium text-slate-800">
                         {user.WaterTanks?.[0]?.capacity?.toLocaleString() || "N/A"} Gallons

@@ -54,8 +54,8 @@ export function TankerDetailsModal({ open, onClose, tanker }) {
             <div className="text-right">{tanker?.capacity || "—"}</div>
           </div>
           <div className="flex items-center justify-between">
-            <Label className="font-medium">Price per Liter (Rs.):</Label>
-            <div className="text-right">{tanker?.price_per_liter || "—"}</div>
+            <Label className="font-medium">Price per Gallon (Rs.):</Label>
+            <div className="text-right">{tanker?.price_per_gallon || "—"}</div>
           </div>
           <div className="flex items-center justify-between">
             <Label className="font-medium">Cost (Rs.):</Label>
@@ -63,7 +63,7 @@ export function TankerDetailsModal({ open, onClose, tanker }) {
           </div>
           <div className="flex items-center justify-between">
             <Label className="font-medium">Availability Status:</Label>
-            <div className="text-right">{tanker?.availability_status || "—"}</div>
+            <div className="text-right">{tanker?.availability_status || tanker?.availability || "—"}</div>
           </div>
           <div className="flex items-center justify-between">
             <Label className="font-medium">Phases:</Label>
