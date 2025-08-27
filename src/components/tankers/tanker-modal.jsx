@@ -14,6 +14,7 @@ import {
 } from "@/components/ui/select"
 import { Checkbox } from "@/components/ui/checkbox"
 import { useForm, Controller } from "react-hook-form"
+import { driverService } from "@/services"
 
 export function TankerModal({ open, onClose, tanker, onSubmit }) {
   const [drivers, setDrivers] = useState([])
@@ -39,8 +40,6 @@ export function TankerModal({ open, onClose, tanker, onSubmit }) {
       assigned_driver_id: "",
     },
   })
-  const API_BASE_URL = process.env.NEXT_PUBLIC_BASE_URL
-
   // Watch price_per_gallon and capacity to calculate cost
   const price_per_gallon = watch("price_per_gallon")
   const capacity = watch("capacity")
@@ -91,17 +90,21 @@ export function TankerModal({ open, onClose, tanker, onSubmit }) {
   useEffect(() => {
     if (!open) return
 
-    fetch(`${API_BASE_URL}/api/driver/all`)
-      .then((res) => res.json())
-      .then((data) => {
+    const fetchDrivers = async () => {
+      try {
+        const data = await driverService.getAllDrivers()
         // only keep those with availability_status === "Available"
         const available = data.filter(
           (d) => d.availability_status === "Available"
         )
         setDrivers(available)
         console.log("Available drivers:", available) // Debug log
-      })
-      .catch((err) => console.error("Failed to load drivers", err))
+      } catch (err) {
+        console.error("Failed to load drivers", err)
+      }
+    }
+
+    fetchDrivers()
   }, [open])
 
   // Handle phase selection

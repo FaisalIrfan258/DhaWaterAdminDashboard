@@ -24,6 +24,7 @@ import { Users, Plus, Search, RefreshCw, ChevronLeft, ChevronRight } from "lucid
 import { Input } from "@/components/ui/input";
 import { UserModal } from "@/components/users/user-modal";
 import { toast } from "sonner";
+import { userService, sensorService } from "@/services";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -59,7 +60,7 @@ export default function UsersPage() {
   const [editingUser, setEditingUser] = useState(null);
   const [viewingUser, setViewingUser] = useState(null);
   const [userToDelete, setUserToDelete] = useState(null);
-  const baseUrl = process.env.NEXT_PUBLIC_BASE_URL;
+
   const [isRefreshing, setIsRefreshing] = useState(false);
   const router = useRouter();
   const [isSuper, setIsSuper] = useState(false);
@@ -104,9 +105,7 @@ export default function UsersPage() {
   // Fetch all users
   const fetchUsers = async () => {
     try {
-      const response = await fetch(`${baseUrl}/api/users/`);
-      if (!response.ok) throw new Error("Failed to fetch users");
-      const data = await response.json();
+      const data = await userService.getAllUsers();
       const usersList = data.users || [];
 
       // Sort users by created_at in descending order
@@ -158,9 +157,7 @@ export default function UsersPage() {
   // Fetch sensors for the dropdown
   const fetchSensors = async () => {
     try {
-      const response = await fetch(`${baseUrl}/api/sensor`);
-      if (!response.ok) throw new Error("Failed to fetch sensors");
-      const data = await response.json();
+      const data = await sensorService.getAllSensors();
       setSensors(data.sensors || []);
     } catch (error) {
       console.error("Error fetching sensors:", error);
@@ -202,17 +199,7 @@ export default function UsersPage() {
     const loadingToast = toast.loading("Creating user...");
 
     try {
-      const response = await fetch(`${baseUrl}/api/users/signup`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify(userData),
-      });
-
-      if (!response.ok) {
-        throw new Error("Failed to create user");
-      }
+      await userService.createUser(userData);
 
       toast.dismiss(loadingToast);
       toast.success("User created successfully!", {
@@ -240,17 +227,7 @@ export default function UsersPage() {
     const loadingToast = toast.loading("Updating user...");
 
     try {
-      const response = await fetch(`${baseUrl}/api/customer/update`, {
-        method: "PUT",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify(userData),
-      });
-
-      if (!response.ok) {
-        throw new Error("Failed to update user");
-      }
+      await userService.updateUser(userData);
 
       toast.dismiss(loadingToast);
       toast.success("User updated successfully!", {
@@ -276,15 +253,7 @@ export default function UsersPage() {
   const handleEditUser = async (user) => {
     setIsLoading(true);
     try {
-      const response = await fetch(
-        `${baseUrl}/api/customer/customer-profile?customer_id=${user.customer_id}`
-      );
-
-      if (!response.ok) {
-        throw new Error("Failed to fetch user details");
-      }
-
-      const data = await response.json();
+      const data = await userService.getUserProfile(user.customer_id);
 
       // Format the user data for the modal
       const formattedUser = {
@@ -339,16 +308,7 @@ export default function UsersPage() {
     const loadingToast = toast.loading("Deleting user...");
 
     try {
-      const response = await fetch(
-        `${baseUrl}/api/customer/delete?customer_id=${userToDelete.customer_id}`,
-        {
-          method: "DELETE",
-        }
-      );
-
-      if (!response.ok) {
-        throw new Error("Failed to delete user");
-      }
+      await userService.deleteUser(userToDelete.customer_id);
 
       toast.dismiss(loadingToast);
       toast.success("User deleted successfully");

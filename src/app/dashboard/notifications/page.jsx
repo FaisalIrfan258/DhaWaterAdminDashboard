@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react"
 import { DashboardShell } from "@/components/dashboard/dashboard-shell"
 import { DashboardHeader } from "@/components/dashboard/dashboard-header"
+import { notificationService } from "@/services"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
@@ -58,7 +59,7 @@ export default function NotificationsPage() {
   const [paginatedNotifications, setPaginatedNotifications] = useState([])
   const [totalPages, setTotalPages] = useState(1)
   
-  const baseUrl = process.env.NEXT_PUBLIC_BASE_URL
+
 
   useEffect(() => {
     // Access the admin_id cookie on the client side
@@ -103,17 +104,7 @@ export default function NotificationsPage() {
   const fetchNotifications = async () => {
     setLoading(true)
     try {
-      const response = await fetch(`${baseUrl}/api/notification/all-notifications`, {
-        headers: {
-          "Content-Type": "application/json",
-        },
-      })
-
-      if (!response.ok) {
-        throw new Error("Failed to fetch notifications")
-      }
-
-      const data = await response.json()
+      const data = await notificationService.getAllNotifications()
       setNotifications(data || [])
       setFilteredNotifications(data || [])
       setError(null)
@@ -132,17 +123,7 @@ export default function NotificationsPage() {
   const fetchSingleNotification = async (id) => {
     try {
       setLoading(true)
-      const response = await fetch(`${baseUrl}/api/notification/single-notification/${id}`, {
-        headers: {
-          "Content-Type": "application/json",
-        },
-      })
-
-      if (!response.ok) {
-        throw new Error("Failed to fetch notification details")
-      }
-
-      const data = await response.json()
+      const data = await notificationService.getNotificationById(id)
       setSelectedNotification(data)
       setIsViewDialogOpen(true)
     } catch (err) {
@@ -202,18 +183,7 @@ export default function NotificationsPage() {
     if (!selectedNotification) return
 
     try {
-      const response = await fetch(
-        `${baseUrl}/api/notification/delete-notification/${selectedNotification.notification_id}`,
-        {
-          method: "DELETE",
-          headers: {
-            "Content-Type": "application/json",
-          },
-        },
-      )
-
-      if (!response.ok) throw new Error("Failed to delete notification")
-
+      await notificationService.deleteNotification(selectedNotification.notification_id)
       setIsDeleteDialogOpen(false)
       toast.success("Notification deleted successfully")
       await fetchNotifications() // Refresh the list
@@ -232,22 +202,10 @@ export default function NotificationsPage() {
 
     try {
       setLoading(true)
-      const response = await fetch(
-        `${baseUrl}/api/notification/update-notification/${selectedNotification.notification_id}`,
-        {
-          method: "PUT",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify({
-            title: editTitle,
-            message: editMessage,
-          }),
-        },
-      )
-
-      if (!response.ok) throw new Error("Failed to update notification")
-
+      await notificationService.updateNotification(selectedNotification.notification_id, {
+        title: editTitle,
+        message: editMessage,
+      })
       toast.success("Notification updated successfully")
       setIsEditDialogOpen(false)
       await fetchNotifications() // Refresh the list
@@ -268,20 +226,11 @@ export default function NotificationsPage() {
 
     try {
       setLoading(true)
-      const response = await fetch(`${baseUrl}/api/notification/create-notification-for-all`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          title: notificationTitle,
-          message: notificationMessage,
-          admin_id: Number.parseInt(adminId),
-        }),
+      await notificationService.createNotificationForAll({
+        title: notificationTitle,
+        message: notificationMessage,
+        admin_id: Number.parseInt(adminId),
       })
-
-      if (!response.ok) throw new Error("Failed to send notification")
-
       toast.success("Notification sent to all customers successfully")
       setNotificationTitle("")
       setNotificationMessage("")
@@ -305,21 +254,12 @@ export default function NotificationsPage() {
 
     try {
       setLoading(true)
-      const response = await fetch(`${baseUrl}/api/notification/create-notification`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          title: notificationTitle,
-          message: notificationMessage,
-          admin_id: Number.parseInt(adminId),
-          customer_id: Number.parseInt(customerId),
-        }),
+      await notificationService.createNotification({
+        title: notificationTitle,
+        message: notificationMessage,
+        admin_id: Number.parseInt(adminId),
+        customer_id: Number.parseInt(customerId),
       })
-
-      if (!response.ok) throw new Error("Failed to send notification")
-
       toast.success("Notification sent to customer successfully")
       setNotificationTitle("")
       setNotificationMessage("")

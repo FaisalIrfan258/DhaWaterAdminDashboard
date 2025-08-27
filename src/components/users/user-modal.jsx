@@ -16,6 +16,7 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Button } from "@/components/ui/button"
 import { useState, useEffect } from "react"
+import { sensorService } from "@/services"
 
 export function UserModal({ 
   isOpen, 
@@ -42,7 +43,6 @@ export function UserModal({
   const [formData, setFormData] = useState(defaultFormData)
   const [sensors, setSensors] = useState([])
   const [isSensorDropdownOpen, setIsSensorDropdownOpen] = useState(false)
-  const baseUrl = process.env.NEXT_PUBLIC_BASE_URL; // Ensure this is set in your environment variables
 
 
   useEffect(() => {
@@ -74,10 +74,7 @@ export function UserModal({
 
   const fetchAvailableSensors = async () => {
     try {
-      const response = await fetch(`${baseUrl}/api/sensor/available-sensors`)
-      if (!response.ok) throw new Error("Failed to fetch available sensors")
-      
-      const data = await response.json()
+      const data = await sensorService.getAvailableSensors()
       // Include both available sensors and the current user's sensor
       const allSensors = data.sensors || []
       const currentSensor = user?.WaterTanks?.[0]?.sensor_id
@@ -367,4 +364,4 @@ export function UserModal({
       </DialogContent>
     </Dialog>
   )
-} 
+}

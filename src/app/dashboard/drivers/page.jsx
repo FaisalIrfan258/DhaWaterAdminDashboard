@@ -38,6 +38,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
 import Cookies from "js-cookie"
+import { driverService } from "@/services"
 
 export default function DriversPage() {
   const [drivers, setDrivers] = useState([])
@@ -74,7 +75,6 @@ export default function DriversPage() {
   const [editStatus, setEditStatus] = useState("")
 
   const [isSuper, setIsSuper] = useState(false)
-  const baseUrl = process.env.NEXT_PUBLIC_BASE_URL
 
   useEffect(() => {
     fetchDrivers()
@@ -118,17 +118,7 @@ export default function DriversPage() {
   const fetchDrivers = async () => {
     setLoading(true)
     try {
-      const response = await fetch(`${baseUrl}/api/driver/all`, {
-        headers: {
-          "Content-Type": "application/json",
-        },
-      })
-
-      if (!response.ok) {
-        throw new Error("Failed to fetch drivers")
-      }
-
-      const data = await response.json()
+      const data = await driverService.getAllDrivers()
       setDrivers(data || [])
       setFilteredDrivers(data || [])
       setError(null)
@@ -146,17 +136,7 @@ export default function DriversPage() {
   const fetchSingleDriver = async (id) => {
     try {
       setLoading(true)
-      const response = await fetch(`${baseUrl}/api/driver/${id}`, {
-        headers: {
-          "Content-Type": "application/json",
-        },
-      })
-
-      if (!response.ok) {
-        throw new Error("Failed to fetch driver details")
-      }
-
-      const data = await response.json()
+      const data = await driverService.getDriverById(id)
       setSelectedDriver(data.data)
       setIsViewDialogOpen(true)
     } catch (err) {
@@ -251,22 +231,14 @@ export default function DriversPage() {
 
     try {
       setLoading(true)
-      const response = await fetch(`${baseUrl}/api/driver/create`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          full_name: fullName,
-          email: email,
-          phone_number: phoneNumber,
-          license_number: licenseNumber,
-          username: username,
-          password: password,
-        }),
+      await driverService.createDriver({
+        full_name: fullName,
+        email: email,
+        phone_number: phoneNumber,
+        license_number: licenseNumber,
+        username: username,
+        password: password,
       })
-
-      if (!response.ok) throw new Error("Failed to create driver")
 
       toast.success("Driver created successfully")
       setFullName("")
@@ -289,15 +261,7 @@ export default function DriversPage() {
     if (!selectedDriver) return
 
     try {
-      const response = await fetch(`${baseUrl}/api/driver/delete/${selectedDriver.driver_id}`, {
-        method: "DELETE",
-        headers: {
-          "Content-Type": "application/json",
-        },
-      })
-
-      if (!response.ok) throw new Error("Failed to delete driver")
-
+      await driverService.deleteDriver(selectedDriver.driver_id)
       setIsDeleteDialogOpen(false)
       toast.success("Driver deleted successfully")
       await fetchDrivers()
@@ -323,22 +287,14 @@ export default function DriversPage() {
 
     try {
       setLoading(true)
-      const response = await fetch(`${baseUrl}/api/driver/update/${selectedDriver.driver_id}`, {
-        method: "PUT",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          full_name: editFullName,
-          email: editEmail,
-          phone_number: editPhoneNumber,
-          license_number: editLicenseNumber,
-          username: editUsername,
-          availability_status: editStatus,
-        }),
+      await driverService.updateDriver(selectedDriver.driver_id, {
+        full_name: editFullName,
+        email: editEmail,
+        phone_number: editPhoneNumber,
+        license_number: editLicenseNumber,
+        username: editUsername,
+        availability_status: editStatus,
       })
-
-      if (!response.ok) throw new Error("Failed to update driver")
 
       toast.success("Driver updated successfully")
       setIsEditDialogOpen(false)

@@ -3,41 +3,33 @@
 import { useEffect, useState } from "react";
 import { Droplet, Truck, Calendar, Users } from "lucide-react";
 import { toast } from 'sonner';
+import { tankerService, requestService, userService, bookingService } from "@/services";
 
 export default function DashboardStats() {
   const [totalTankers, setTotalTankers] = useState(null);
   const [totalPendingRequests, setTotalPendingRequests] = useState(null);
   const [totalUsers, setTotalUsers] = useState(null);
   const [pendingDeliveries, setPendingDeliveries] = useState(0); // State for pending deliveries
-  const baseUrl = process.env.NEXT_PUBLIC_BASE_URL; // Ensure this is set in your environment variables
 
   useEffect(() => {
     const fetchStats = async () => {
       try {
         // Fetch total active tankers
-        const tankersResponse = await fetch(`${baseUrl}/api/tankers/total-tankers`);
-        if (!tankersResponse.ok) throw new Error('Failed to fetch total tankers');
-        const tankersData = await tankersResponse.json();
-        setTotalTankers(tankersData.total_tankers); // Accessing total_tankers from the response
+        const tankersData = await tankerService.getTotalTankers();
+        setTotalTankers(tankersData.total_tankers);
 
         // Fetch total pending requests
-        const requestsResponse = await fetch(`${baseUrl}/api/admin/total-pending-requests`);
-        if (!requestsResponse.ok) throw new Error('Failed to fetch total pending requests');
-        const requestsData = await requestsResponse.json();
-        setTotalPendingRequests(requestsData.total_pending_requests); // Accessing total_pending_requests from the response
+        const requestsData = await requestService.getTotalPendingRequests();
+        setTotalPendingRequests(requestsData.total_pending_requests);
 
         // Fetch total users
-        const usersResponse = await fetch(`${baseUrl}/api/customer/total-users`);
-        if (!usersResponse.ok) throw new Error('Failed to fetch total users');
-        const usersData = await usersResponse.json();
-        setTotalUsers(usersData.total_users); // Accessing total_users from the response
+        const usersData = await userService.getTotalUsers();
+        setTotalUsers(usersData.total_users);
 
         // Fetch all bookings to count pending deliveries
-        const bookingsResponse = await fetch(`${baseUrl}/api/bookings/all-bookings`);
-        if (!bookingsResponse.ok) throw new Error('Failed to fetch bookings');
-        const bookingsData = await bookingsResponse.json();
-        const pendingCount = bookingsData.filter(booking => booking.status === "Pending").length; // Count pending bookings
-        setPendingDeliveries(pendingCount); // Set pending deliveries count
+        const bookingsData = await bookingService.getAllBookings();
+        const pendingCount = bookingsData.filter(booking => booking.status === "Pending").length;
+        setPendingDeliveries(pendingCount);
       } catch (error) {
         console.error('Error fetching stats:', error);
         toast.error('Failed to load stats');
@@ -45,7 +37,7 @@ export default function DashboardStats() {
     };
 
     fetchStats();
-  }, [baseUrl]);
+  }, []);
 
   // Prepare the stats array based on fetched data
   const stats = [

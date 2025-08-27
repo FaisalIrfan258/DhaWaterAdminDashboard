@@ -43,6 +43,8 @@ import {
   SelectItem,
 } from "@/components/ui/select";
 import Cookies from "js-cookie";
+import requestService from "@/services/requestService";
+import notificationService from "@/services/notificationService";
 
 export default function RequestsPage() {
   useUser();
@@ -65,8 +67,6 @@ export default function RequestsPage() {
   const [itemsPerPage, setItemsPerPage] = useState(10);
   const [paginatedRequests, setPaginatedRequests] = useState([]);
   const [totalPages, setTotalPages] = useState(1);
-  
-  const baseUrl = process.env.NEXT_PUBLIC_BASE_URL;
 
   useEffect(() => {
     // Access the admin_id cookie on the client side
@@ -110,17 +110,7 @@ export default function RequestsPage() {
   const fetchRequests = async () => {
     setLoading(true);
     try {
-      const response = await fetch(`${baseUrl}/api/admin/requests`, {
-        headers: {
-          "Content-Type": "application/json",
-        },
-      });
-
-      if (!response.ok) {
-        throw new Error("Failed to fetch requests");
-      }
-
-      const data = await response.json();
+      const data = await requestService.getAllRequests();
       // API returns array directly, not wrapped in requests object
       setRequests(data || []);
       setFilteredRequests(data || []);
@@ -212,30 +202,14 @@ export default function RequestsPage() {
       if (!selectedRequestId || !selectedCustomerId) return;
 
       // Use the specified API for rejection
-      const response = await fetch(
-        `${baseUrl}/api/bookings/reject-request/${selectedRequestId}`,
-        {
-          method: "PUT",
-          headers: {
-            "Content-Type": "application/json",
-          },
-        }
-      );
-
-      if (!response.ok) throw new Error("Failed to reject request");
+      await requestService.rejectRequest(selectedRequestId);
 
       // Send notification with customer_id included
-      await fetch(`${baseUrl}/api/notification/create-notification`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          title: notificationTitle,
-          message: rejectReason,
-          admin_id: adminId,
-          customer_id: selectedCustomerId,
-        }),
+      await notificationService.createNotification({
+        title: notificationTitle,
+        message: rejectReason,
+        admin_id: adminId,
+        customer_id: selectedCustomerId,
       });
 
       setRejectDialogOpen(false);
@@ -281,16 +255,10 @@ export default function RequestsPage() {
 
   const handleSubmit = async () => {
     try {
-      const response = await fetch(`${baseUrl}/api/accept-request`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          request_id: selectedRequestId,
-          admin_id: adminId,
-          customer_id: selectedCustomerId,
-        }),
+      await requestService.acceptRequest({
+        request_id: selectedRequestId,
+        admin_id: adminId,
+        customer_id: selectedCustomerId,
       });
       // Handle response...
     } catch (error) {

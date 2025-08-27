@@ -4,6 +4,7 @@ import { useState, useEffect } from "react";
 import { DashboardShell } from "@/components/dashboard/dashboard-shell";
 import { DashboardHeader } from "@/components/dashboard/dashboard-header";
 import { Button } from "@/components/ui/button";
+import { bookingService } from "@/services";
 import {
   Card,
   CardContent,
@@ -69,7 +70,7 @@ export default function BookingsPage() {
   const [paginatedBookings, setPaginatedBookings] = useState([]);
   const [totalPages, setTotalPages] = useState(1);
   
-  const baseUrl = process.env.NEXT_PUBLIC_BASE_URL;
+
 
   // Check if user is super admin
   useEffect(() => {
@@ -112,9 +113,7 @@ export default function BookingsPage() {
   const fetchBookings = async () => {
     setLoading(true);
     try {
-      const response = await fetch(`${baseUrl}/api/bookings/all-bookings`);
-      if (!response.ok) throw new Error("Failed to fetch bookings");
-      const data = await response.json();
+      const data = await bookingService.getAllBookings();
       // Sort bookings in ascending order by scheduled date
       const sortedData = data.sort(
         (a, b) => new Date(b.scheduled_date) - new Date(a.scheduled_date)
@@ -188,17 +187,7 @@ export default function BookingsPage() {
     }
 
     try {
-      const response = await fetch(
-        `${baseUrl}/api/bookings/delete-booking/${selectedBooking.booking_id}`,
-        {
-          method: "DELETE",
-          headers: {
-            "Content-Type": "application/json",
-          },
-        }
-      );
-
-      if (!response.ok) throw new Error("Failed to delete booking");
+      await bookingService.deleteBooking(selectedBooking.booking_id);
       toast.success("Booking deleted successfully");
       fetchBookings();
     } catch (error) {

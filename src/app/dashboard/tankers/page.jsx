@@ -16,6 +16,7 @@ import { TankerDetailsModal } from "@/components/tankers/tanker-details-modal"
 import { DeleteConfirmationDialog } from "@/components/tankers/delete-confirmation-dialog"
 import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from "@/components/ui/select"
 import Cookies from "js-cookie"
+import { tankerService } from "@/services"
 
 export default function TankersPage() {
   const [tankers, setTankers] = useState([])
@@ -39,7 +40,7 @@ export default function TankersPage() {
   const [paginatedTankers, setPaginatedTankers] = useState([])
   const [totalPages, setTotalPages] = useState(1)
   
-  const baseUrl = process.env.NEXT_PUBLIC_BASE_URL
+
 
   // Check if user is a super admin
   useEffect(() => {
@@ -94,10 +95,7 @@ export default function TankersPage() {
   const fetchTankers = async () => {
     setLoading(true)
     try {
-      const response = await fetch(`${baseUrl}/api/tankers`)
-      if (!response.ok) throw new Error("Failed to fetch tankers")
-
-      const data = await response.json()
+      const data = await tankerService.getAllTankers()
       const sortedTankers = [...data].sort((a, b) => new Date(b.created_at) - new Date(a.created_at))
       setTankers(sortedTankers)
       setFilteredTankers(sortedTankers)
@@ -125,15 +123,7 @@ export default function TankersPage() {
         phase_id: data.phase_id, // Now sending an array of phase IDs instead of a single ID
       }
 
-      const response = await fetch(`${baseUrl}/api/tankers`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify(payload),
-      })
-
-      if (!response.ok) throw new Error("Failed to add tanker")
+      await tankerService.createTanker(payload)
       toast.success("Tanker added successfully")
       fetchTankers() // Refresh the list
       setModalOpen(false)
@@ -163,15 +153,7 @@ export default function TankersPage() {
         phase_id: data.phase_id, // Now sending an array of phase IDs instead of a single ID
       }
 
-      const response = await fetch(`${baseUrl}/api/tankers/${editingTanker.tanker_id}`, {
-        method: "PUT",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify(payload),
-      })
-
-      if (!response.ok) throw new Error("Failed to update tanker")
+      await tankerService.updateTanker(editingTanker.tanker_id, payload)
       toast.success("Tanker updated successfully")
       fetchTankers() // Refresh the list
       setModalOpen(false)
@@ -190,11 +172,7 @@ export default function TankersPage() {
 
     setIsDeleting(true)
     try {
-      const response = await fetch(`${baseUrl}/api/tankers/${deletingTanker.tanker_id}`, {
-        method: "DELETE",
-      })
-
-      if (!response.ok) throw new Error("Failed to delete tanker")
+      await tankerService.deleteTanker(deletingTanker.tanker_id)
       toast.success("Tanker deleted successfully")
       fetchTankers() // Refresh the list
       setDeleteDialogOpen(false)
@@ -210,10 +188,7 @@ export default function TankersPage() {
   // Handle viewing tanker details
   const handleViewDetails = async (tankerId) => {
     try {
-      const response = await fetch(`${baseUrl}/api/tankers/${tankerId}`)
-      if (!response.ok) throw new Error("Failed to fetch tanker details")
-
-      const tanker = await response.json()
+      const tanker = await tankerService.getTankerById(tankerId)
       setViewingTanker(tanker)
       setDetailsModalOpen(true)
     } catch (error) {

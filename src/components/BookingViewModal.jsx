@@ -11,6 +11,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Calendar, User, Truck, FileText } from "lucide-react";
+import { bookingService } from "@/services";
 
 const BookingViewModal = ({ isOpen, onClose, booking }) => {
   const [bookingData, setBookingData] = useState(null);
@@ -22,9 +23,7 @@ const BookingViewModal = ({ isOpen, onClose, booking }) => {
       
       setLoading(true);
       try {
-        const response = await fetch(`${process.env.NEXT_PUBLIC_BASE_URL}/api/bookings/single-booking/${booking.booking_id}`);
-        if (!response.ok) throw new Error("Failed to fetch booking details");
-        const data = await response.json();
+        const data = await bookingService.getBookingById(booking.booking_id);
         setBookingData(data);
       } catch (error) {
         console.error("Error fetching booking details:", error);

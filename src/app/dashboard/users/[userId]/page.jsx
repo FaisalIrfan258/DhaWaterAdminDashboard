@@ -10,6 +10,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { CalendarIcon } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
+import { userService } from "@/services";
 
 import {
   Popover,
@@ -105,11 +106,7 @@ const UserDetailsPage = () => {
     const fetchUserDetails = async () => {
       setLoading(true);
       try {
-        const response = await fetch(
-          `${process.env.NEXT_PUBLIC_BASE_URL}/api/customer/customer-profile?customer_id=${userId}`
-        );
-        if (!response.ok) throw new Error("Failed to fetch user details");
-        const data = await response.json();
+        const data = await userService.getUserProfile(userId);
         setUser(data);
 
         // Check if WaterTanks exist and if WaterTankStatuses has data
@@ -135,11 +132,7 @@ const UserDetailsPage = () => {
 
     const fetchRecentBookings = async () => {
       try {
-        const response = await fetch(
-          `${process.env.NEXT_PUBLIC_BASE_URL}/api/bookings/my-bookings/${userId}`
-        );
-        if (!response.ok) throw new Error("Failed to fetch bookings");
-        const data = await response.json();
+        const data = await userService.getUserBookings(userId);
         setBookings(data);
       } catch (error) {
         console.error("Error fetching bookings:", error);
@@ -162,11 +155,7 @@ const UserDetailsPage = () => {
     const formattedEndDate = format(endDate, "yyyy-MM-dd");
 
     try {
-      const response = await fetch(
-        `${process.env.NEXT_PUBLIC_BASE_URL}/api/tankStatus/hourly-tank-status?customer_id=${userId}&start_date=${formattedStartDate}&end_date=${formattedEndDate}`
-      );
-      if (!response.ok) throw new Error("Failed to fetch tank status");
-      const data = await response.json();
+      const data = await userService.getUserTankStatus(userId, formattedStartDate, formattedEndDate);
       setTankStatus(data);
     } catch (error) {
       console.error("Error fetching tank status:", error);

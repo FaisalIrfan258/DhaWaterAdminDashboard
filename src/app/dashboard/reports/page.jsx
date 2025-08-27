@@ -11,10 +11,11 @@ import jsPDF from "jspdf";
 import autoTable from "jspdf-autotable";
 import { toast } from "sonner";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { driverService } from "@/services";
 
 export default function ReportsPage() {
   const [activeTab, setActiveTab] = useState("hydrant");
-  const baseUrl = process.env.NEXT_PUBLIC_BASE_URL;
+
   
   // Hydrant Summary Form State
   const [hydrantData, setHydrantData] = useState({
@@ -89,17 +90,7 @@ export default function ReportsPage() {
   const fetchDrivers = async () => {
     setIsLoadingDrivers(true);
     try {
-      const response = await fetch(`${baseUrl}/api/driver/all`, {
-        headers: {
-          "Content-Type": "application/json",
-        },
-      });
-
-      if (!response.ok) {
-        throw new Error("Failed to fetch drivers");
-      }
-
-      const data = await response.json();
+      const data = await driverService.getAllDrivers();
       setDrivers(data || []);
     } catch (err) {
       console.error("Error fetching drivers:", err);
@@ -118,11 +109,7 @@ export default function ReportsPage() {
     
     setIsLoadingDeliveries(true);
     try {
-      const response = await fetch(`${baseUrl}/api/driver/delivery-report/${driverData.driverId}?start_date=${driverData.startDate}&end_date=${driverData.endDate}`);
-      
-      if (!response.ok) throw new Error("Failed to fetch deliveries");
-      
-      const responseData = await response.json();
+      const responseData = await driverService.getDriverDeliveryReport(driverData.driverId, driverData.startDate, driverData.endDate);
       
       if (responseData.status === "success" && Array.isArray(responseData.data)) {
         setDriverData({

@@ -4,6 +4,7 @@ import React, { useEffect, useState } from "react";
 import { Modal } from "@/components/ui/modal"; // Adjust the import path as necessary
 import { Button } from "@/components/ui/button"; // Adjust the import path as necessary
 import { toast } from "sonner";
+import { tankerService, bookingService } from "@/services";
 
 const AcceptRequestModal = ({ isOpen, onClose, requestId, customerId, adminId }) => {
   const [tankers, setTankers] = useState([]);
@@ -12,11 +13,8 @@ const AcceptRequestModal = ({ isOpen, onClose, requestId, customerId, adminId })
 
   useEffect(() => {
     const fetchAvailableTankers = async () => {
-      const baseUrl = process.env.NEXT_PUBLIC_BASE_URL; // Ensure this is set in your environment variables
       try {
-        const response = await fetch(`${baseUrl}/api/tankers/available-tankers`);
-        if (!response.ok) throw new Error("Failed to fetch available tankers");
-        const data = await response.json();
+        const data = await tankerService.getAvailableTankers();
         setTankers(data); // Assuming the API returns an array of available tankers
       } catch (error) {
         console.error("Error fetching available tankers:", error);
@@ -42,20 +40,7 @@ const AcceptRequestModal = ({ isOpen, onClose, requestId, customerId, adminId })
     };
 
     try {
-      const baseUrl = process.env.NEXT_PUBLIC_BASE_URL; // Ensure this is set in your environment variables
-      const response = await fetch(`${baseUrl}/api/bookings/create-booking`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify(requestBody),
-      });
-
-      if (!response.ok) {
-        throw new Error("Failed to create booking");
-      }
-
-      const result = await response.json();
+      const result = await bookingService.createBooking(requestBody);
       console.log("Booking created:", result);
       toast.success("Booking created successfully!");
       onClose(); // Close the modal after successful submission
@@ -122,4 +107,4 @@ const AcceptRequestModal = ({ isOpen, onClose, requestId, customerId, adminId })
   );
 };
 
-export default AcceptRequestModal; 
+export default AcceptRequestModal;

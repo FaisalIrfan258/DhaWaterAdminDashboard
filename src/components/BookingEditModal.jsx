@@ -15,6 +15,7 @@ import { Label } from "@/components/ui/label";
 import { toast } from "sonner";
 import Cookies from "js-cookie";
 import { useRouter } from "next/navigation";
+import { tankerService, bookingService } from "@/services";
 import { Calendar, Loader2 } from "lucide-react";
 import { 
   Select,
@@ -64,9 +65,7 @@ const BookingEditModal = ({ isOpen, onClose, booking, onRefresh }) => {
       
       setIsTankersLoading(true);
       try {
-        const response = await fetch(`${process.env.NEXT_PUBLIC_BASE_URL}/api/tankers`);
-        if (!response.ok) throw new Error("Failed to fetch tankers");
-        const data = await response.json();
+        const data = await tankerService.getAllTankers();
         setTankers(data);
       } catch (error) {
         console.error("Error fetching tankers:", error);
@@ -85,9 +84,7 @@ const BookingEditModal = ({ isOpen, onClose, booking, onRefresh }) => {
       
       setIsLoading(true);
       try {
-        const response = await fetch(`${process.env.NEXT_PUBLIC_BASE_URL}/api/bookings/single-booking/${booking.booking_id}`);
-        if (!response.ok) throw new Error("Failed to fetch booking details");
-        const data = await response.json();
+        const data = await bookingService.getBookingById(booking.booking_id);
         setBookingDetails(data);
         
         // Format date for datetime-local input
@@ -144,15 +141,7 @@ const BookingEditModal = ({ isOpen, onClose, booking, onRefresh }) => {
     e.preventDefault();
     setIsSubmitting(true);
     try {
-      const response = await fetch(`${process.env.NEXT_PUBLIC_BASE_URL}/api/bookings/update-booking/${booking.booking_id}`, {
-        method: "PUT",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify(formData), // Send only IDs to backend
-      });
-
-      if (!response.ok) throw new Error("Failed to update booking");
+      await bookingService.updateBooking(booking.booking_id, formData);
       toast.success("Booking updated successfully!");
       onRefresh(); // Refresh the bookings list
       onClose(); // Close the modal
@@ -288,4 +277,4 @@ const BookingEditModal = ({ isOpen, onClose, booking, onRefresh }) => {
   );
 };
 
-export default BookingEditModal; 
+export default BookingEditModal;

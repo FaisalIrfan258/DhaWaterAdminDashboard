@@ -10,6 +10,7 @@ import { Label } from "@/components/ui/label"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { PlusCircle, ChevronLeft, ChevronRight } from "lucide-react"
+import { adminService } from "@/services"
 
 export default function AdminManagementPage() {
   const [fullName, setFullName] = useState("")
@@ -26,8 +27,7 @@ export default function AdminManagementPage() {
   const [paginatedAdmins, setPaginatedAdmins] = useState([])
   const [totalPages, setTotalPages] = useState(1)
 
-  // Define the base URL
-  const baseUrl = process.env.NEXT_PUBLIC_BASE_URL;
+
 
   // Fetch admins on component mount
   useEffect(() => {
@@ -68,8 +68,7 @@ export default function AdminManagementPage() {
   const fetchAdmins = async () => {
     setIsLoading(true);
     try {
-      const response = await fetch(`${baseUrl}/api/superadmin/view-admins`);
-      const data = await response.json();
+      const data = await adminService.getAllAdmins();
       const sortedAdmins = [...data.admins].sort((a, b) => a.full_name.localeCompare(b.full_name));
       setAdmins(sortedAdmins);
     } catch (error) {
@@ -98,16 +97,7 @@ export default function AdminManagementPage() {
     };
 
     try {
-      const response = await fetch(`${baseUrl}/api/superadmin/create-admin`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(payload),
-      });
-
-      if (!response.ok) throw new Error('Failed to create admin');
-
+      await adminService.createAdmin(payload);
       toast.success('Admin created successfully');
       resetForm();
       await fetchAdmins();
@@ -143,16 +133,7 @@ export default function AdminManagementPage() {
     }
 
     try {
-      const response = await fetch(`${baseUrl}/api/superadmin/update-admin`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(payload),
-      });
-
-      if (!response.ok) throw new Error('Failed to update admin');
-
+      await adminService.updateAdmin(payload);
       toast.success('Admin updated successfully');
       resetForm();
       await fetchAdmins();
@@ -176,12 +157,7 @@ export default function AdminManagementPage() {
   const handleDeleteAdmin = async (adminId) => {
     setIsLoading(true);
     try {
-      const response = await fetch(`${baseUrl}/api/superadmin/delete-admin?admin_id=${adminId}`, {
-        method: 'DELETE',
-      });
-
-      if (!response.ok) throw new Error('Failed to delete admin');
-
+      await adminService.deleteAdmin(adminId);
       toast.success('Admin deleted successfully');
       await fetchAdmins();
     } catch (error) {

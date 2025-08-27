@@ -4,6 +4,7 @@ import { useState, useEffect } from "react";
 import { DashboardShell } from "@/components/dashboard/dashboard-shell";
 import { DashboardHeader } from "@/components/dashboard/dashboard-header";
 import { Button } from "@/components/ui/button";
+import { sensorService } from "@/services";
 import {
   Card,
   CardContent,
@@ -70,7 +71,7 @@ export default function DevicesPage() {
   const [paginatedDevices, setPaginatedDevices] = useState([]);
   const [totalPages, setTotalPages] = useState(1);
 
-  const baseUrl = process.env.NEXT_PUBLIC_BASE_URL;
+
 
   // Apply pagination whenever devices or pagination settings change
   useEffect(() => {
@@ -108,11 +109,7 @@ export default function DevicesPage() {
   const fetchDevices = async () => {
     setLoading(true);
     try {
-      const response = await fetch(`${baseUrl}/api/sensor`);
-      if (!response.ok) {
-        throw new Error("Failed to fetch devices");
-      }
-      const data = await response.json();
+      const data = await sensorService.getAllSensors();
       const devicesList = data.sensors || [];
       const sortedDevices = [...devicesList].sort(
         (a, b) => new Date(b.created_at) - new Date(a.created_at)
@@ -155,18 +152,7 @@ export default function DevicesPage() {
   // Add new sensor
   const addSensor = async (sensorData) => {
     try {
-      const response = await fetch(`${baseUrl}/api/sensor`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify(sensorData),
-      });
-
-      if (!response.ok) {
-        throw new Error("Failed to add sensor");
-      }
-
+      await sensorService.createSensor(sensorData);
       // Refresh the devices list
       await fetchDevices();
       return true;
@@ -180,18 +166,7 @@ export default function DevicesPage() {
   // Update existing sensor
   const updateSensor = async (sensorData) => {
     try {
-      const response = await fetch(`${baseUrl}/api/sensor`, {
-        method: "PUT",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify(sensorData),
-      });
-
-      if (!response.ok) {
-        throw new Error("Failed to update sensor");
-      }
-
+      await sensorService.updateSensor(sensorData);
       // Refresh the devices list
       await fetchDevices();
       return true;
@@ -205,17 +180,7 @@ export default function DevicesPage() {
   // Delete sensor
   const deleteSensor = async (sensorId) => {
     try {
-      const response = await fetch(
-        `${baseUrl}/api/sensor?sensor_id=${sensorId}`,
-        {
-          method: "DELETE",
-        }
-      );
-
-      if (!response.ok) {
-        throw new Error("Failed to delete sensor");
-      }
-
+      await sensorService.deleteSensor(sensorId);
       // Refresh the devices list
       await fetchDevices();
       return true;

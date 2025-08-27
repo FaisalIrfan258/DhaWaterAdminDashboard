@@ -14,8 +14,8 @@ import {
   ShieldAlert,
   ShieldCheck,
 } from "lucide-react";
-import Cookies from "js-cookie";
 import { useUser } from "@/context/UserContext";
+import { authService } from "@/services";
 
 export default function LoginForm() {
   const [email, setEmail] = useState("");
@@ -62,73 +62,28 @@ export default function LoginForm() {
     }
 
     setIsLoading(true);
+    setLoginError("");
 
     try {
-      const endpoint =
-        loginType === "superAdmin"
-          ? `${process.env.NEXT_PUBLIC_BASE_URL}/api/superadmin/login`
-          : `${process.env.NEXT_PUBLIC_BASE_URL}/api/admin/login`;
+      const credentials = { email, password };
+      let data;
 
-      const response = await fetch(endpoint, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({ email, password }),
-      });
-
-      if (response.ok) {
-        const data = await response.json();
-
-        // Store admin token and admin ID in cookies
-        Cookies.set("admin_token", data.admin_token, {
-          path: "/",
-          secure: true,
-          sameSite: "Strict",
-        });
-        Cookies.set("admin_id", data.admin_id, {
-          path: "/",
-          secure: true,
-          sameSite: "Strict",
-        });
-        Cookies.set("admin_name", data.full_name, {
-          path: "/",
-          secure: true,
-          sameSite: "Strict",
-        });
-        Cookies.set("admin_email", data.email, {
-          path: "/",
-          secure: true,
-          sameSite: "Strict",
-        });
-        Cookies.set("is_super", data.is_super, {
-          path: "/",
-          secure: true,
-          sameSite: "Strict",
-        });
-
-        // Store user type in cookie
-        Cookies.set("user_type", loginType, {
-          path: "/",
-          secure: true,
-          sameSite: "Strict",
-        });
-
-        // Set user data in context
-        setUser(data);
-
-        // Redirect to dashboard
-        window.location.href = "/dashboard";
+      if (loginType === "superAdmin") {
+        data = await authService.superAdminLogin(credentials);
       } else {
-        const errorData = await response.json().catch(() => ({}));
-        throw new Error(
-          errorData.message || `Login failed with status: ${response.status}`
-        );
+        data = await authService.adminLogin(credentials);
       }
+
+      // Set user data in context
+      setUser(data);
+
+      // Redirect to dashboard
+      router.push("/dashboard");
     } catch (error) {
-      console.error("Login failed:", error);
       setLoginError(
-        error.message || "Failed to login. Please check your credentials."
+        error.response?.data?.message || 
+        error.message || 
+        "Failed to login. Please check your credentials."
       );
     } finally {
       setIsLoading(false);

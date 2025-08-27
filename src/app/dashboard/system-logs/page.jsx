@@ -3,6 +3,7 @@
 import { useState, useEffect } from "react";
 import { DashboardShell } from "@/components/dashboard/dashboard-shell";
 import { DashboardHeader } from "@/components/dashboard/dashboard-header";
+import { auditService } from "@/services";
 import {
   Card,
   CardContent,
@@ -54,7 +55,7 @@ export default function SystemLogsPage() {
   const [paginatedLogs, setPaginatedLogs] = useState([]);
   const [totalPages, setTotalPages] = useState(1);
   
-  const baseUrl = process.env.NEXT_PUBLIC_BASE_URL;
+
 
   // Apply pagination whenever logs or pagination settings change
   useEffect(() => {
@@ -92,9 +93,7 @@ export default function SystemLogsPage() {
   const fetchLogs = async () => {
     setIsLoading(true);
     try {
-      const response = await fetch(`${baseUrl}/api/auditLogs/get-audit-logs`);
-      if (!response.ok) throw new Error("Failed to fetch audit logs");
-      const data = await response.json();
+      const data = await auditService.getAuditLogs();
       setLogs(data);
       setFilteredLogs(data);
     } catch (error) {
@@ -411,4 +410,4 @@ export default function SystemLogsPage() {
       </Dialog>
     </DashboardShell>
   );
-} 
+}

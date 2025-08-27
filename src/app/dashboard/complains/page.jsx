@@ -41,6 +41,7 @@ import {
   SelectItem,
 } from "@/components/ui/select";
 import Cookies from "js-cookie";
+import complaintService from "@/services/complaintService";
 
 export default function ComplaintsPage() {
   useUser();
@@ -60,8 +61,6 @@ export default function ComplaintsPage() {
   const [itemsPerPage, setItemsPerPage] = useState(10);
   const [paginatedComplaints, setPaginatedComplaints] = useState([]);
   const [totalPages, setTotalPages] = useState(1);
-  
-  const baseUrl = process.env.NEXT_PUBLIC_BASE_URL;
 
   useEffect(() => {
     // Access the admin_id cookie on the client side
@@ -105,17 +104,7 @@ export default function ComplaintsPage() {
   const fetchComplaints = async () => {
     setLoading(true);
     try {
-      const response = await fetch(`${baseUrl}/api/complain/all-complains`, {
-        headers: {
-          "Content-Type": "application/json",
-        },
-      });
-
-      if (!response.ok) {
-        throw new Error("Failed to fetch complaints");
-      }
-
-      const data = await response.json();
+      const data = await complaintService.getAllComplaints();
       setComplaints(data || []);
       setFilteredComplaints(data || []);
       setError(null);
@@ -192,23 +181,10 @@ export default function ComplaintsPage() {
     try {
       if (!selectedComplaint || !adminId) return;
 
-      const response = await fetch(
-        `${baseUrl}/api/complain/update-complain-remarks/${selectedComplaint.complain_id}`,
-        {
-          method: "PUT",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify({
-            remarks: remarks,
-            admin_id: adminId,
-          }),
-        }
-      );
-
-      if (!response.ok) throw new Error("Failed to update complaint");
-
-      const data = await response.json();
+      await complaintService.updateComplaintRemarks(selectedComplaint.complain_id, {
+        remarks: remarks,
+        admin_id: adminId,
+      });
 
       setIsUpdateDialogOpen(false);
       toast.success("Complaint updated successfully");

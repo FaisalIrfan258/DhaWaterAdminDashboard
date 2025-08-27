@@ -6,13 +6,13 @@ import { WaterTank } from '@/components/water-tank';
 import { Skeleton } from '@/components/ui/skeleton';
 import { motion } from 'framer-motion';
 import { Badge } from '@/components/ui/badge';
+import { tankService } from '@/services';
 
 const TankDetailsContent = () => {
   const [waterLevel, setWaterLevel] = useState(0);
   const [waterLevelGallons, setWaterLevelGallons] = useState(0);
   const [waterLevelFeet, setWaterLevelFeet] = useState(0);
   const [loading, setLoading] = useState(true);
-  const baseUrl = process.env.NEXT_PUBLIC_BASE_URL; // Ensure this is set in your environment variables
   const totalCapacity = 1285777; // Total capacity in US gallons
   const totalHeight = 15; // Total height in feet
   const gallonsPerFeet = totalCapacity / totalHeight; // Calculation for gallons per feet
@@ -21,20 +21,12 @@ const TankDetailsContent = () => {
     const fetchTankData = async () => {
       try {
         // Fetch water level percentage
-        const levelResponse = await fetch(`${baseUrl}/api/tankStatus/latest-water-level/?tank_id=2`);
-        if (!levelResponse.ok) {
-          throw new Error('Failed to fetch tank level data');
-        }
-        const levelData = await levelResponse.json();
+        const levelData = await tankService.getLatestWaterLevel(2);
         const level = levelData.water_level || 0;
         setWaterLevel(level);
         
         // Fetch water level in gallons
-        const gallonsResponse = await fetch(`${baseUrl}/api/tankStatus/latest-water-level-gallons/?tank_id=2`);
-        if (!gallonsResponse.ok) {
-          throw new Error('Failed to fetch tank gallons data');
-        }
-        const gallons = await gallonsResponse.text();
+        const gallons = await tankService.getLatestWaterLevelGallons(2);
         setWaterLevelGallons(parseInt(gallons) || 0);
         
         // Calculate water level in feet
@@ -48,7 +40,7 @@ const TankDetailsContent = () => {
     };
 
     fetchTankData();
-  }, [baseUrl]);
+  }, []);
 
   return (
     <div className="p-6 space-y-6">
