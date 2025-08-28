@@ -10,14 +10,16 @@ class AuthService {
    * @returns {Promise<Object>} Login response
    */
   async adminLogin(credentials) {
-    const response = await post('/api/admin/login', credentials);
-    
-    // Store auth data in cookies
-    if (response.token) {
-      this.storeAuthData(response);
+    try {
+      const response = await post('/api/admin/login', credentials);
+      
+      // Store auth data in cookies with correct field names
+      this.storeAuthDataFromAPI(response, 'admin');
+      
+      return response;
+    } catch (error) {
+      throw new Error(error.response?.data?.message || error.message || "Login failed. Please check your credentials.");
     }
-    
-    return response;
   }
 
   /**
@@ -28,14 +30,16 @@ class AuthService {
    * @returns {Promise<Object>} Login response
    */
   async superAdminLogin(credentials) {
-    const response = await post('/api/superadmin/login', credentials);
-    
-    // Store auth data in cookies
-    if (response.token) {
-      this.storeAuthData(response);
+    try {
+      const response = await post('/api/superadmin/login', credentials);
+      
+      // Store auth data in cookies with correct field names
+      this.storeAuthDataFromAPI(response, 'superAdmin');
+      
+      return response;
+    } catch (error) {
+      throw new Error(error.response?.data?.message || error.message || "Login failed. Please check your credentials.");
     }
-    
-    return response;
   }
 
   /**
@@ -70,6 +74,25 @@ class AuthService {
     if (authData.user_type) {
       Cookies.set('user_type', authData.user_type, cookieOptions);
     }
+  }
+
+  /**
+   * Store authentication data from API response with correct field mapping
+   */
+  storeAuthDataFromAPI(apiData, loginType) {
+    const cookieOptions = {
+      path: "/",
+      secure: process.env.NODE_ENV === 'production',
+      sameSite: "Strict",
+    };
+
+    // Store admin token and admin ID in cookies
+    Cookies.set("admin_token", apiData.admin_token, cookieOptions);
+    Cookies.set("user_id", apiData.admin_id, cookieOptions);
+    Cookies.set("user_name", apiData.full_name, cookieOptions);
+    Cookies.set("user_email", apiData.email, cookieOptions);
+    Cookies.set("is_super_admin", apiData.is_super, cookieOptions);
+    Cookies.set("user_type", loginType, cookieOptions);
   }
 
   /**

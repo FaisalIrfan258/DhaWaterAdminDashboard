@@ -73,7 +73,7 @@ export default function LoginForm() {
       } else {
         data = await authService.adminLogin(credentials);
       }
-
+      
       // Set user data in context
       setUser(data);
 
@@ -81,9 +81,7 @@ export default function LoginForm() {
       router.push("/dashboard");
     } catch (error) {
       setLoginError(
-        error.response?.data?.message || 
-        error.message || 
-        "Failed to login. Please check your credentials."
+        error.message || "Login failed. Please check your credentials."
       );
     } finally {
       setIsLoading(false);
