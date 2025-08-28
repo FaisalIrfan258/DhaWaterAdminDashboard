@@ -15,16 +15,18 @@ import {
   ChartNoAxesCombined,
   NotebookPen,
 } from "lucide-react";
-import Cookies from "js-cookie";
+import { useUser } from "@/context/UserContext";
 
 const CustomSidebar = () => {
   const pathname = usePathname();
-  const [user, setUser] = useState(null);
+  const { user } = useUser();
+  const [userState, setUserState] = useState(null);
 
   useEffect(() => {
-    const userType = Cookies.get("user_type");
-    setUser({ isSuper: userType === "superAdmin" });
-  }, []);
+    if (user?.user_type) {
+      setUserState({ isSuper: user.user_type === "superAdmin" });
+    }
+  }, [user]);
 
   const baseNavItems = [
     { title: "Dashboard", icon: LayoutDashboard, href: "/dashboard" },
@@ -37,11 +39,11 @@ const CustomSidebar = () => {
     { title: "Complains", icon: NotebookPen, href: "/dashboard/complains" },
   ];
 
-  if (user === null) {
+  if (userState === null) {
     return null; // or a loading spinner
   }
 
-  const navItems = user.isSuper
+  const navItems = userState.isSuper
     ? [
         ...baseNavItems,
         { title: "Reports and Analytics", icon: ChartNoAxesCombined, href: "/dashboard/reports" },

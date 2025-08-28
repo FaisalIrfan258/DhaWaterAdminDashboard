@@ -1,5 +1,4 @@
 import { post } from '../lib/apiClient';
-import Cookies from 'js-cookie';
 
 class AuthService {
   /**
@@ -13,7 +12,7 @@ class AuthService {
     try {
       const response = await post('/api/admin/login', credentials);
       
-      // Store auth data in cookies with correct field names
+      // Store auth data in localStorage
       this.storeAuthDataFromAPI(response, 'admin');
       
       return response;
@@ -33,7 +32,7 @@ class AuthService {
     try {
       const response = await post('/api/superadmin/login', credentials);
       
-      // Store auth data in cookies with correct field names
+      // Store auth data in localStorage
       this.storeAuthDataFromAPI(response, 'superAdmin');
       
       return response;
@@ -42,79 +41,37 @@ class AuthService {
     }
   }
 
-  /**
-   * Store authentication data in cookies
-   * @param {Object} authData - Authentication response data
-   */
-  storeAuthData(authData) {
-    const cookieOptions = {
-      expires: 7, // 7 days
-      secure: process.env.NODE_ENV === 'production',
-      sameSite: 'strict'
-    };
 
-    Cookies.set('admin_token', authData.token, cookieOptions);
-    
-    if (authData.admin_id) {
-      Cookies.set('user_id', authData.admin_id.toString(), cookieOptions);
-    }
-    
-    if (authData.admin_name) {
-      Cookies.set('user_name', authData.admin_name, cookieOptions);
-    }
-    
-    if (authData.admin_email) {
-      Cookies.set('user_email', authData.admin_email, cookieOptions);
-    }
-    
-    if (authData.is_super_admin !== undefined) {
-      Cookies.set('is_super_admin', authData.is_super_admin.toString(), cookieOptions);
-    }
-    
-    if (authData.user_type) {
-      Cookies.set('user_type', authData.user_type, cookieOptions);
-    }
-  }
 
   /**
    * Store authentication data from API response with correct field mapping
    */
   storeAuthDataFromAPI(apiData, loginType) {
-    const cookieOptions = {
-      path: "/",
-      secure: process.env.NODE_ENV === 'production',
-      sameSite: "Strict",
+    // Handle different token field names based on login type
+    const token = apiData.admin_token || apiData.access_token;
+    
+    const userData = {
+      admin_token: token,
+      user_id: apiData.admin_id.toString(),
+      user_name: apiData.full_name,
+      user_email: apiData.email,
+      is_super_admin: apiData.is_super.toString(),
+      user_type: loginType
     };
-
-    // Store admin token and admin ID in cookies
-    Cookies.set("admin_token", apiData.admin_token, cookieOptions);
-    Cookies.set("user_id", apiData.admin_id, cookieOptions);
-    Cookies.set("user_name", apiData.full_name, cookieOptions);
-    Cookies.set("user_email", apiData.email, cookieOptions);
-    Cookies.set("is_super_admin", apiData.is_super, cookieOptions);
-    Cookies.set("user_type", loginType, cookieOptions);
+    
+    // Store in localStorage
+    if (typeof window !== 'undefined') {
+      localStorage.setItem('auth_data', JSON.stringify(userData));
+    }
   }
 
   /**
-   * Logout user by clearing all auth cookies
+   * Logout user by clearing auth data
    */
   logout() {
-    const authCookies = [
-      'admin_token',
-      'user_id',
-      'user_name',
-      'user_email',
-      'is_super_admin',
-      'user_type'
-    ];
-
-    authCookies.forEach(cookie => {
-      Cookies.remove(cookie);
-    });
-
-    // Redirect to login page
+    // Clear localStorage
     if (typeof window !== 'undefined') {
-      window.location.href = '/login';
+      localStorage.removeItem('auth_data');
     }
   }
 
@@ -123,21 +80,29 @@ class AuthService {
    * @returns {boolean} Authentication status
    */
   isAuthenticated() {
-    return !!Cookies.get('admin_token');
+    if (typeof window === 'undefined') return false;
+    const authData = localStorage.getItem('auth_data');
+    return !!authData && !!JSON.parse(authData).admin_token;
   }
 
   /**
-   * Get current user data from cookies
+   * Get current user data from localStorage
    * @returns {Object} User data
    */
   getCurrentUser() {
+    if (typeof window === 'undefined') return null;
+    
+    const authData = localStorage.getItem('auth_data');
+    if (!authData) return null;
+    
+    const userData = JSON.parse(authData);
     return {
-      id: Cookies.get('user_id'),
-      name: Cookies.get('user_name'),
-      email: Cookies.get('user_email'),
-      isSuperAdmin: Cookies.get('is_super_admin') === 'true',
-      userType: Cookies.get('user_type'),
-      token: Cookies.get('admin_token')
+      id: userData.user_id,
+      name: userData.user_name,
+      email: userData.user_email,
+      isSuperAdmin: userData.is_super_admin === 'true',
+      user_type: userData.user_type,
+      token: userData.admin_token
     };
   }
 
@@ -146,7 +111,8 @@ class AuthService {
    * @returns {boolean} Super admin status
    */
   isSuperAdmin() {
-    return Cookies.get('is_super_admin') === 'true';
+    const user = this.getCurrentUser();
+    return user ? user.isSuperAdmin : false;
   }
 }
 

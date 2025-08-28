@@ -31,11 +31,12 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog"
-import Cookies from "js-cookie"
+import { useUser } from "@/context/UserContext"
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"
 import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from "@/components/ui/select"
 
 export default function NotificationsPage() {
+  const { user } = useUser()
   const [adminId, setAdminId] = useState(null)
   const [notifications, setNotifications] = useState([])
   const [filteredNotifications, setFilteredNotifications] = useState([])
@@ -62,11 +63,12 @@ export default function NotificationsPage() {
 
 
   useEffect(() => {
-    // Access the admin_id cookie on the client side
-    const id = Cookies.get("admin_id")
-    setAdminId(id)
+    // Get admin_id from UserContext
+    if (user?.id) {
+      setAdminId(user.id)
+    }
     fetchNotifications()
-  }, [])
+  }, [user])
 
   // Apply pagination whenever notifications or pagination settings change
   useEffect(() => {

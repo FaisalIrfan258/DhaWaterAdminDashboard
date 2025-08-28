@@ -1,7 +1,11 @@
-import Cookies from 'js-cookie'
-
 export const fetchWithAuth = async (url, options = {}) => {
-  const token = Cookies.get('admin_token')
+  const userData = localStorage.getItem('userData')
+  let token = null
+  
+  if (userData) {
+    const parsedData = JSON.parse(userData)
+    token = parsedData.token
+  }
   
   if (!token) {
     // Redirect to login if token is missing
@@ -25,4 +29,4 @@ export const fetchWithAuth = async (url, options = {}) => {
       ...options.headers,
     },
   })
-} 
+}

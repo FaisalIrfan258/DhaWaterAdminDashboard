@@ -74,11 +74,14 @@ export default function LoginForm() {
         data = await authService.adminLogin(credentials);
       }
       
-      // Set user data in context
-      setUser(data);
+      // Get the properly formatted user data from authService
+      const userData = authService.getCurrentUser();
+      setUser(userData);
 
       // Redirect to dashboard
-      router.push("/dashboard");
+      if (typeof window !== 'undefined') {
+        window.location.href = '/dashboard';
+      }
     } catch (error) {
       setLoginError(
         error.message || "Login failed. Please check your credentials."

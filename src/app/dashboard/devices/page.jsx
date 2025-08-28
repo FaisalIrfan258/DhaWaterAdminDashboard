@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import { useUser } from "@/context/UserContext"; // Add this missing import
 import { DashboardShell } from "@/components/dashboard/dashboard-shell";
 import { DashboardHeader } from "@/components/dashboard/dashboard-header";
 import { Button } from "@/components/ui/button";
@@ -49,9 +50,9 @@ import {
   SelectContent,
   SelectItem,
 } from "@/components/ui/select";
-import Cookies from "js-cookie";
 
 export default function DevicesPage() {
+  const { user } = useUser();
   const [devices, setDevices] = useState([]);
   const [filteredDevices, setFilteredDevices] = useState([]);
   const [searchQuery, setSearchQuery] = useState("");
@@ -71,12 +72,45 @@ export default function DevicesPage() {
   const [paginatedDevices, setPaginatedDevices] = useState([]);
   const [totalPages, setTotalPages] = useState(1);
 
-
-
   // Apply pagination whenever devices or pagination settings change
   useEffect(() => {
     paginateDevices();
   }, [filteredDevices, currentPage, itemsPerPage]);
+
+  // Combined effect to handle filtering when devices, searchQuery, or statusFilter change
+  useEffect(() => {
+    let filtered = [...devices];
+    
+    // Apply status filter first
+    if (statusFilter !== "All") {
+      filtered = filtered.filter((device) => device.status === statusFilter);
+    }
+    
+    // Apply search filter
+    if (searchQuery && searchQuery.trim()) {
+      const query = searchQuery.toLowerCase();
+      filtered = filtered.filter(
+        (device) =>
+          device.sensor_name?.toLowerCase().includes(query) ||
+          device.sensor_id?.toString().includes(query) ||
+          device.sensor_type?.toLowerCase().includes(query) ||
+          device.location?.toLowerCase().includes(query)
+      );
+    }
+    
+    setFilteredDevices(filtered);
+  }, [devices, searchQuery, statusFilter]);
+
+  // Check if user is super admin
+  useEffect(() => {
+    if (user?.user_type) {
+      setIsSuper(user.user_type === "superAdmin");
+    }
+  }, [user]);
+
+  useEffect(() => {
+    fetchDevices();
+  }, []);
 
   // Paginate devices function
   const paginateDevices = () => {
@@ -115,7 +149,6 @@ export default function DevicesPage() {
         (a, b) => new Date(b.created_at) - new Date(a.created_at)
       );
       setDevices(sortedDevices);
-      setFilteredDevices(sortedDevices);
       setError(null);
     } catch (err) {
       console.error("Error fetching devices:", err);
@@ -128,25 +161,10 @@ export default function DevicesPage() {
     }
   };
 
-  // Handle search
+  // Handle search - only update search query, let useEffect handle filtering
   const handleSearch = (e) => {
-    const query = e.target.value.toLowerCase();
+    const query = e.target.value;
     setSearchQuery(query);
-
-    if (!query.trim()) {
-      setFilteredDevices(devices);
-      return;
-    }
-
-    const filtered = devices.filter(
-      (device) =>
-        device.sensor_name?.toLowerCase().includes(query) ||
-        device.sensor_id?.toString().includes(query) ||
-        device.sensor_type?.toLowerCase().includes(query) ||
-        device.location?.toLowerCase().includes(query)
-    );
-
-    setFilteredDevices(filtered);
   };
 
   // Add new sensor
@@ -191,59 +209,6 @@ export default function DevicesPage() {
     }
   };
 
-  // Example usage in button handlers
-  const handleAddDevice = async () => {
-    const newSensor = {
-      sensor_name: "New sensor",
-      sensor_details: "Acha wala sensor",
-      manufacturing_date: "2025-02-10",
-    };
-    const success = await addSensor(newSensor);
-    if (success) {
-      // Handle success (e.g., show notification)
-    }
-  };
-
-  const handleEditDevice = async (device) => {
-    const updatedSensor = {
-      ...device,
-      sensor_name: "Updated name", // Example update
-    };
-    const success = await updateSensor(updatedSensor);
-    if (success) {
-      // Handle success
-    }
-  };
-
-  const handleDeleteDevice = async (sensorId) => {
-    const success = await deleteSensor(sensorId);
-    if (success) {
-      // Handle success
-    }
-  };
-
-  useEffect(() => {
-    fetchDevices();
-  }, []);
-
-  // When devices change, update filtered devices
-  useEffect(() => {
-    if (searchQuery) {
-      handleSearch({ target: { value: searchQuery } });
-    } else {
-      setFilteredDevices(devices);
-    }
-  }, [devices]);
-
-  // Update filtered devices based on status filter
-  useEffect(() => {
-    let filtered = [...devices];
-    if (statusFilter !== "All") {
-      filtered = filtered.filter((device) => device.status === statusFilter);
-    }
-    setFilteredDevices(filtered);
-  }, [statusFilter, devices]);
-
   const handleRefresh = async () => {
     setIsRefreshing(true);
     try {
@@ -283,9 +248,10 @@ export default function DevicesPage() {
 
   // Check if user is super admin
   useEffect(() => {
-    const userType = Cookies.get("user_type");
-    setIsSuper(userType === "superAdmin");
-  }, []);
+    if (user?.user_type) {
+      setIsSuper(user.user_type === "superAdmin");
+    }
+  }, [user]);
 
   return (
     <DashboardShell>

@@ -1,6 +1,8 @@
 "use client"
 
 import { useState, useEffect } from "react"
+import { useRouter } from "next/navigation"
+import ProtectedRoute from "@/components/auth/ProtectedRoute"
 import AdminList from "@/components/dashboard/admin-list"
 import { toast } from 'sonner'
 import { Modal } from "@/components/ui/modal"
@@ -12,7 +14,8 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { PlusCircle, ChevronLeft, ChevronRight } from "lucide-react"
 import { adminService } from "@/services"
 
-export default function AdminManagementPage() {
+function AdminManagementPageContent() {
+  const router = useRouter();
   const [fullName, setFullName] = useState("")
   const [email, setEmail] = useState("")
   const [password, setPassword] = useState("")
@@ -26,8 +29,6 @@ export default function AdminManagementPage() {
   const [itemsPerPage, setItemsPerPage] = useState(10)
   const [paginatedAdmins, setPaginatedAdmins] = useState([])
   const [totalPages, setTotalPages] = useState(1)
-
-
 
   // Fetch admins on component mount
   useEffect(() => {
@@ -335,5 +336,13 @@ export default function AdminManagementPage() {
       </Modal>
     </div>
   )
+}
+
+export default function AdminManagementPage() {
+  return (
+    <ProtectedRoute requireSuperAdmin={true}>
+      <AdminManagementPageContent />
+    </ProtectedRoute>
+  );
 }
 

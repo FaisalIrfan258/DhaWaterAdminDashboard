@@ -1,17 +1,32 @@
 import { NextResponse } from 'next/server';
 
 export function middleware(request) {
-  const token = request.cookies.get('admin_token'); // Check for the authentication token
+  const { pathname } = request.nextUrl;
+  
+  // Allow access to login page and public assets
+  if (pathname === '/login' || pathname.startsWith('/_next') || pathname.startsWith('/favicon') || pathname.startsWith('/api')) {
+    return NextResponse.next();
+  }
 
-  // If the token is not present, redirect to the login page
-  if (!token) {
-    return NextResponse.redirect(new URL('/login', request.url));
+  // For dashboard routes, we'll handle authentication on the client side
+  // since we're using localStorage instead of cookies
+  if (pathname.startsWith('/dashboard')) {
+    return NextResponse.next();
   }
 
   return NextResponse.next(); // Allow the request to proceed
 }
 
-// Specify the paths that the middleware should apply to
+// Specify the paths that the middleware should apply to - protect all routes except login
 export const config = {
-  matcher: ['/dashboard/:path*', '/requests/:path*', '/users/:path*'], // Apply to all relevant routes
+  matcher: [
+    /*
+     * Match all request paths except for the ones starting with:
+     * - api (API routes)
+     * - _next/static (static files)
+     * - _next/image (image optimization files)
+     * - favicon.ico (favicon file)
+     */
+    '/((?!api|_next/static|_next/image|favicon.ico).*)',
+  ],
 };

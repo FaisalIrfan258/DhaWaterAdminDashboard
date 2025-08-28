@@ -44,10 +44,11 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { useRouter } from "next/navigation";
-import Cookies from "js-cookie";
+
 import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from "@/components/ui/select";
 
 export default function UsersPage() {
+  const { user } = useUser();
   const [users, setUsers] = useState([]);
   const [filteredUsers, setFilteredUsers] = useState([]);
   const [searchQuery, setSearchQuery] = useState("");
@@ -381,9 +382,10 @@ export default function UsersPage() {
 
   // Check if user is super admin
   useEffect(() => {
-    const userType = Cookies.get("user_type");
-    setIsSuper(userType === "superAdmin");
-  }, []);
+    if (user?.user_type) {
+      setIsSuper(user.user_type === "superAdmin");
+    }
+  }, [user]);
 
   return (
     <DashboardShell>

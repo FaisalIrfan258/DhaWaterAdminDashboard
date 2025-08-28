@@ -1,6 +1,7 @@
 "use client"
 
 import { useEffect, useState } from "react"
+import { useUser } from "@/context/UserContext" // Add this missing import
 import { DashboardShell } from "@/components/dashboard/dashboard-shell"
 import { DashboardHeader } from "@/components/dashboard/dashboard-header"
 import { Button } from "@/components/ui/button"
@@ -37,10 +38,11 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
-import Cookies from "js-cookie"
+
 import { driverService } from "@/services"
 
 export default function DriversPage() {
+  const { user } = useUser()
   const [drivers, setDrivers] = useState([])
   const [filteredDrivers, setFilteredDrivers] = useState([])
   const [searchQuery, setSearchQuery] = useState("")
@@ -85,9 +87,10 @@ export default function DriversPage() {
   }, [filteredDrivers, currentPage, itemsPerPage])
 
   useEffect(() => {
-    const userType = Cookies.get("user_type");
-    setIsSuper(userType === "superAdmin");
-  }, []);
+    if (user?.user_type) {
+      setIsSuper(user.user_type === "superAdmin");
+    }
+  }, [user]);
 
   const paginateDrivers = () => {
     const indexOfLastItem = currentPage * itemsPerPage;

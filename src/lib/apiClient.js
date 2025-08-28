@@ -1,5 +1,4 @@
 import axios from 'axios';
-import Cookies from 'js-cookie';
 import { toast } from 'sonner';
 
 // Create axios instance with base configuration
@@ -14,9 +13,13 @@ const apiClient = axios.create({
 // Request interceptor to add auth token
 apiClient.interceptors.request.use(
   (config) => {
-    const token = Cookies.get('admin_token');
-    if (token) {
-      config.headers.Authorization = `Bearer ${token}`;
+    const userData = localStorage.getItem('userData');
+    if (userData) {
+      const parsedData = JSON.parse(userData);
+      const token = parsedData.token;
+      if (token) {
+        config.headers.Authorization = `Bearer ${token}`;
+      }
     }
     return config;
   },
@@ -39,12 +42,7 @@ apiClient.interceptors.response.use(
       switch (status) {
         case 401:
           // Unauthorized - redirect to login
-          Cookies.remove('admin_token');
-          Cookies.remove('user_id');
-          Cookies.remove('user_name');
-          Cookies.remove('user_email');
-          Cookies.remove('is_super_admin');
-          Cookies.remove('user_type');
+          localStorage.removeItem('userData');
           toast.error('Session expired. Please login again.');
           if (typeof window !== 'undefined') {
             window.location.href = '/login';

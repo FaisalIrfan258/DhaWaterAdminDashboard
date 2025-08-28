@@ -15,10 +15,11 @@ import { TankerModal } from "@/components/tankers/tanker-modal"
 import { TankerDetailsModal } from "@/components/tankers/tanker-details-modal"
 import { DeleteConfirmationDialog } from "@/components/tankers/delete-confirmation-dialog"
 import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from "@/components/ui/select"
-import Cookies from "js-cookie"
 import { tankerService } from "@/services"
+import { useUser } from "@/context/UserContext"
 
 export default function TankersPage() {
+  const { user } = useUser()
   const [tankers, setTankers] = useState([])
   const [filteredTankers, setFilteredTankers] = useState([])
   const [searchQuery, setSearchQuery] = useState("")
@@ -44,9 +45,10 @@ export default function TankersPage() {
 
   // Check if user is a super admin
   useEffect(() => {
-    const userType = Cookies.get("user_type")
-    setIsSuper(userType === "superAdmin")
-  }, [])
+    if (user?.user_type) {
+      setIsSuper(user.user_type === "superAdmin")
+    }
+  }, [user])
 
   // Apply pagination whenever tankers or pagination settings change
   useEffect(() => {

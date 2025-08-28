@@ -13,7 +13,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { toast } from "sonner";
-import Cookies from "js-cookie";
+import { useUser } from "@/context/UserContext"
 import { useRouter } from "next/navigation";
 import { tankerService, bookingService } from "@/services";
 import { Calendar, Loader2 } from "lucide-react";
@@ -26,6 +26,7 @@ import {
 } from "@/components/ui/select";
 
 const BookingEditModal = ({ isOpen, onClose, booking, onRefresh }) => {
+  const { user } = useUser();
   const [formData, setFormData] = useState({
     admin_id: "",
     tanker_id: "",
@@ -47,16 +48,17 @@ const BookingEditModal = ({ isOpen, onClose, booking, onRefresh }) => {
 
   useEffect(() => {
     // Check if user is super admin
-    const userType = Cookies.get("user_type");
-    setIsSuper(userType === "superAdmin");
-    
-    // If not a super admin and modal is open, redirect to dashboard
-    if (userType !== "superAdmin" && isOpen) {
-      toast.error("You don't have permission to edit bookings");
-      onClose();
-      router.push("/dashboard");
+    if (user?.user_type) {
+      setIsSuper(user.user_type === "superAdmin");
+      
+      // If not a super admin and modal is open, redirect to dashboard
+      if (user.user_type !== "superAdmin" && isOpen) {
+        toast.error("You don't have permission to edit bookings");
+        onClose();
+        router.push("/dashboard");
+      }
     }
-  }, [isOpen, onClose, router]);
+  }, [user, isOpen, onClose, router]);
 
   // Fetch all tankers
   useEffect(() => {

@@ -49,9 +49,10 @@ import {
   SelectContent,
   SelectItem,
 } from "@/components/ui/select";
-import Cookies from "js-cookie";
+import { useUser } from "@/context/UserContext"
 
 export default function BookingsPage() {
+  const { user } = useUser();
   const [bookings, setBookings] = useState([]);
   const [filteredBookings, setFilteredBookings] = useState([]);
   const [searchQuery, setSearchQuery] = useState("");
@@ -74,9 +75,10 @@ export default function BookingsPage() {
 
   // Check if user is super admin
   useEffect(() => {
-    const userType = Cookies.get("user_type");
-    setIsSuper(userType === "superAdmin");
-  }, []);
+    if (user?.user_type) {
+      setIsSuper(user.user_type === "superAdmin");
+    }
+  }, [user]);
 
   // Apply pagination whenever bookings or pagination settings change
   useEffect(() => {
@@ -179,8 +181,7 @@ export default function BookingsPage() {
     if (!selectedBooking) return;
 
     // Double check super admin status before proceeding
-    const userType = Cookies.get("user_type");
-    if (userType !== "superAdmin") {
+    if (user?.user_type !== "superAdmin") {
       toast.error("You don't have permission to delete bookings");
       setIsDeleteDialogOpen(false);
       return;

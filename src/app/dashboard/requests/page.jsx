@@ -42,12 +42,12 @@ import {
   SelectContent,
   SelectItem,
 } from "@/components/ui/select";
-import Cookies from "js-cookie";
+
 import requestService from "@/services/requestService";
 import notificationService from "@/services/notificationService";
 
 export default function RequestsPage() {
-  useUser();
+  const { user } = useUser();
   const [adminId, setAdminId] = useState(null);
   const [requests, setRequests] = useState([]);
   const [filteredRequests, setFilteredRequests] = useState([]);
@@ -69,10 +69,11 @@ export default function RequestsPage() {
   const [totalPages, setTotalPages] = useState(1);
 
   useEffect(() => {
-    // Access the admin_id cookie on the client side
-    const id = Cookies.get("admin_id");
-    setAdminId(id);
-  }, []);
+    // Get admin_id from UserContext
+    if (user?.id) {
+      setAdminId(user.id);
+    }
+  }, [user]);
 
   // Apply pagination whenever requests or pagination settings change
   useEffect(() => {

@@ -1,6 +1,8 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import { useRouter } from "next/navigation";
+import ProtectedRoute from "@/components/auth/ProtectedRoute";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -13,10 +15,10 @@ import { toast } from "sonner";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { driverService } from "@/services";
 
-export default function ReportsPage() {
+function ReportsPageContent() {
+  const router = useRouter();
   const [activeTab, setActiveTab] = useState("hydrant");
 
-  
   // Hydrant Summary Form State
   const [hydrantData, setHydrantData] = useState({
     date: new Date().toISOString().split('T')[0], // Default to today
@@ -989,5 +991,13 @@ export default function ReportsPage() {
         </TabsContent>
       </Tabs>
     </div>
+  );
+}
+
+export default function ReportsPage() {
+  return (
+    <ProtectedRoute requireSuperAdmin={true}>
+      <ReportsPageContent />
+    </ProtectedRoute>
   );
 }
