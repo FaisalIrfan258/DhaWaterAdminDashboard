@@ -18,23 +18,39 @@ const BookingViewModal = ({ isOpen, onClose, booking }) => {
   const [loading, setLoading] = useState(false);
 
   useEffect(() => {
+    let isMounted = true;
+    
     const fetchBookingDetails = async () => {
-      if (!booking) return;
+      if (!booking || !isOpen) return;
       
       setLoading(true);
       try {
         const data = await bookingService.getBookingById(booking.booking_id);
-        setBookingData(data);
+        if (isMounted) {
+          setBookingData(data);
+        }
       } catch (error) {
-        console.error("Error fetching booking details:", error);
+        if (isMounted) {
+          console.error("Error fetching booking details:", error);
+        }
       } finally {
-        setLoading(false);
+        if (isMounted) {
+          setLoading(false);
+        }
       }
     };
 
     if (isOpen && booking) {
       fetchBookingDetails();
+    } else {
+      // Reset state when modal closes
+      setBookingData(null);
+      setLoading(false);
     }
+
+    return () => {
+      isMounted = false;
+    };
   }, [isOpen, booking]);
 
   if (!booking) return null;

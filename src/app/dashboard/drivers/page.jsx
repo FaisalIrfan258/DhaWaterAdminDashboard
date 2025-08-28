@@ -200,9 +200,9 @@ export default function DriversPage() {
     }
   }
 
-  const sortedDrivers = [...drivers].sort((a, b) => new Date(b.created_at) - new Date(a.created_at))
-
   useEffect(() => {
+    // Sort drivers in descending order by creation date
+    const sortedDrivers = [...drivers].sort((a, b) => new Date(b.created_at) - new Date(a.created_at))
     applyStatusFilter(sortedDrivers, statusFilter)
   }, [drivers, statusFilter])
 

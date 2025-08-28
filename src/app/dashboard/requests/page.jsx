@@ -148,18 +148,13 @@ export default function RequestsPage() {
     setFilteredRequests(filtered);
   };
 
-  // Sort requests in descending order by request date
-  const sortedRequests = [...requests].sort(
-    (a, b) => new Date(b.request_date) - new Date(a.request_date)
-  );
-
-  // Update filtered requests to use sorted requests
+  // Update filtered requests based on status filter and sorting
   useEffect(() => {
-    setFilteredRequests(sortedRequests);
-  }, [requests]);
+    // Sort requests in descending order by request date
+    const sortedRequests = [...requests].sort(
+      (a, b) => new Date(b.request_date) - new Date(a.request_date)
+    );
 
-  // Update filtered requests based on status filter
-  useEffect(() => {
     if (statusFilter === "All") {
       setFilteredRequests(sortedRequests);
     } else {

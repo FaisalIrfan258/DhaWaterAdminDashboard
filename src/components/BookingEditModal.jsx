@@ -1,6 +1,5 @@
 "use client";
-
-import React, { useState, useEffect } from "react";
+import React, { useEffect, useState } from "react";
 import {
   Dialog,
   DialogContent,
@@ -12,21 +11,24 @@ import {
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { toast } from "sonner";
-import { useUser } from "@/context/UserContext"
-import { useRouter } from "next/navigation";
-import { tankerService, bookingService } from "@/services";
-import { Calendar, Loader2 } from "lucide-react";
-import { 
+import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
-  SelectValue
+  SelectValue,
 } from "@/components/ui/select";
+import { Textarea } from "@/components/ui/textarea";
+import { bookingService, tankerService } from "@/services";
+import { toast } from "sonner";
+import { useUser } from "@/context/UserContext";
+import { useRouter } from "next/navigation";
+import { Calendar, Loader2 } from "lucide-react";
 
 const BookingEditModal = ({ isOpen, onClose, booking, onRefresh }) => {
   const { user } = useUser();
+  const router = useRouter();
+  
   const [formData, setFormData] = useState({
     admin_id: "",
     tanker_id: "",
@@ -44,10 +46,9 @@ const BookingEditModal = ({ isOpen, onClose, booking, onRefresh }) => {
   const [isSuper, setIsSuper] = useState(false);
   const [tankers, setTankers] = useState([]);
   const [isTankersLoading, setIsTankersLoading] = useState(false);
-  const router = useRouter();
 
+  // Check if user is super admin
   useEffect(() => {
-    // Check if user is super admin
     if (user?.user_type) {
       setIsSuper(user.user_type === "superAdmin");
       
@@ -62,59 +63,104 @@ const BookingEditModal = ({ isOpen, onClose, booking, onRefresh }) => {
 
   // Fetch all tankers
   useEffect(() => {
+    let isMounted = true;
+    
     const fetchTankers = async () => {
-      if (!isOpen) return;
+      if (!isOpen) {
+        // Reset state when modal closes
+        setTankers([]);
+        setIsTankersLoading(false);
+        return;
+      }
       
       setIsTankersLoading(true);
       try {
         const data = await tankerService.getAllTankers();
-        setTankers(data);
+        if (isMounted) {
+          setTankers(data);
+        }
       } catch (error) {
-        console.error("Error fetching tankers:", error);
-        toast.error("Failed to load tankers");
+        if (isMounted) {
+          console.error("Error fetching tankers:", error);
+          toast.error("Failed to load tankers");
+        }
       } finally {
-        setIsTankersLoading(false);
+        if (isMounted) {
+          setIsTankersLoading(false);
+        }
       }
     };
 
     fetchTankers();
+    
+    return () => {
+      isMounted = false;
+    };
   }, [isOpen]);
 
   useEffect(() => {
+    let isMounted = true;
+    
     const fetchBookingDetails = async () => {
-      if (!booking || !isOpen) return;
+      if (!booking || !isOpen) {
+        // Reset state when modal closes or no booking
+        setBookingDetails(null);
+        setFormData({
+          admin_id: "",
+          tanker_id: "",
+          customer_id: "",
+          scheduled_date: "",
+        });
+        setDisplayData({
+          admin_name: "",
+          tanker_name: "",
+          customer_name: "",
+        });
+        setIsLoading(false);
+        return;
+      }
       
       setIsLoading(true);
       try {
         const data = await bookingService.getBookingById(booking.booking_id);
-        setBookingDetails(data);
-        
-        // Format date for datetime-local input
-        const formattedDate = formatDateForInput(data.scheduled_date);
-        
-        // Set form values (IDs for submission)
-        setFormData({
-          admin_id: data.Admin.admin_id,
-          tanker_id: data.Tanker.tanker_id,
-          customer_id: data.Customer.customer_id,
-          scheduled_date: formattedDate,
-        });
+        if (isMounted) {
+          setBookingDetails(data);
+          
+          // Format date for datetime-local input
+          const formattedDate = formatDateForInput(data.scheduled_date);
+          
+          // Set form values (IDs for submission)
+          setFormData({
+            admin_id: data.Admin.admin_id,
+            tanker_id: data.Tanker.tanker_id,
+            customer_id: data.Customer.customer_id,
+            scheduled_date: formattedDate,
+          });
 
-        // Set display values (names for display)
-        setDisplayData({
-          admin_name: data.Admin.full_name,
-          tanker_name: data.Tanker.tanker_name,
-          customer_name: data.Customer.full_name,
-        });
+          // Set display values (names for display)
+          setDisplayData({
+            admin_name: data.Admin.full_name,
+            tanker_name: data.Tanker.tanker_name,
+            customer_name: data.Customer.full_name,
+          });
+        }
       } catch (error) {
-        console.error("Error fetching booking details:", error);
-        toast.error("Failed to load booking details");
+        if (isMounted) {
+          console.error("Error fetching booking details:", error);
+          toast.error("Failed to load booking details");
+        }
       } finally {
-        setIsLoading(false);
+        if (isMounted) {
+          setIsLoading(false);
+        }
       }
     };
 
     fetchBookingDetails();
+    
+    return () => {
+      isMounted = false;
+    };
   }, [booking, isOpen]);
 
   // Format date for datetime-local input

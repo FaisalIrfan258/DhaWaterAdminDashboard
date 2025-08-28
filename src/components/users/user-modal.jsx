@@ -44,8 +44,17 @@ export function UserModal({
   const [sensors, setSensors] = useState([])
   const [isSensorDropdownOpen, setIsSensorDropdownOpen] = useState(false)
 
-
   useEffect(() => {
+    let isMounted = true;
+    
+    if (!isOpen) {
+      // Reset state when modal closes
+      setFormData(defaultFormData);
+      setSensors([]);
+      setIsSensorDropdownOpen(false);
+      return;
+    }
+    
     if (mode === "edit" && user) {
       // For editing, if we receive home_address, split it into street_address and phase_number
       let streetAddress = user.street_address || ""
@@ -54,25 +63,31 @@ export function UserModal({
       // Get the sensor ID from WaterTanks if available
       const sensorId = user.WaterTanks?.[0]?.sensor_id?.toString() || ""
       
-      setFormData({
-        ...user,
-        street_address: streetAddress,
-        phase_number: phaseNumber,
-        device_id: sensorId, // Set the sensor ID from WaterTanks
-        tank_capacity: user.WaterTanks?.[0]?.capacity?.toString() || "",
-        password: "" // Clear password when editing
-      })
+      if (isMounted) {
+        setFormData({
+          ...user,
+          street_address: streetAddress,
+          phase_number: phaseNumber,
+          device_id: sensorId, // Set the sensor ID from WaterTanks
+          tank_capacity: user.WaterTanks?.[0]?.capacity?.toString() || "",
+          password: "" // Clear password when editing
+        })
+      }
 
       // If we have a sensor ID, fetch available sensors to show it in the dropdown
-      if (sensorId) {
-        fetchAvailableSensors()
+      if (sensorId && isMounted) {
+        fetchAvailableSensors(isMounted)
       }
-    } else if (mode === "add") {
+    } else if (mode === "add" && isMounted) {
       setFormData(defaultFormData)
     }
-  }, [mode, user])
+    
+    return () => {
+      isMounted = false;
+    };
+  }, [mode, user, isOpen])
 
-  const fetchAvailableSensors = async () => {
+  const fetchAvailableSensors = async (isMounted = true) => {
     try {
       const data = await sensorService.getAvailableSensors()
       // Include both available sensors and the current user's sensor
@@ -90,9 +105,13 @@ export function UserModal({
         }
       }
       
-      setSensors(allSensors)
+      if (isMounted) {
+        setSensors(allSensors)
+      }
     } catch (error) {
-      console.error("Error fetching available sensors:", error)
+      if (isMounted) {
+        console.error("Error fetching available sensors:", error)
+      }
     }
   }
 

@@ -246,13 +246,6 @@ export default function DevicesPage() {
     }
   };
 
-  // Check if user is super admin
-  useEffect(() => {
-    if (user?.user_type) {
-      setIsSuper(user.user_type === "superAdmin");
-    }
-  }, [user]);
-
   return (
     <DashboardShell>
       <DashboardHeader

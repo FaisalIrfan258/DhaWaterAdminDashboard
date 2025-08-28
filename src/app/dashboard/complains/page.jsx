@@ -141,18 +141,13 @@ export default function ComplaintsPage() {
     setFilteredComplaints(filtered);
   };
 
-  // Sort complaints in descending order by date
-  const sortedComplaints = [...complaints].sort(
-    (a, b) => new Date(b.complain_date) - new Date(a.complain_date)
-  );
-
-  // Update filtered complaints to use sorted complaints
+  // Update filtered complaints based on status filter and sorting
   useEffect(() => {
-    setFilteredComplaints(sortedComplaints);
-  }, [complaints]);
+    // Sort complaints in descending order by date
+    const sortedComplaints = [...complaints].sort(
+      (a, b) => new Date(b.complain_date) - new Date(a.complain_date)
+    );
 
-  // Update filtered complaints based on status filter
-  useEffect(() => {
     if (statusFilter === "All") {
       setFilteredComplaints(sortedComplaints);
     } else {
