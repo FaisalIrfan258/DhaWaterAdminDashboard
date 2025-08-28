@@ -357,7 +357,7 @@ const UserDetailsPage = () => {
               <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
                 <div>
                   <Label htmlFor="start-date" className="text-sm text-slate-500">Start Date</Label>
-                  <Popover>
+                  <Popover modal={false}>
                     <PopoverTrigger asChild>
                       <Button
                         variant="outline"
@@ -368,7 +368,7 @@ const UserDetailsPage = () => {
                         {startDate ? format(startDate, "PPP") : "Select date"}
                       </Button>
                     </PopoverTrigger>
-                    <PopoverContent className="w-auto p-0">
+                    <PopoverContent className="w-auto p-0" modal={false}>
                       <Calendar
                         mode="single"
                         selected={startDate}
@@ -381,7 +381,7 @@ const UserDetailsPage = () => {
                 
                 <div>
                   <Label htmlFor="end-date" className="text-sm text-slate-500">End Date</Label>
-                  <Popover>
+                  <Popover modal={false}>
                     <PopoverTrigger asChild>
                       <Button
                         variant="outline"
@@ -392,7 +392,7 @@ const UserDetailsPage = () => {
                         {endDate ? format(endDate, "PPP") : "Select date"}
                       </Button>
                     </PopoverTrigger>
-                    <PopoverContent className="w-auto p-0">
+                    <PopoverContent className="w-auto p-0" modal={false}>
                       <Calendar
                         mode="single"
                         selected={endDate}

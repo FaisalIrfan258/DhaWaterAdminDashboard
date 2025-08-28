@@ -327,14 +327,14 @@ export default function BookingsPage() {
                           </TableCell>
 
                           <TableCell>
-                            <DropdownMenu>
+                            <DropdownMenu modal={false}>
                               <DropdownMenuTrigger asChild>
                                 <Button variant="ghost" size="sm">
                                   <MoreHorizontal className="h-4 w-4" />
                                   <span className="sr-only">Open menu</span>
                                 </Button>
                               </DropdownMenuTrigger>
-                              <DropdownMenuContent align="end">
+                              <DropdownMenuContent align="end" modal={false}>
                                 <DropdownMenuItem
                                   onClick={() => handleViewBooking(booking)}
                                 >

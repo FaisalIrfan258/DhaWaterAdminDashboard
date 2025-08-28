@@ -257,11 +257,12 @@ const BookingEditModal = ({ isOpen, onClose, booking, onRefresh }) => {
                     value={formData.tanker_id.toString()} 
                     onValueChange={handleTankerChange}
                     disabled={isSubmitting}
+                    modal={false}
                   >
                     <SelectTrigger>
                       <SelectValue placeholder="Select a tanker" />
                     </SelectTrigger>
-                    <SelectContent>
+                    <SelectContent modal={false}>
                       {tankers.map((tanker) => (
                         <SelectItem 
                           key={tanker.tanker_id} 

@@ -7,9 +7,10 @@ import { CheckIcon, ChevronRightIcon, CircleIcon } from "lucide-react"
 import { cn } from "@/lib/utils"
 
 function DropdownMenu({
+  modal = true,
   ...props
 }) {
-  return <DropdownMenuPrimitive.Root data-slot="dropdown-menu" {...props} />;
+  return <DropdownMenuPrimitive.Root data-slot="dropdown-menu" modal={modal} {...props} />;
 }
 
 function DropdownMenuPortal({
@@ -27,6 +28,7 @@ function DropdownMenuTrigger({
 function DropdownMenuContent({
   className,
   sideOffset = 4,
+  modal = true,
   ...props
 }) {
   return (

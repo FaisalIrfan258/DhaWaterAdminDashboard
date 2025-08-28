@@ -225,11 +225,12 @@ export function TankerModal({ open, onClose, tanker, onSubmit }) {
                   <Select
                     onValueChange={field.onChange}
                     value={field.value}
+                    modal={false}
                   >
                     <SelectTrigger className="mt-2">
                       <SelectValue placeholder="Select Availability" />
                     </SelectTrigger>
-                    <SelectContent>
+                    <SelectContent modal={false}>
                       <SelectItem value="Available">
                         Available
                       </SelectItem>
@@ -278,11 +279,12 @@ export function TankerModal({ open, onClose, tanker, onSubmit }) {
                   <Select
                     onValueChange={field.onChange}
                     value={field.value}
+                    modal={false}
                   >
                     <SelectTrigger className="mt-2">
                       <SelectValue placeholder="Select Driver" />
                     </SelectTrigger>
-                    <SelectContent>
+                    <SelectContent modal={false}>
                       {drivers.map((d) => (
                         <SelectItem
                           key={d.driver_id}

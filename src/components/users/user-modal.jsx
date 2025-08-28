@@ -325,11 +325,12 @@ export function UserModal({
                 onValueChange={(value) => setFormData({ ...formData, device_id: value })}
                 onOpenChange={handleSensorDropdownOpen}
                 disabled={isViewOnly}
+                modal={false}
               >
                 <SelectTrigger className="col-span-3">
                   <SelectValue placeholder="Select a sensor" />
                 </SelectTrigger>
-                <SelectContent>
+                <SelectContent modal={false}>
                   {sensors.map((sensor) => (
                     <SelectItem 
                       key={sensor.sensor_id} 
@@ -347,18 +348,21 @@ export function UserModal({
               <Label htmlFor="category" className="text-right">
                 Category
               </Label>
-              <select
-                id="category"
+              <Select
                 value={formData.category}
-                onChange={(e) => setFormData({ ...formData, category: e.target.value })}
-                className="col-span-3"
+                onValueChange={(value) => setFormData({ ...formData, category: value })}
                 disabled={isViewOnly}
+                modal={false}
               >
-                <option value="Corporate">Corporate</option>
-                <option value="Civil">Civil</option>
-                <option value="DHA Employee">DHA Employees</option>
-
-              </select>
+                <SelectTrigger className="col-span-3">
+                  <SelectValue placeholder="Select category" />
+                </SelectTrigger>
+                <SelectContent modal={false}>
+                  <SelectItem value="Corporate">Corporate</SelectItem>
+                  <SelectItem value="Civil">Civil</SelectItem>
+                  <SelectItem value="DHA Employee">DHA Employees</SelectItem>
+                </SelectContent>
+              </Select>
             </div>
           </div>
 

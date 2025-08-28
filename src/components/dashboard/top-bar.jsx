@@ -28,6 +28,7 @@ export default function TopBar() {
   const router = useRouter()
   const { user, clearUser } = useUser()
   const [showProfileModal, setShowProfileModal] = useState(false)
+  const [dropdownOpen, setDropdownOpen] = useState(false)
 
   const handleLogout = () => {
     // Use authService to handle logout
@@ -59,7 +60,8 @@ export default function TopBar() {
             </Button>
           </Link>
 
-          <DropdownMenu>
+          <DropdownMenu open={dropdownOpen} onOpenChange={setDropdownOpen}
+            modal={false}>
             <DropdownMenuTrigger asChild>
               <Button variant="ghost" className="relative h-8 w-8 rounded-full">
                 <Avatar className="h-8 w-8">
@@ -67,7 +69,8 @@ export default function TopBar() {
                 </Avatar>
               </Button>
             </DropdownMenuTrigger>
-            <DropdownMenuContent className="w-56" align="end" forceMount>
+            <DropdownMenuContent className="w-56" align="end" forceMount
+              modal={false}>
               <DropdownMenuLabel className="font-normal">
                 <div className="flex flex-col space-y-1">
                   <p className="text-sm font-medium leading-none">{user?.name || ""}</p>
@@ -76,7 +79,10 @@ export default function TopBar() {
                 </div>
               </DropdownMenuLabel>
               <DropdownMenuSeparator />
-              <DropdownMenuItem onClick={() => setShowProfileModal(true)}>Profile</DropdownMenuItem>
+              <DropdownMenuItem onClick={() => {
+                setDropdownOpen(false)
+                setTimeout(() => setShowProfileModal(true), 100)
+              }}>Profile</DropdownMenuItem>
               <DropdownMenuItem onClick={handleLogout}>Log out</DropdownMenuItem>
             </DropdownMenuContent>
           </DropdownMenu>

@@ -439,11 +439,11 @@ export default function NotificationsPage() {
                             </div>
                           </TableCell>
                           <TableCell>
-                            <DropdownMenu>
+                            <DropdownMenu modal={false}>
                               <DropdownMenuTrigger asChild>
                                 <Button variant="ghost">...</Button>
                               </DropdownMenuTrigger>
-                              <DropdownMenuContent>
+                              <DropdownMenuContent modal={false}>
                                 <DropdownMenuItem onClick={() => fetchSingleNotification(notification.notification_id)}>
                                   View
                                 </DropdownMenuItem>

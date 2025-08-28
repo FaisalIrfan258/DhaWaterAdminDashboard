@@ -7,9 +7,10 @@ import { CheckIcon, ChevronDownIcon, ChevronUpIcon } from "lucide-react"
 import { cn } from "@/lib/utils"
 
 function Select({
+  modal = true,
   ...props
 }) {
-  return <SelectPrimitive.Root data-slot="select" {...props} />;
+  return <SelectPrimitive.Root data-slot="select" modal={modal} {...props} />;
 }
 
 function SelectGroup({
@@ -51,6 +52,7 @@ function SelectContent({
   className,
   children,
   position = "popper",
+  modal = true,
   ...props
 }) {
   return (
@@ -64,6 +66,7 @@ function SelectContent({
           className
         )}
         position={position}
+        modal={modal}
         {...props}>
         <SelectScrollUpButton />
         <SelectPrimitive.Viewport

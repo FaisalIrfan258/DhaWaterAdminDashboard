@@ -516,14 +516,14 @@ export default function DriversPage() {
                             </Badge>
                           </TableCell>
                           <TableCell>
-                            <DropdownMenu>
+                            <DropdownMenu modal={false}>
                               <DropdownMenuTrigger asChild>
                                 <Button variant="ghost" size="sm">
                                   <MoreHorizontal className="h-4 w-4" />
                                   <span className="sr-only">Open menu</span>
                                 </Button>
                               </DropdownMenuTrigger>
-                              <DropdownMenuContent align="end">
+                              <DropdownMenuContent align="end" modal={false}>
                                 <DropdownMenuItem onClick={() => fetchSingleDriver(driver.driver_id)}>
                                   <Eye className="mr-2 h-4 w-4" />
                                   View details
@@ -719,11 +719,11 @@ export default function DriversPage() {
               </div>
               <div className="grid gap-2">
                 <Label htmlFor="edit-status">Status</Label>
-                <Select value={editStatus} onValueChange={setEditStatus}>
+                <Select value={editStatus} onValueChange={setEditStatus} modal={false}>
                   <SelectTrigger id="edit-status">
                     <SelectValue placeholder="Select status" />
                   </SelectTrigger>
-                  <SelectContent>
+                  <SelectContent modal={false}>
                     <SelectItem value="Available">Available</SelectItem>
                     <SelectItem value="Unavailable">Unavailable</SelectItem>
                   </SelectContent>
