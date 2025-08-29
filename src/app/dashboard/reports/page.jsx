@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import ProtectedRoute from "@/components/auth/ProtectedRoute";
 import { Button } from "@/components/ui/button";
@@ -13,7 +13,7 @@ import jsPDF from "jspdf";
 import autoTable from "jspdf-autotable";
 import { toast } from "sonner";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { driverService } from "@/services";
+import { useDrivers, useDriverDeliveryReport } from "@/hooks";
 
 function ReportsPageContent() {
   const router = useRouter();
@@ -79,44 +79,38 @@ function ReportsPageContent() {
     endDate: new Date().toISOString().split('T')[0], // Default to today
     deliveries: []
   });
-  const [drivers, setDrivers] = useState([]);
-  const [isLoadingDrivers, setIsLoadingDrivers] = useState(false);
-  const [isLoadingDeliveries, setIsLoadingDeliveries] = useState(false);
-  
-  // Fetch drivers on component mount
-  useEffect(() => {
-    fetchDrivers();
+
+  const handleDriverChange = useCallback((value) => {
+    setDriverData(prev => ({...prev, driverId: value}));
   }, []);
   
-  // Fetch drivers function
-  const fetchDrivers = async () => {
-    setIsLoadingDrivers(true);
-    try {
-      const data = await driverService.getAllDrivers();
-      setDrivers(data || []);
-    } catch (err) {
-      console.error("Error fetching drivers:", err);
-      toast.error("Failed to load drivers");
-    } finally {
-      setIsLoadingDrivers(false);
-    }
-  };
+  // React Query hooks
+  const { data: drivers = [], isLoading: isLoadingDrivers } = useDrivers();
+  const { 
+    data: deliveriesData, 
+    isLoading: isLoadingDeliveries, 
+    refetch: fetchDriverDeliveries 
+  } = useDriverDeliveryReport(
+    driverData.driverId, 
+    driverData.startDate, 
+    driverData.endDate,
+    { enabled: false } // Only fetch when manually triggered
+  );
   
   // Fetch driver deliveries
-  const fetchDriverDeliveries = async () => {
+  const handleFetchDriverDeliveries = async () => {
     if (!driverData.driverId) {
       toast.error("Please select a driver");
       return;
     }
     
-    setIsLoadingDeliveries(true);
     try {
-      const responseData = await driverService.getDriverDeliveryReport(driverData.driverId, driverData.startDate, driverData.endDate);
+      const result = await fetchDriverDeliveries();
       
-      if (responseData.status === "success" && Array.isArray(responseData.data)) {
+      if (result?.data?.status === "success" && Array.isArray(result.data.data)) {
         setDriverData({
           ...driverData,
-          deliveries: responseData.data || []
+          deliveries: result.data.data || []
         });
       } else {
         throw new Error("Invalid response format");
@@ -125,8 +119,6 @@ function ReportsPageContent() {
     } catch (err) {
       console.error("Error fetching driver deliveries:", err);
       toast.error("Failed to load deliveries");
-    } finally {
-      setIsLoadingDeliveries(false);
     }
   };
   
@@ -869,7 +861,7 @@ function ReportsPageContent() {
                   <Label htmlFor="driverSelect">Select Driver</Label>
                   <Select 
                     value={driverData.driverId} 
-                    onValueChange={(value) => setDriverData({...driverData, driverId: value})}
+                    onValueChange={handleDriverChange}
                   >
                     <SelectTrigger id="driverSelect" disabled={isLoadingDrivers}>
                       <SelectValue placeholder="Select a driver" />
@@ -908,7 +900,7 @@ function ReportsPageContent() {
               
               <Button 
                 className="w-full" 
-                onClick={fetchDriverDeliveries}
+                onClick={handleFetchDriverDeliveries}
                 disabled={isLoadingDeliveries || !driverData.driverId}
               >
                 {isLoadingDeliveries ? "Loading..." : "View Deliveries"}

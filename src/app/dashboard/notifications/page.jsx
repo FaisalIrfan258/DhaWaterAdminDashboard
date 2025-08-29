@@ -1,9 +1,9 @@
 "use client"
 
-import { useEffect, useState } from "react"
+import { useEffect, useState, useCallback, useMemo } from "react"
 import { DashboardShell } from "@/components/dashboard/dashboard-shell"
 import { DashboardHeader } from "@/components/dashboard/dashboard-header"
-import { notificationService } from "@/services"
+import { useNotifications, useCreateNotification, useUpdateNotification, useDeleteNotification } from "@/hooks"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
@@ -38,12 +38,14 @@ import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from "@
 export default function NotificationsPage() {
   const { user } = useUser()
   const [adminId, setAdminId] = useState(null)
-  const [notifications, setNotifications] = useState([])
   const [filteredNotifications, setFilteredNotifications] = useState([])
   const [searchQuery, setSearchQuery] = useState("")
-  const [loading, setLoading] = useState(true)
-  const [error, setError] = useState(null)
-  const [isRefreshing, setIsRefreshing] = useState(false)
+  
+  // React Query hooks
+  const { data: notifications = [], isLoading: loading, error, refetch } = useNotifications()
+  const createNotificationMutation = useCreateNotification()
+  const updateNotificationMutation = useUpdateNotification()
+  const deleteNotificationMutation = useDeleteNotification()
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false)
   const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false)
   const [isViewDialogOpen, setIsViewDialogOpen] = useState(false)
@@ -57,8 +59,7 @@ export default function NotificationsPage() {
   // Pagination states
   const [currentPage, setCurrentPage] = useState(1)
   const [itemsPerPage, setItemsPerPage] = useState(10)
-  const [paginatedNotifications, setPaginatedNotifications] = useState([])
-  const [totalPages, setTotalPages] = useState(1)
+  
   
 
 
@@ -67,23 +68,29 @@ export default function NotificationsPage() {
     if (user?.id) {
       setAdminId(user.id)
     }
-    fetchNotifications()
   }, [user])
 
-  // Apply pagination whenever notifications or pagination settings change
+  // Update filtered notifications when notifications data changes
   useEffect(() => {
-    paginateNotifications()
-  }, [filteredNotifications, currentPage, itemsPerPage])
+    setFilteredNotifications(notifications)
+  }, [notifications])
 
   // Paginate notifications function
-  const paginateNotifications = () => {
-    const indexOfLastItem = currentPage * itemsPerPage
-    const indexOfFirstItem = indexOfLastItem - itemsPerPage
-    const currentNotifications = filteredNotifications.slice(indexOfFirstItem, indexOfLastItem)
-    
-    setPaginatedNotifications(currentNotifications)
-    setTotalPages(Math.ceil(filteredNotifications.length / itemsPerPage))
-  }
+  const totalPages = useMemo(() => {
+    return Math.ceil(filteredNotifications.length / itemsPerPage)
+  }, [filteredNotifications, itemsPerPage])
+
+  const paginatedNotifications = useMemo(() => {
+    const indexOfFirstItem = (currentPage - 1) * itemsPerPage
+    const indexOfLastItem = indexOfFirstItem + itemsPerPage
+    return filteredNotifications.slice(indexOfFirstItem, indexOfLastItem)
+  }, [filteredNotifications, currentPage, itemsPerPage])
+
+  useEffect(() => {
+    if (currentPage > totalPages && totalPages > 0) {
+      setCurrentPage(totalPages)
+    }
+  }, [totalPages, currentPage])
 
   const goToNextPage = () => {
     if (currentPage < totalPages) {
@@ -97,47 +104,24 @@ export default function NotificationsPage() {
     }
   }
 
-  const handleItemsPerPageChange = (value) => {
+  const handleItemsPerPageChange = useCallback((value) => {
     setItemsPerPage(Number(value))
     setCurrentPage(1) // Reset to first page when changing items per page
-  }
+  }, [])
 
-  // Fetch all notifications
-  const fetchNotifications = async () => {
-    setLoading(true)
-    try {
-      const data = await notificationService.getAllNotifications()
-      setNotifications(data || [])
-      setFilteredNotifications(data || [])
-      setError(null)
-    } catch (err) {
-      console.error("Error fetching notifications:", err)
-      setError("Failed to load notifications. Please try again.")
-      toast.error("Failed to load notifications", {
-        description: "Please refresh the page to try again.",
-      })
-    } finally {
-      setLoading(false)
-    }
-  }
+  // Handle refresh
+  const handleRefresh = useCallback(() => {
+    refetch()
+  }, [refetch])
 
-  // Fetch single notification
-  const fetchSingleNotification = async (id) => {
-    try {
-      setLoading(true)
-      const data = await notificationService.getNotificationById(id)
-      setSelectedNotification(data)
-      setIsViewDialogOpen(true)
-    } catch (err) {
-      console.error("Error fetching notification details:", err)
-      toast.error("Failed to load notification details")
-    } finally {
-      setLoading(false)
-    }
-  }
+  // Handle view notification
+  const handleViewNotification = useCallback((notification) => {
+    setSelectedNotification(notification)
+    setIsViewDialogOpen(true)
+  }, [])
 
   // Handle search
-  const handleSearch = (e) => {
+  const handleSearch = useCallback((e) => {
     const query = e.target.value.toLowerCase()
     setSearchQuery(query)
 
@@ -156,27 +140,26 @@ export default function NotificationsPage() {
     )
 
     setFilteredNotifications(filtered)
-  }
+  }, [notifications])
 
   // Sort notifications in descending order by date
-  const sortedNotifications = [...notifications].sort((a, b) => new Date(b.created_at) - new Date(a.created_at))
+  const sortedNotifications = useMemo(() => {
+    return [...notifications].sort((a, b) => new Date(b.created_at) - new Date(a.created_at))
+  }, [notifications])
 
   // Update filtered notifications to use sorted notifications
   useEffect(() => {
     setFilteredNotifications(sortedNotifications)
-  }, [notifications])
+  }, [sortedNotifications])
 
   // Handle refresh
-  const handleRefresh = async () => {
-    setIsRefreshing(true)
+  const handleRefreshData = async () => {
     try {
-      await fetchNotifications()
+      await refetch()
       toast.success("Notifications refreshed successfully")
     } catch (error) {
       console.error("Error refreshing notifications:", error)
       toast.error("Failed to refresh notifications")
-    } finally {
-      setIsRefreshing(false)
     }
   }
 
@@ -185,13 +168,10 @@ export default function NotificationsPage() {
     if (!selectedNotification) return
 
     try {
-      await notificationService.deleteNotification(selectedNotification.notification_id)
+      await deleteNotificationMutation.mutateAsync(selectedNotification.notification_id)
       setIsDeleteDialogOpen(false)
-      toast.success("Notification deleted successfully")
-      await fetchNotifications() // Refresh the list
     } catch (error) {
       console.error("Error deleting notification:", error)
-      toast.error("Failed to delete notification")
     }
   }
 
@@ -203,19 +183,16 @@ export default function NotificationsPage() {
     }
 
     try {
-      setLoading(true)
-      await notificationService.updateNotification(selectedNotification.notification_id, {
-        title: editTitle,
-        message: editMessage,
+      await updateNotificationMutation.mutateAsync({
+        id: selectedNotification.notification_id,
+        data: {
+          title: editTitle,
+          message: editMessage,
+        }
       })
-      toast.success("Notification updated successfully")
       setIsEditDialogOpen(false)
-      await fetchNotifications() // Refresh the list
     } catch (error) {
       console.error("Error updating notification:", error)
-      toast.error("Failed to update notification")
-    } finally {
-      setLoading(false)
     }
   }
 
@@ -227,23 +204,17 @@ export default function NotificationsPage() {
     }
 
     try {
-      setLoading(true)
-      await notificationService.createNotificationForAll({
+      await createNotificationMutation.mutateAsync({
         title: notificationTitle,
         message: notificationMessage,
         admin_id: Number.parseInt(adminId),
       })
-      toast.success("Notification sent to all customers successfully")
       setNotificationTitle("")
       setNotificationMessage("")
       setCustomerId("")
       setIsCreateDialogOpen(false)
-      await fetchNotifications()
     } catch (error) {
       console.error("Error sending notification:", error)
-      toast.error("Failed to send notification")
-    } finally {
-      setLoading(false)
     }
   }
 
@@ -255,24 +226,18 @@ export default function NotificationsPage() {
     }
 
     try {
-      setLoading(true)
-      await notificationService.createNotification({
+      await createNotificationMutation.mutateAsync({
         title: notificationTitle,
         message: notificationMessage,
         admin_id: Number.parseInt(adminId),
         customer_id: Number.parseInt(customerId),
       })
-      toast.success("Notification sent to customer successfully")
       setNotificationTitle("")
       setNotificationMessage("")
       setCustomerId("")
       setIsCreateDialogOpen(false)
-      await fetchNotifications()
     } catch (error) {
       console.error("Error sending notification:", error)
-      toast.error("Failed to send notification")
-    } finally {
-      setLoading(false)
     }
   }
 
@@ -362,8 +327,8 @@ export default function NotificationsPage() {
               </DialogFooter>
             </DialogContent>
           </Dialog>
-          <Button variant="outline" size="icon" onClick={handleRefresh} disabled={isRefreshing}>
-            <RefreshCw className={`h-4 w-4 ${isRefreshing ? "animate-spin" : ""}`} />
+          <Button variant="outline" size="icon" onClick={handleRefreshData} disabled={loading}>
+                  <RefreshCw className={`h-4 w-4 ${loading ? "animate-spin" : ""}`} />
             <span className="sr-only">Refresh</span>
           </Button>
         </div>
@@ -444,7 +409,7 @@ export default function NotificationsPage() {
                                 <Button variant="ghost">...</Button>
                               </DropdownMenuTrigger>
                               <DropdownMenuContent modal={false}>
-                                <DropdownMenuItem onClick={() => fetchSingleNotification(notification.notification_id)}>
+                                <DropdownMenuItem onClick={() => handleViewNotification(notification)}>
                                   View
                                 </DropdownMenuItem>
                                 <DropdownMenuItem onClick={() => openEditDialog(notification)}>

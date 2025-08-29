@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo, useCallback } from "react";
 import { DashboardShell } from "@/components/dashboard/dashboard-shell";
 import { DashboardHeader } from "@/components/dashboard/dashboard-header";
 import { auditService } from "@/services";
@@ -52,25 +52,22 @@ export default function SystemLogsPage() {
   // Pagination states
   const [currentPage, setCurrentPage] = useState(1);
   const [itemsPerPage, setItemsPerPage] = useState(10);
-  const [paginatedLogs, setPaginatedLogs] = useState([]);
-  const [totalPages, setTotalPages] = useState(1);
   
+  const totalPages = useMemo(() => {
+    return Math.ceil(filteredLogs.length / itemsPerPage);
+  }, [filteredLogs, itemsPerPage]);
 
-
-  // Apply pagination whenever logs or pagination settings change
-  useEffect(() => {
-    paginateLogs();
+  const paginatedLogs = useMemo(() => {
+    const indexOfFirstItem = (currentPage - 1) * itemsPerPage;
+    const indexOfLastItem = indexOfFirstItem + itemsPerPage;
+    return filteredLogs.slice(indexOfFirstItem, indexOfLastItem);
   }, [filteredLogs, currentPage, itemsPerPage]);
 
-  // Paginate logs function
-  const paginateLogs = () => {
-    const indexOfLastItem = currentPage * itemsPerPage;
-    const indexOfFirstItem = indexOfLastItem - itemsPerPage;
-    const currentLogs = filteredLogs.slice(indexOfFirstItem, indexOfLastItem);
-    
-    setPaginatedLogs(currentLogs);
-    setTotalPages(Math.ceil(filteredLogs.length / itemsPerPage));
-  };
+  useEffect(() => {
+    if (currentPage > totalPages && totalPages > 0) {
+      setCurrentPage(totalPages);
+    }
+  }, [totalPages, currentPage]);
 
   const goToNextPage = () => {
     if (currentPage < totalPages) {
@@ -84,10 +81,10 @@ export default function SystemLogsPage() {
     }
   };
 
-  const handleItemsPerPageChange = (value) => {
+  const handleItemsPerPageChange = useCallback((value) => {
     setItemsPerPage(Number(value));
     setCurrentPage(1); // Reset to first page when changing items per page
-  };
+  }, []);
 
   // Fetch audit logs
   const fetchLogs = async () => {
@@ -111,7 +108,7 @@ export default function SystemLogsPage() {
   }, []);
 
   // Handle search
-  const handleSearch = (e) => {
+  const handleSearch = useCallback((e) => {
     const query = e.target.value.toLowerCase();
     setSearchQuery(query);
 
@@ -130,7 +127,7 @@ export default function SystemLogsPage() {
     );
 
     setFilteredLogs(filtered);
-  };
+  }, [logs]);
 
   // Handle refresh
   const handleRefresh = async () => {
@@ -181,10 +178,10 @@ export default function SystemLogsPage() {
   };
 
   // View log details
-  const handleViewLog = (log) => {
+  const handleViewLog = useCallback((log) => {
     setViewingLog(log);
     setIsViewModalOpen(true);
-  };
+  }, []);
 
   return (
     <DashboardShell>

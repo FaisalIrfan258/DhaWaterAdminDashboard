@@ -1,11 +1,11 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo, useCallback } from "react";
 import { useUser } from "@/context/UserContext"; // Add this missing import
 import { DashboardShell } from "@/components/dashboard/dashboard-shell";
 import { DashboardHeader } from "@/components/dashboard/dashboard-header";
 import { Button } from "@/components/ui/button";
-import { sensorService } from "@/services";
+import { useSensors, useCreateSensor, useUpdateSensor, useDeleteSensor } from "@/hooks";
 import {
   Card,
   CardContent,
@@ -53,11 +53,16 @@ import {
 
 export default function DevicesPage() {
   const { user } = useUser();
-  const [devices, setDevices] = useState([]);
-  const [filteredDevices, setFilteredDevices] = useState([]);
+  const { data: sensorsData, isLoading: loading, error, refetch } = useSensors();
+  const createSensorMutation = useCreateSensor();
+  const updateSensorMutation = useUpdateSensor();
+  const deleteSensorMutation = useDeleteSensor();
+  
+  // Filtered devices using useMemo for better performance
   const [searchQuery, setSearchQuery] = useState("");
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(null);
+  
+  // Extract devices from React Query response
+  const devices = sensorsData?.sensors || [];
   const [modalState, setModalState] = useState({
     isOpen: false,
     mode: "view",
@@ -69,17 +74,17 @@ export default function DevicesPage() {
   // Pagination states
   const [currentPage, setCurrentPage] = useState(1);
   const [itemsPerPage, setItemsPerPage] = useState(10);
-  const [paginatedDevices, setPaginatedDevices] = useState([]);
-  const [totalPages, setTotalPages] = useState(1);
 
-  // Apply pagination whenever devices or pagination settings change
-  useEffect(() => {
-    paginateDevices();
-  }, [filteredDevices, currentPage, itemsPerPage]);
 
-  // Combined effect to handle filtering when devices, searchQuery, or statusFilter change
-  useEffect(() => {
-    let filtered = [...devices];
+
+
+  // Filter devices based on search query and status using useMemo
+  const sortedDevices = useMemo(() => [...devices].sort(
+    (a, b) => new Date(b.created_at) - new Date(a.created_at)
+  ), [devices]);
+
+  const filteredDevices = useMemo(() => {
+    let filtered = [...sortedDevices];
     
     // Apply status filter first
     if (statusFilter !== "All") {
@@ -98,8 +103,22 @@ export default function DevicesPage() {
       );
     }
     
-    setFilteredDevices(filtered);
-  }, [devices, searchQuery, statusFilter]);
+    return filtered;
+  }, [sortedDevices, searchQuery, statusFilter]);
+
+  const totalPages = useMemo(() => Math.ceil(filteredDevices.length / itemsPerPage), [filteredDevices, itemsPerPage]);
+
+  const paginatedDevices = useMemo(() => {
+    const indexOfLastItem = currentPage * itemsPerPage;
+    const indexOfFirstItem = indexOfLastItem - itemsPerPage;
+    return filteredDevices.slice(indexOfFirstItem, indexOfLastItem);
+  }, [filteredDevices, currentPage, itemsPerPage]);
+
+  useEffect(() => {
+    if (currentPage > totalPages && totalPages > 0) {
+      setCurrentPage(totalPages);
+    }
+  }, [totalPages]);
 
   // Check if user is super admin
   useEffect(() => {
@@ -108,19 +127,7 @@ export default function DevicesPage() {
     }
   }, [user]);
 
-  useEffect(() => {
-    fetchDevices();
-  }, []);
-
-  // Paginate devices function
-  const paginateDevices = () => {
-    const indexOfLastItem = currentPage * itemsPerPage;
-    const indexOfFirstItem = indexOfLastItem - itemsPerPage;
-    const currentDevices = filteredDevices.slice(indexOfFirstItem, indexOfLastItem);
-    
-    setPaginatedDevices(currentDevices);
-    setTotalPages(Math.ceil(filteredDevices.length / itemsPerPage));
-  };
+  // Data is automatically fetched by React Query
 
   const goToNextPage = () => {
     if (currentPage < totalPages) {
@@ -134,49 +141,26 @@ export default function DevicesPage() {
     }
   };
 
-  const handleItemsPerPageChange = (value) => {
+  const handleItemsPerPageChange = useCallback((value) => {
     setItemsPerPage(Number(value));
     setCurrentPage(1); // Reset to first page when changing items per page
-  };
+  }, []);
 
-  // Fetch all sensors
-  const fetchDevices = async () => {
-    setLoading(true);
-    try {
-      const data = await sensorService.getAllSensors();
-      const devicesList = data.sensors || [];
-      const sortedDevices = [...devicesList].sort(
-        (a, b) => new Date(b.created_at) - new Date(a.created_at)
-      );
-      setDevices(sortedDevices);
-      setError(null);
-    } catch (err) {
-      console.error("Error fetching devices:", err);
-      setError("Failed to load devices. Please try again.");
-      toast.error("Failed to load devices", {
-        description: "Please refresh the page to try again.",
-      });
-    } finally {
-      setLoading(false);
-    }
-  };
+
 
   // Handle search - only update search query, let useEffect handle filtering
-  const handleSearch = (e) => {
+  const handleSearch = useCallback((e) => {
     const query = e.target.value;
     setSearchQuery(query);
-  };
+  }, []);
 
   // Add new sensor
   const addSensor = async (sensorData) => {
     try {
-      await sensorService.createSensor(sensorData);
-      // Refresh the devices list
-      await fetchDevices();
+      await createSensorMutation.mutateAsync(sensorData);
       return true;
     } catch (err) {
       console.error("Error adding sensor:", err);
-      setError("Failed to add sensor. Please try again.");
       return false;
     }
   };
@@ -184,13 +168,10 @@ export default function DevicesPage() {
   // Update existing sensor
   const updateSensor = async (sensorData) => {
     try {
-      await sensorService.updateSensor(sensorData);
-      // Refresh the devices list
-      await fetchDevices();
+      await updateSensorMutation.mutateAsync(sensorData);
       return true;
     } catch (err) {
       console.error("Error updating sensor:", err);
-      setError("Failed to update sensor. Please try again.");
       return false;
     }
   };
@@ -198,13 +179,10 @@ export default function DevicesPage() {
   // Delete sensor
   const deleteSensor = async (sensorId) => {
     try {
-      await sensorService.deleteSensor(sensorId);
-      // Refresh the devices list
-      await fetchDevices();
+      await deleteSensorMutation.mutateAsync(sensorId);
       return true;
     } catch (err) {
       console.error("Error deleting sensor:", err);
-      setError("Failed to delete sensor. Please try again.");
       return false;
     }
   };
@@ -212,7 +190,7 @@ export default function DevicesPage() {
   const handleRefresh = async () => {
     setIsRefreshing(true);
     try {
-      await fetchDevices();
+      await refetch();
       toast.success("Devices refreshed successfully");
     } catch (error) {
       console.error("Error refreshing devices:", error);
@@ -242,7 +220,6 @@ export default function DevicesPage() {
 
     if (success) {
       closeModal();
-      await fetchDevices();
     }
   };
 
@@ -312,7 +289,17 @@ export default function DevicesPage() {
 
             {error && (
               <div className="bg-destructive/15 text-destructive p-3 rounded-md mb-4">
-                {error}
+                <div className="flex items-center justify-between">
+                  <span>Error loading devices: {error.message}</span>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => refetch()}
+                  >
+                    <RefreshCw className="h-4 w-4 mr-2" />
+                    Retry
+                  </Button>
+                </div>
               </div>
             )}
 

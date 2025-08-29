@@ -1,67 +1,51 @@
 "use client"
 
-import { useEffect, useState } from "react";
 import { Droplet, Truck, Calendar, Users } from "lucide-react";
-import { toast } from 'sonner';
-import { tankerService, requestService, userService, bookingService } from "@/services";
+import { useTotalTankers, useTotalPendingRequests, useTotalUsers, usePendingBookings } from "@/hooks";
 
 export default function DashboardStats() {
-  const [totalTankers, setTotalTankers] = useState(null);
-  const [totalPendingRequests, setTotalPendingRequests] = useState(null);
-  const [totalUsers, setTotalUsers] = useState(null);
-  const [pendingDeliveries, setPendingDeliveries] = useState(0); // State for pending deliveries
+  // Use React Query hooks for data fetching
+  const { data: tankersData, isLoading: tankersLoading } = useTotalTankers();
+  const { data: requestsData, isLoading: requestsLoading } = useTotalPendingRequests();
+  const { data: usersData, isLoading: usersLoading } = useTotalUsers();
+  const { data: pendingBookings, isLoading: bookingsLoading } = usePendingBookings();
 
-  useEffect(() => {
-    const fetchStats = async () => {
-      try {
-        // Fetch total active tankers
-        const tankersData = await tankerService.getTotalTankers();
-        setTotalTankers(tankersData.total_tankers);
+  // Extract values from API responses
+  const totalTankers = tankersData?.total_tankers;
+  const totalPendingRequests = requestsData?.total_pending_requests;
+  const totalUsers = usersData?.total_users;
+  const pendingDeliveries = pendingBookings?.length || 0;
 
-        // Fetch total pending requests
-        const requestsData = await requestService.getTotalPendingRequests();
-        setTotalPendingRequests(requestsData.total_pending_requests);
-
-        // Fetch total users
-        const usersData = await userService.getTotalUsers();
-        setTotalUsers(usersData.total_users);
-
-        // Fetch all bookings to count pending deliveries
-        const bookingsData = await bookingService.getAllBookings();
-        const pendingCount = bookingsData.filter(booking => booking.status === "Pending").length;
-        setPendingDeliveries(pendingCount);
-      } catch (error) {
-        console.error('Error fetching stats:', error);
-        toast.error('Failed to load stats');
-      }
-    };
-
-    fetchStats();
-  }, []);
+  // Check if any data is still loading
+  const isLoading = tankersLoading || requestsLoading || usersLoading || bookingsLoading;
 
   // Prepare the stats array based on fetched data
   const stats = [
     {
       title: "Total Pending Water Requests",
-      value: totalPendingRequests !== null ? totalPendingRequests : "Loading...", // Placeholder for pending requests
+      value: totalPendingRequests !== undefined ? totalPendingRequests : "--", // Placeholder for pending requests
+      loading: requestsLoading,
       changeType: "positive", // Placeholder for change type
       icon: Droplet,
     },
     {
       title: "Active Tankers",
-      value: totalTankers !== null ? totalTankers : "Loading...", // Placeholder for active tankers
+      value: totalTankers !== undefined ? totalTankers : "--", // Placeholder for active tankers
+      loading: tankersLoading,
       changeType: "positive", // Placeholder for change type
       icon: Truck,
     },
     {
       title: "Total Users",
-      value: totalUsers !== null ? totalUsers : "Loading...", // Placeholder for total users      
+      value: totalUsers !== undefined ? totalUsers : "--", // Placeholder for total users
+      loading: usersLoading,
       changeType: "positive", // Placeholder for change type
       icon: Users,
     },
     {
       title: "Pending Deliveries", // New card for pending deliveries
-      value: pendingDeliveries !== null ? pendingDeliveries : "Loading...", // Placeholder for pending deliveries
+      value: pendingDeliveries !== undefined ? pendingDeliveries : "--", // Placeholder for pending deliveries
+      loading: bookingsLoading,
       changeType: "positive", // Placeholder for change type
       icon: Calendar,
     },

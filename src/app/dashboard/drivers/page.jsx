@@ -1,6 +1,6 @@
 "use client"
 
-import { useEffect, useState } from "react"
+import { useState, useEffect, useMemo, useCallback } from "react"
 import { useUser } from "@/context/UserContext" // Add this missing import
 import { DashboardShell } from "@/components/dashboard/dashboard-shell"
 import { DashboardHeader } from "@/components/dashboard/dashboard-header"
@@ -39,15 +39,18 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
 
-import { driverService } from "@/services"
+import { useDrivers, useCreateDriver, useUpdateDriver, useDeleteDriver } from "@/hooks"
 
 export default function DriversPage() {
   const { user } = useUser()
-  const [drivers, setDrivers] = useState([])
-  const [filteredDrivers, setFilteredDrivers] = useState([])
+  
+  // React Query hooks
+  const { data: driversData = [], isLoading, error, refetch } = useDrivers()
+  const createDriverMutation = useCreateDriver()
+  const updateDriverMutation = useUpdateDriver()
+  const deleteDriverMutation = useDeleteDriver()
+  
   const [searchQuery, setSearchQuery] = useState("")
-  const [loading, setLoading] = useState(true)
-  const [error, setError] = useState(null)
   const [isRefreshing, setIsRefreshing] = useState(false)
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false)
   const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false)
@@ -57,8 +60,7 @@ export default function DriversPage() {
   const [statusFilter, setStatusFilter] = useState("All")
   const [currentPage, setCurrentPage] = useState(1)
   const [itemsPerPage, setItemsPerPage] = useState(10)
-  const [paginatedDrivers, setPaginatedDrivers] = useState([])
-  const [totalPages, setTotalPages] = useState(1)
+  
 
   // Form states for create
   const [fullName, setFullName] = useState("")
@@ -78,28 +80,58 @@ export default function DriversPage() {
 
   const [isSuper, setIsSuper] = useState(false)
 
-  useEffect(() => {
-    fetchDrivers()
-  }, [])
+  // Sort drivers by created_at (newest first)
+  const sortedDrivers = useMemo(() => {
+    if (!driversData || driversData.length === 0) return []
+    return [...driversData].sort((a, b) => new Date(b.created_at) - new Date(a.created_at))
+  }, [driversData])
+
+  // Filter drivers based on search query and status filter
+  const filteredDrivers = useMemo(() => {
+    let filtered = [...sortedDrivers]
+    
+    // Apply status filter
+    if (statusFilter !== "All") {
+      filtered = filtered.filter((driver) => driver.status === statusFilter)
+    }
+    
+    // Apply search filter
+    if (searchQuery.trim()) {
+      const query = searchQuery.toLowerCase()
+      filtered = filtered.filter(
+        (driver) =>
+          driver.full_name?.toLowerCase().includes(query) ||
+          driver.email?.toLowerCase().includes(query) ||
+          driver.phone_number?.toLowerCase().includes(query) ||
+          driver.license_number?.toLowerCase().includes(query) ||
+          driver.username?.toLowerCase().includes(query)
+      )
+    }
+    
+    return filtered
+  }, [sortedDrivers, searchQuery, statusFilter])
+
+  const totalPages = useMemo(() => {
+    return Math.ceil(filteredDrivers.length / itemsPerPage)
+  }, [filteredDrivers, itemsPerPage])
+
+  const paginatedDrivers = useMemo(() => {
+    const indexOfFirstItem = (currentPage - 1) * itemsPerPage
+    const indexOfLastItem = indexOfFirstItem + itemsPerPage
+    return filteredDrivers.slice(indexOfFirstItem, indexOfLastItem)
+  }, [filteredDrivers, currentPage, itemsPerPage])
 
   useEffect(() => {
-    paginateDrivers()
-  }, [filteredDrivers, currentPage, itemsPerPage])
+    if (currentPage > totalPages && totalPages > 0) {
+      setCurrentPage(totalPages)
+    }
+  }, [totalPages, currentPage])
 
   useEffect(() => {
     if (user?.user_type) {
       setIsSuper(user.user_type === "superAdmin");
     }
   }, [user]);
-
-  const paginateDrivers = () => {
-    const indexOfLastItem = currentPage * itemsPerPage;
-    const indexOfFirstItem = indexOfLastItem - itemsPerPage;
-    const currentDrivers = filteredDrivers.slice(indexOfFirstItem, indexOfLastItem);
-    
-    setPaginatedDrivers(currentDrivers);
-    setTotalPages(Math.ceil(filteredDrivers.length / itemsPerPage));
-  };
 
   const goToNextPage = () => {
     if (currentPage < totalPages) {
@@ -113,103 +145,33 @@ export default function DriversPage() {
     }
   };
 
-  const handleItemsPerPageChange = (value) => {
+  const handleItemsPerPageChange = useCallback((value) => {
     setItemsPerPage(Number(value));
     setCurrentPage(1);
-  };
+  }, []);
 
-  const fetchDrivers = async () => {
-    setLoading(true)
-    try {
-      const data = await driverService.getAllDrivers()
-      setDrivers(data || [])
-      setFilteredDrivers(data || [])
-      setError(null)
-    } catch (err) {
-      console.error("Error fetching drivers:", err)
-      setError("Failed to load drivers. Please try again.")
-      toast.error("Failed to load drivers", {
-        description: "Please refresh the page to try again.",
-      })
-    } finally {
-      setLoading(false)
-    }
-  }
 
-  const fetchSingleDriver = async (id) => {
-    try {
-      setLoading(true)
-      const data = await driverService.getDriverById(id)
-      setSelectedDriver(data.data)
-      setIsViewDialogOpen(true)
-    } catch (err) {
-      console.error("Error fetching driver details:", err)
-      toast.error("Failed to load driver details")
-    } finally {
-      setLoading(false)
-    }
-  }
 
-  const handleSearch = (e) => {
+  const handleViewDriver = useCallback((driver) => {
+    setSelectedDriver(driver)
+    setIsViewDialogOpen(true)
+  }, [])
+
+  const handleSearch = useCallback((e) => {
     const query = e.target.value.toLowerCase()
     setSearchQuery(query)
+  }, [])
 
-    if (!query.trim()) {
-      applyStatusFilter(drivers, statusFilter)
-      return
-    }
-
-    const filtered = drivers.filter(
-      (driver) =>
-        driver.full_name?.toLowerCase().includes(query) ||
-        driver.email?.toLowerCase().includes(query) ||
-        driver.phone_number?.includes(query) ||
-        driver.license_number?.toLowerCase().includes(query) ||
-        driver.username?.toLowerCase().includes(query) ||
-        driver.driver_id?.toString().includes(query),
-    )
-
-    applyStatusFilter(filtered, statusFilter)
-  }
-
-  const applyStatusFilter = (driversArray, status) => {
-    if (status === "All") {
-      setFilteredDrivers(driversArray)
-    } else {
-      setFilteredDrivers(driversArray.filter((driver) => driver.availability_status === status))
-    }
-  }
-
-  const handleStatusFilterChange = (value) => {
+  const handleStatusFilterChange = useCallback((value) => {
     setStatusFilter(value)
+  }, [])
 
-    if (!searchQuery.trim()) {
-      applyStatusFilter(drivers, value)
-    } else {
-      const searchFiltered = drivers.filter(
-        (driver) =>
-          driver.full_name?.toLowerCase().includes(searchQuery) ||
-          driver.email?.toLowerCase().includes(searchQuery) ||
-          driver.phone_number?.includes(searchQuery) ||
-          driver.license_number?.toLowerCase().includes(searchQuery) ||
-          driver.username?.toLowerCase().includes(searchQuery) ||
-          driver.driver_id?.toString().includes(searchQuery),
-      )
 
-      applyStatusFilter(searchFiltered, value)
-    }
-  }
-
-  useEffect(() => {
-    // Sort drivers in descending order by creation date
-    const sortedDrivers = [...drivers].sort((a, b) => new Date(b.created_at) - new Date(a.created_at))
-    applyStatusFilter(sortedDrivers, statusFilter)
-  }, [drivers, statusFilter])
 
   const handleRefresh = async () => {
     setIsRefreshing(true)
     try {
-      await fetchDrivers()
+      await refetch()
       toast.success("Drivers list refreshed successfully")
     } catch (error) {
       console.error("Error refreshing drivers:", error)
@@ -233,8 +195,7 @@ export default function DriversPage() {
     }
 
     try {
-      setLoading(true)
-      await driverService.createDriver({
+      await createDriverMutation.mutateAsync({
         full_name: fullName,
         email: email,
         phone_number: phoneNumber,
@@ -243,7 +204,6 @@ export default function DriversPage() {
         password: password,
       })
 
-      toast.success("Driver created successfully")
       setFullName("")
       setEmail("")
       setPhoneNumber("")
@@ -251,12 +211,8 @@ export default function DriversPage() {
       setUsername("")
       setPassword("")
       setIsCreateDialogOpen(false)
-      await fetchDrivers()
     } catch (error) {
       console.error("Error creating driver:", error)
-      toast.error("Failed to create driver")
-    } finally {
-      setLoading(false)
     }
   }
 
@@ -264,13 +220,10 @@ export default function DriversPage() {
     if (!selectedDriver) return
 
     try {
-      await driverService.deleteDriver(selectedDriver.driver_id)
+      await deleteDriverMutation.mutateAsync(selectedDriver.driver_id)
       setIsDeleteDialogOpen(false)
-      toast.success("Driver deleted successfully")
-      await fetchDrivers()
     } catch (error) {
       console.error("Error deleting driver:", error)
-      toast.error("Failed to delete driver")
     }
   }
 
@@ -289,24 +242,21 @@ export default function DriversPage() {
     }
 
     try {
-      setLoading(true)
-      await driverService.updateDriver(selectedDriver.driver_id, {
-        full_name: editFullName,
-        email: editEmail,
-        phone_number: editPhoneNumber,
-        license_number: editLicenseNumber,
-        username: editUsername,
-        availability_status: editStatus,
+      await updateDriverMutation.mutateAsync({
+        id: selectedDriver.driver_id,
+        data: {
+          full_name: editFullName,
+          email: editEmail,
+          phone_number: editPhoneNumber,
+          license_number: editLicenseNumber,
+          username: editUsername,
+          availability_status: editStatus,
+        }
       })
 
-      toast.success("Driver updated successfully")
       setIsEditDialogOpen(false)
-      await fetchDrivers()
     } catch (error) {
       console.error("Error updating driver:", error)
-      toast.error("Failed to update driver")
-    } finally {
-      setLoading(false)
     }
   }
 
@@ -429,7 +379,7 @@ export default function DriversPage() {
                 <Button variant="outline" onClick={() => setIsCreateDialogOpen(false)}>
                   Cancel
                 </Button>
-                <Button onClick={handleCreateDriver} disabled={loading}>
+                <Button onClick={handleCreateDriver} disabled={createDriverMutation.isPending}>
                   Add Driver
                 </Button>
               </DialogFooter>
@@ -470,9 +420,16 @@ export default function DriversPage() {
               )}
             </div>
 
-            {error && <div className="bg-destructive/15 text-destructive p-3 rounded-md mb-4">{error}</div>}
+            {error && (
+              <div className="bg-destructive/15 text-destructive p-3 rounded-md mb-4 flex items-center justify-between">
+                <span>{error.message || 'An error occurred while loading drivers'}</span>
+                <Button variant="outline" size="sm" onClick={() => refetch()}>
+                  Retry
+                </Button>
+              </div>
+            )}
 
-            {loading && !isRefreshing ? (
+            {isLoading && !isRefreshing ? (
               <div className="flex justify-center items-center py-8">
                 <RefreshCw className="h-8 w-8 animate-spin text-muted-foreground" />
               </div>
@@ -524,7 +481,7 @@ export default function DriversPage() {
                                 </Button>
                               </DropdownMenuTrigger>
                               <DropdownMenuContent align="end" modal={false}>
-                                <DropdownMenuItem onClick={() => fetchSingleDriver(driver.driver_id)}>
+                                <DropdownMenuItem onClick={() => handleViewDriver(driver)}>
                                   <Eye className="mr-2 h-4 w-4" />
                                   View details
                                 </DropdownMenuItem>
@@ -735,7 +692,7 @@ export default function DriversPage() {
             <Button variant="outline" onClick={() => setIsEditDialogOpen(false)}>
               Cancel
             </Button>
-            <Button onClick={handleUpdateDriver} disabled={loading}>
+            <Button onClick={handleUpdateDriver} disabled={updateDriverMutation.isPending}>
               Update Driver
             </Button>
           </DialogFooter>

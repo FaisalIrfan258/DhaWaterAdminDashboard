@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo, useCallback } from "react";
 import { DashboardShell } from "@/components/dashboard/dashboard-shell";
 import { DashboardHeader } from "@/components/dashboard/dashboard-header";
 import { Button } from "@/components/ui/button";
@@ -24,7 +24,7 @@ import { Users, Plus, Search, RefreshCw, ChevronLeft, ChevronRight } from "lucid
 import { Input } from "@/components/ui/input";
 import { UserModal } from "@/components/users/user-modal";
 import { toast } from "sonner";
-import { userService, sensorService } from "@/services";
+import { useUsers, useCreateUser, useUpdateUser, useDeleteUser, useSensors } from "@/hooks";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -50,15 +50,23 @@ import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from "@
 
 export default function UsersPage() {
   const { user } = useUser();
-  const [users, setUsers] = useState([]);
+  const { data: usersData, isLoading, error, refetch } = useUsers();
+  const { data: sensorsData } = useSensors();
+  const createUserMutation = useCreateUser();
+  const updateUserMutation = useUpdateUser();
+  const deleteUserMutation = useDeleteUser();
+  
   const [filteredUsers, setFilteredUsers] = useState([]);
   const [searchQuery, setSearchQuery] = useState("");
-  const [sensors, setSensors] = useState([]);
+  
+  // Extract data from React Query responses
+  const users = usersData || [];
+  const sensors = sensorsData?.sensors || [];
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [isViewModalOpen, setIsViewModalOpen] = useState(false);
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
-  const [isLoading, setIsLoading] = useState(false);
+
   const [editingUser, setEditingUser] = useState(null);
   const [viewingUser, setViewingUser] = useState(null);
   const [userToDelete, setUserToDelete] = useState(null);
@@ -69,23 +77,20 @@ export default function UsersPage() {
   // Pagination states
   const [currentPage, setCurrentPage] = useState(1);
   const [itemsPerPage, setItemsPerPage] = useState(10);
-  const [paginatedUsers, setPaginatedUsers] = useState([]);
-  const [totalPages, setTotalPages] = useState(1);
 
-  // Apply pagination whenever users or pagination settings change
-  useEffect(() => {
-    paginateUsers();
-  }, [filteredUsers, currentPage, itemsPerPage]);
+  const totalPages = useMemo(() => Math.ceil(filteredUsers.length / itemsPerPage), [filteredUsers, itemsPerPage]);
 
-  // Paginate users function
-  const paginateUsers = () => {
+  const paginatedUsers = useMemo(() => {
     const indexOfLastItem = currentPage * itemsPerPage;
     const indexOfFirstItem = indexOfLastItem - itemsPerPage;
-    const currentUsers = filteredUsers.slice(indexOfFirstItem, indexOfLastItem);
-    
-    setPaginatedUsers(currentUsers);
-    setTotalPages(Math.ceil(filteredUsers.length / itemsPerPage));
-  };
+    return filteredUsers.slice(indexOfFirstItem, indexOfLastItem);
+  }, [filteredUsers, currentPage, itemsPerPage]);
+
+  useEffect(() => {
+    if (currentPage > totalPages && totalPages > 0) {
+      setCurrentPage(totalPages);
+    }
+  }, [totalPages]);
 
   const goToNextPage = () => {
     if (currentPage < totalPages) {
@@ -99,87 +104,65 @@ export default function UsersPage() {
     }
   };
 
-  const handleItemsPerPageChange = (value) => {
+  const handleItemsPerPageChange = useCallback((value) => {
     setItemsPerPage(Number(value));
     setCurrentPage(1); // Reset to first page when changing items per page
-  };
+  }, []);
 
-  // Fetch all users
-  const fetchUsers = async () => {
-    try {
-      const data = await userService.getAllUsers();
-      const usersList = data.users || [];
+  // Format users data from React Query
+  const formattedUsers = useMemo(() => {
+    if (!users || users.length === 0) return [];
+    
+    // Sort users by created_at in descending order
+    const sortedUsers = [...users].sort(
+      (a, b) => new Date(b.created_at) - new Date(a.created_at)
+    );
 
-      // Sort users by created_at in descending order
-      const sortedUsers = [...usersList].sort(
-        (a, b) => new Date(b.created_at) - new Date(a.created_at)
-      );
+    // Update to include all relevant fields
+    return sortedUsers.map((user) => {
+      // Format the address by combining street_address and phase_number if available
+      let displayAddress = user.street_address || user.home_address || '';
+      if (user.phase_number) {
+        displayAddress += ` Phase ${user.phase_number}`;
+      } else if (user.Phase && user.Phase.phase_name) {
+        displayAddress += ` Phase ${user.Phase.phase_name}`;
+      }
+      
+      return {
+        customer_id: user.customer_id,
+        full_name: user.full_name,
+        email: user.email,
+        phone_number: user.phone_number,
+        home_address: displayAddress, // Use the combined address for display
+        street_address: user.street_address,
+        phase_number: user.phase_number,
+        username: user.username,
+        balance: user.balance, // Include balance
+        created_at: user.created_at,
+        category: user.category, // Include category field
+        WaterTanks: user.WaterTanks?.map((tank) => ({
+          sensor_id: tank.sensor_id, // Map sensor_id from WaterTanks
+          sensor_name: tank.Sensor?.sensor_name || `Sensor ${tank.sensor_id}` // Include sensor name
+        })) || [],
+        userType: user.UserType?.type, // Include user type
+        userTypeDescription: user.UserType?.description, // Include user type description
+      };
+    });
+  }, [users]);
 
-      // Update to include all relevant fields
-      const formattedUsers = sortedUsers.map((user) => {
-        // Format the address by combining street_address and phase_number if available
-        let displayAddress = user.street_address || user.home_address || '';
-        if (user.phase_number) {
-          displayAddress += ` Phase ${user.phase_number}`;
-        } else if (user.Phase && user.Phase.phase_name) {
-          displayAddress += ` Phase ${user.Phase.phase_name}`;
-        }
-        
-        return {
-          customer_id: user.customer_id,
-          full_name: user.full_name,
-          email: user.email,
-          phone_number: user.phone_number,
-          home_address: displayAddress, // Use the combined address for display
-          street_address: user.street_address,
-          phase_number: user.phase_number,
-          username: user.username,
-          balance: user.balance, // Include balance
-          created_at: user.created_at,
-          category: user.category, // Include category field
-          WaterTanks: user.WaterTanks.map((tank) => ({
-            sensor_id: tank.sensor_id, // Map sensor_id from WaterTanks
-            sensor_name: tank.Sensor?.sensor_name || `Sensor ${tank.sensor_id}` // Include sensor name
-          })),
-          userType: user.UserType.type, // Include user type
-          userTypeDescription: user.UserType.description, // Include user type description
-        };
-      });
 
-      setUsers(formattedUsers);
-      setFilteredUsers(formattedUsers); // Initialize filtered users with all users
-    } catch (error) {
-      console.error("Error fetching users:", error);
-      toast.error("Failed to load users", {
-        description: "Please refresh the page to try again.",
-      });
-    }
-  };
-
-  // Fetch sensors for the dropdown
-  const fetchSensors = async () => {
-    try {
-      const data = await sensorService.getAllSensors();
-      setSensors(data.sensors || []);
-    } catch (error) {
-      console.error("Error fetching sensors:", error);
-      toast.error("Failed to load sensors", {
-        description: "Please refresh the page to try again.",
-      });
-    }
-  };
 
   // Handle search
-  const handleSearch = (e) => {
+  const handleSearch = useCallback((e) => {
     const query = e.target.value.toLowerCase();
     setSearchQuery(query);
 
     if (!query.trim()) {
-      setFilteredUsers(users);
+      setFilteredUsers(formattedUsers);
       return;
     }
 
-    const filtered = users.filter(
+    const filtered = formattedUsers.filter(
       (user) =>
         user.full_name?.toLowerCase().includes(query) ||
         user.email?.toLowerCase().includes(query) ||
@@ -192,62 +175,28 @@ export default function UsersPage() {
     );
 
     setFilteredUsers(filtered);
-  };
+  }, [formattedUsers]);
 
   // Add new user
   const handleAddUser = async (userData) => {
-    setIsLoading(true);
-
-    const loadingToast = toast.loading("Creating user...");
-
     try {
-      await userService.createUser(userData);
-
-      toast.dismiss(loadingToast);
-      toast.success("User created successfully!", {
-        description: `${userData.full_name} has been added to the system.`,
-      });
-
-      await fetchUsers();
+      await createUserMutation.mutateAsync(userData);
       setIsAddModalOpen(false);
     } catch (error) {
       console.error("Error creating user:", error);
-      toast.dismiss(loadingToast);
-      toast.error("Failed to create user", {
-        description:
-          "Please try again or contact support if the problem persists.",
-      });
-    } finally {
-      setIsLoading(false);
+      // Error handling is done in the hook
     }
   };
 
   // Update existing user
   const handleUpdateUser = async (userData) => {
-    setIsLoading(true);
-
-    const loadingToast = toast.loading("Updating user...");
-
     try {
-      await userService.updateUser(userData);
-
-      toast.dismiss(loadingToast);
-      toast.success("User updated successfully!", {
-        description: `${userData.full_name}'s information has been updated.`,
-      });
-
-      await fetchUsers();
+      await updateUserMutation.mutateAsync({ userId: userData.customer_id, userData });
       setIsEditModalOpen(false);
       setEditingUser(null);
     } catch (error) {
       console.error("Error updating user:", error);
-      toast.dismiss(loadingToast);
-      toast.error("Failed to update user", {
-        description:
-          "Please try again or contact support if the problem persists.",
-      });
-    } finally {
-      setIsLoading(false);
+      // Error handling is done in the hook
     }
   };
 
@@ -289,9 +238,9 @@ export default function UsersPage() {
   };
 
   // Handle view user details
-  const handleViewUser = (user) => {
+  const handleViewUser = useCallback((user) => {
     router.push(`/dashboard/users/${user.customer_id}`);
-  };
+  }, [router]);
 
   // Open delete confirmation dialog
   const confirmDeleteUser = (user) => {
@@ -307,48 +256,36 @@ export default function UsersPage() {
   const handleDeleteUser = async () => {
     if (!userToDelete) return;
 
-    const loadingToast = toast.loading("Deleting user...");
-
     try {
-      await userService.deleteUser(userToDelete.customer_id);
-
-      toast.dismiss(loadingToast);
-      toast.success("User deleted successfully");
-
-      // Refresh the users list
-      await fetchUsers();
+      await deleteUserMutation.mutateAsync(userToDelete.customer_id);
     } catch (error) {
       console.error("Error deleting user:", error);
-      toast.dismiss(loadingToast);
-      toast.error("Failed to delete user", {
-        description:
-          "Please try again or contact support if the problem persists.",
-      });
+      // Error handling is done in the hook
     } finally {
       setIsDeleteDialogOpen(false);
       setUserToDelete(null);
     }
   };
 
-  const handleCloseAddModal = () => {
+  const handleCloseAddModal = useCallback(() => {
     setIsAddModalOpen(false);
-  };
+  }, []);
 
-  const handleCloseEditModal = () => {
+  const handleCloseEditModal = useCallback(() => {
     setIsEditModalOpen(false);
     setEditingUser(null);
-  };
+  }, []);
 
-  const handleCloseViewModal = () => {
+  const handleCloseViewModal = useCallback(() => {
     setIsViewModalOpen(false);
     setViewingUser(null);
-  };
+  }, []);
 
-  // Add a refresh function
+  // Handle refresh
   const handleRefresh = async () => {
     setIsRefreshing(true);
     try {
-      await Promise.all([fetchUsers(), fetchSensors()]);
+      await refetch();
       toast.success("Data refreshed successfully");
     } catch (error) {
       console.error("Error refreshing data:", error);
@@ -358,19 +295,39 @@ export default function UsersPage() {
     }
   };
 
-  useEffect(() => {
-    fetchUsers();
-    fetchSensors();
-  }, []);
+  // Show error state
+  if (error) {
+    return (
+      <DashboardShell>
+        <DashboardHeader heading="Users" text="Manage system users and their information.">
+          <Button onClick={handleRefresh} disabled={isRefreshing}>
+            {isRefreshing ? "Refreshing..." : "Refresh"}
+          </Button>
+        </DashboardHeader>
+        <div className="flex items-center justify-center h-64">
+          <div className="text-center">
+            <p className="text-muted-foreground mb-4">
+              {error?.message || "Failed to load users. Please try again."}
+            </p>
+            <Button onClick={handleRefresh} disabled={isRefreshing}>
+              {isRefreshing ? "Refreshing..." : "Try Again"}
+            </Button>
+          </div>
+        </div>
+      </DashboardShell>
+    );
+  }
 
-  // When users change, update filtered users
+
+
+  // When formattedUsers change, update filtered users
   useEffect(() => {
     if (searchQuery) {
       handleSearch({ target: { value: searchQuery } });
     } else {
-      setFilteredUsers(users);
+      setFilteredUsers(formattedUsers);
     }
-  }, [users]);
+  }, [formattedUsers, searchQuery, handleSearch]);
 
   // Format date to local string
   const formatDate = (dateString) => {
@@ -604,7 +561,7 @@ export default function UsersPage() {
         mode="add"
         sensors={sensors}
         onSubmit={handleAddUser}
-        isLoading={isLoading}
+        isLoading={createUserMutation.isPending}
       />
 
       <UserModal
@@ -614,7 +571,7 @@ export default function UsersPage() {
         user={editingUser}
         sensors={sensors}
         onSubmit={handleUpdateUser}
-        isLoading={isLoading}
+        isLoading={updateUserMutation.isPending}
       />
 
       <ViewUserModal

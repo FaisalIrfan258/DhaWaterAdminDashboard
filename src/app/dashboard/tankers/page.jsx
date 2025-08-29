@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useState, useEffect, useMemo, useCallback } from "react"
 import { DashboardShell } from "@/components/dashboard/dashboard-shell"
 import { DashboardHeader } from "@/components/dashboard/dashboard-header"
 import { Button } from "@/components/ui/button"
@@ -15,16 +15,19 @@ import { TankerModal } from "@/components/tankers/tanker-modal"
 import { TankerDetailsModal } from "@/components/tankers/tanker-details-modal"
 import { DeleteConfirmationDialog } from "@/components/tankers/delete-confirmation-dialog"
 import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from "@/components/ui/select"
-import { tankerService } from "@/services"
+import { useTankers, useCreateTanker, useUpdateTanker, useDeleteTanker } from "@/hooks"
 import { useUser } from "@/context/UserContext"
 
 export default function TankersPage() {
   const { user } = useUser()
-  const [tankers, setTankers] = useState([])
-  const [filteredTankers, setFilteredTankers] = useState([])
+  
+  // React Query hooks
+  const { data: tankersData = [], isLoading, error, refetch } = useTankers()
+  const createTankerMutation = useCreateTanker()
+  const updateTankerMutation = useUpdateTanker()
+  const deleteTankerMutation = useDeleteTanker()
+  
   const [searchQuery, setSearchQuery] = useState("")
-  const [loading, setLoading] = useState(true)
-  const [error, setError] = useState(null)
   const [isRefreshing, setIsRefreshing] = useState(false)
   const [modalOpen, setModalOpen] = useState(false)
   const [detailsModalOpen, setDetailsModalOpen] = useState(false)
@@ -38,8 +41,7 @@ export default function TankersPage() {
   // Pagination states
   const [currentPage, setCurrentPage] = useState(1)
   const [itemsPerPage, setItemsPerPage] = useState(10)
-  const [paginatedTankers, setPaginatedTankers] = useState([])
-  const [totalPages, setTotalPages] = useState(1)
+  
   
 
 
@@ -50,20 +52,50 @@ export default function TankersPage() {
     }
   }, [user])
 
-  // Apply pagination whenever tankers or pagination settings change
-  useEffect(() => {
-    paginateTankers()
-  }, [filteredTankers, currentPage, itemsPerPage])
+  // Sort tankers by creation date (newest first)
+  const sortedTankers = useMemo(() => {
+    return [...tankersData].sort((a, b) => new Date(b.created_at) - new Date(a.created_at))
+  }, [tankersData])
+
+  // Filter tankers based on search query and status
+  const filteredTankers = useMemo(() => {
+    let filtered = sortedTankers
+
+    // Filter by status
+    if (statusFilter !== "All") {
+      filtered = filtered.filter((tanker) => tanker.availability_status === statusFilter)
+    }
+
+    // Filter by search query
+    if (searchQuery && searchQuery.trim()) {
+      const query = searchQuery.toLowerCase()
+      filtered = filtered.filter(
+        (tanker) =>
+          tanker.tanker_name?.toLowerCase().includes(query) ||
+          tanker.plate_number?.toLowerCase().includes(query) ||
+          tanker.availability_status?.toLowerCase().includes(query)
+      )
+    }
+
+    return filtered
+  }, [sortedTankers, searchQuery, statusFilter])
 
   // Paginate tankers function
-  const paginateTankers = () => {
-    const indexOfLastItem = currentPage * itemsPerPage
-    const indexOfFirstItem = indexOfLastItem - itemsPerPage
-    const currentTankers = filteredTankers.slice(indexOfFirstItem, indexOfLastItem)
-    
-    setPaginatedTankers(currentTankers)
-    setTotalPages(Math.ceil(filteredTankers.length / itemsPerPage))
-  }
+  const totalPages = useMemo(() => {
+    return Math.ceil(filteredTankers.length / itemsPerPage)
+  }, [filteredTankers, itemsPerPage])
+
+  const paginatedTankers = useMemo(() => {
+    const indexOfFirstItem = (currentPage - 1) * itemsPerPage
+    const indexOfLastItem = indexOfFirstItem + itemsPerPage
+    return filteredTankers.slice(indexOfFirstItem, indexOfLastItem)
+  }, [filteredTankers, currentPage, itemsPerPage])
+
+  useEffect(() => {
+    if (currentPage > totalPages && totalPages > 0) {
+      setCurrentPage(totalPages)
+    }
+  }, [totalPages, currentPage])
 
   const goToNextPage = () => {
     if (currentPage < totalPages) {
@@ -77,10 +109,10 @@ export default function TankersPage() {
     }
   }
 
-  const handleItemsPerPageChange = (value) => {
+  const handleItemsPerPageChange = useCallback((value) => {
     setItemsPerPage(Number(value))
     setCurrentPage(1) // Reset to first page when changing items per page
-  }
+  }, [])
 
   const getStatusBadgeVariant = (status) => {
     switch (status) {
@@ -90,24 +122,6 @@ export default function TankersPage() {
         return "destructive"
       default:
         return "default"
-    }
-  }
-
-  // Fetch all tankers
-  const fetchTankers = async () => {
-    setLoading(true)
-    try {
-      const data = await tankerService.getAllTankers()
-      const sortedTankers = [...data].sort((a, b) => new Date(b.created_at) - new Date(a.created_at))
-      setTankers(sortedTankers)
-      setFilteredTankers(sortedTankers)
-      setError(null)
-    } catch (err) {
-      console.error("Error fetching tankers:", err)
-      setError("Failed to load tankers")
-      toast.error("Failed to load tankers")
-    } finally {
-      setLoading(false)
     }
   }
 
@@ -125,13 +139,10 @@ export default function TankersPage() {
         phase_id: data.phase_id, // Now sending an array of phase IDs instead of a single ID
       }
 
-      await tankerService.createTanker(payload)
-      toast.success("Tanker added successfully")
-      fetchTankers() // Refresh the list
+      await createTankerMutation.mutateAsync(payload)
       setModalOpen(false)
     } catch (error) {
       console.error("Error:", error)
-      toast.error("Failed to add tanker")
     }
   }
 
@@ -155,13 +166,10 @@ export default function TankersPage() {
         phase_id: data.phase_id, // Now sending an array of phase IDs instead of a single ID
       }
 
-      await tankerService.updateTanker(editingTanker.tanker_id, payload)
-      toast.success("Tanker updated successfully")
-      fetchTankers() // Refresh the list
+      await updateTankerMutation.mutateAsync({ tankerId: editingTanker.tanker_id, tankerData: payload })
       setModalOpen(false)
     } catch (error) {
       console.error("Error:", error)
-      toast.error("Failed to update tanker")
     }
   }
 
@@ -174,14 +182,11 @@ export default function TankersPage() {
 
     setIsDeleting(true)
     try {
-      await tankerService.deleteTanker(deletingTanker.tanker_id)
-      toast.success("Tanker deleted successfully")
-      fetchTankers() // Refresh the list
+      await deleteTankerMutation.mutateAsync(deletingTanker.tanker_id)
       setDeleteDialogOpen(false)
       setDeletingTanker(null)
     } catch (error) {
       console.error("Error:", error)
-      toast.error("Failed to delete tanker")
     } finally {
       setIsDeleting(false)
     }
@@ -200,31 +205,16 @@ export default function TankersPage() {
   }
 
   // Handle search
-  const handleSearch = (e) => {
+  const handleSearch = useCallback((e) => {
     const query = e.target.value.toLowerCase()
     setSearchQuery(query)
-
-    if (!query.trim()) {
-      setFilteredTankers(tankers)
-      return
-    }
-
-    const filtered = tankers.filter(
-      (tanker) =>
-        tanker.tanker_name.toLowerCase().includes(query) ||
-        tanker.plate_number.toLowerCase().includes(query) ||
-        tanker.availability_status.toLowerCase().includes(query) ||
-        (tanker.Driver?.full_name && tanker.Driver.full_name.toLowerCase().includes(query)),
-    )
-
-    setFilteredTankers(filtered)
-  }
+  }, [])
 
   // Handle refresh
   const handleRefresh = async () => {
     setIsRefreshing(true)
     try {
-      await fetchTankers()
+      await refetch()
       toast.success("Tankers list refreshed")
     } catch (error) {
       toast.error("Failed to refresh tankers")
@@ -233,28 +223,17 @@ export default function TankersPage() {
     }
   }
 
-  const handleEdit = (tanker) => {
+  const handleEdit = useCallback((tanker) => {
     setEditingTanker(tanker) // Set the selected tanker for editing
     setModalOpen(true) // Open the edit modal
-  }
+  }, [])
 
-  const handleDelete = (tanker) => {
+  const handleDelete = useCallback((tanker) => {
     setDeletingTanker(tanker) // Set the selected tanker for deletion
     setDeleteDialogOpen(true) // Open the delete confirmation dialog
-  }
-
-  // Update filtered tankers based on status filter
-  useEffect(() => {
-    let filtered = [...tankers]
-    if (statusFilter !== "All") {
-      filtered = filtered.filter((tanker) => tanker.availability_status === statusFilter)
-    }
-    setFilteredTankers(filtered)
-  }, [statusFilter, tankers])
-
-  useEffect(() => {
-    fetchTankers()
   }, [])
+
+
 
   return (
     <DashboardShell>
@@ -310,10 +289,17 @@ export default function TankersPage() {
               )}
             </div>
 
-            {error && <div className="bg-destructive/15 text-destructive p-3 rounded-md mb-4">{error}</div>}
+            {error && (
+              <div className="bg-destructive/15 text-destructive p-3 rounded-md mb-4 flex items-center justify-between">
+                <span>{error.message}</span>
+                <Button variant="outline" size="sm" onClick={() => refetch()}>
+                  Retry
+                </Button>
+              </div>
+            )}
 
             <div className="relative w-full overflow-auto">
-              {loading ? (
+              {isLoading ? (
                 <div className="flex justify-center items-center py-8">
                   <RefreshCw className="h-8 w-8 animate-spin text-muted-foreground" />
                 </div>

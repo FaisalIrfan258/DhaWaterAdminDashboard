@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useState, useEffect, useCallback, useMemo } from "react"
 import { useRouter } from "next/navigation"
 import ProtectedRoute from "@/components/auth/ProtectedRoute"
 import AdminList from "@/components/dashboard/admin-list"
@@ -12,42 +12,43 @@ import { Label } from "@/components/ui/label"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { PlusCircle, ChevronLeft, ChevronRight } from "lucide-react"
-import { adminService } from "@/services"
+import { useAdmins, useCreateAdmin, useUpdateAdmin, useDeleteAdmin } from "@/hooks"
 
 function AdminManagementPageContent() {
   const router = useRouter();
+  
+  // React Query hooks
+  const { data, isLoading, error, refetch } = useAdmins();
+  const admins = useMemo(() => Array.isArray(data?.admins) ? data.admins : [], [data]);
+  const createAdminMutation = useCreateAdmin();
+  const updateAdminMutation = useUpdateAdmin();
+  const deleteAdminMutation = useDeleteAdmin();
+  
   const [fullName, setFullName] = useState("")
   const [email, setEmail] = useState("")
   const [password, setPassword] = useState("")
   const [userType, setUserType] = useState("")
-  const [admins, setAdmins] = useState([])
   const [selectedAdmin, setSelectedAdmin] = useState(null)
   const [isModalOpen, setIsModalOpen] = useState(false)
-  const [isLoading, setIsLoading] = useState(false)
   // Pagination states
   const [currentPage, setCurrentPage] = useState(1)
   const [itemsPerPage, setItemsPerPage] = useState(10)
-  const [paginatedAdmins, setPaginatedAdmins] = useState([])
-  const [totalPages, setTotalPages] = useState(1)
+  
+  
 
-  // Fetch admins on component mount
-  useEffect(() => {
-    fetchAdmins();
-  }, []);
+  const totalPages = useMemo(() => Math.ceil(admins.length / itemsPerPage), [admins, itemsPerPage]);
 
-  // Apply pagination whenever admins list or pagination settings change
-  useEffect(() => {
-    paginateAdmins();
-  }, [admins, currentPage, itemsPerPage]);
-
-  const paginateAdmins = () => {
+  const paginatedAdmins = useMemo(() => {
     const indexOfLastItem = currentPage * itemsPerPage;
     const indexOfFirstItem = indexOfLastItem - itemsPerPage;
-    const currentAdmins = admins.slice(indexOfFirstItem, indexOfLastItem);
-    
-    setPaginatedAdmins(currentAdmins);
-    setTotalPages(Math.ceil(admins.length / itemsPerPage));
-  };
+    return admins.slice(indexOfFirstItem, indexOfLastItem);
+  }, [admins, currentPage, itemsPerPage]);
+
+  useEffect(() => {
+    if (currentPage > totalPages && totalPages > 0) {
+      setCurrentPage(totalPages);
+    }
+  }, [totalPages, currentPage]);
 
   const goToNextPage = () => {
     if (currentPage < totalPages) {
@@ -61,32 +62,20 @@ function AdminManagementPageContent() {
     }
   };
 
-  const handleItemsPerPageChange = (value) => {
+  const handleItemsPerPageChange = useCallback((value) => {
     setItemsPerPage(Number(value));
     setCurrentPage(1); // Reset to first page when changing items per page
-  };
+  }, []);
 
-  const fetchAdmins = async () => {
-    setIsLoading(true);
-    try {
-      const data = await adminService.getAllAdmins();
-      const sortedAdmins = [...data.admins].sort((a, b) => a.full_name.localeCompare(b.full_name));
-      setAdmins(sortedAdmins);
-    } catch (error) {
-      console.error('Error fetching admins:', error);
-      toast.error('Failed to fetch admins');
-    } finally {
-      setIsLoading(false);
-    }
+  const handleRefresh = async () => {
+    await refetch();
   };
 
   const handleAddAdmin = async (e) => {
     e.preventDefault();
-    setIsLoading(true);
 
     if (!fullName || !email || !password || !userType) {
       toast.error('Please fill all required fields');
-      setIsLoading(false);
       return;
     }
 
@@ -98,31 +87,23 @@ function AdminManagementPageContent() {
     };
 
     try {
-      await adminService.createAdmin(payload);
-      toast.success('Admin created successfully');
+      await createAdminMutation.mutateAsync(payload);
       resetForm();
-      await fetchAdmins();
     } catch (error) {
       console.error('Error:', error);
-      toast.error('Failed to create admin');
-    } finally {
-      setIsLoading(false);
     }
   };
 
   const handleUpdateAdmin = async (e) => {
     e.preventDefault();
     if (!selectedAdmin) return;
-    setIsLoading(true);
 
     if (!fullName || !email || !userType) {
       toast.error('Please fill all required fields');
-      setIsLoading(false);
       return;
     }
 
     const payload = {
-      admin_id: selectedAdmin,
       full_name: fullName,
       email: email,
       user_type: userType
@@ -134,15 +115,10 @@ function AdminManagementPageContent() {
     }
 
     try {
-      await adminService.updateAdmin(payload);
-      toast.success('Admin updated successfully');
+      await updateAdminMutation.mutateAsync({ adminId: selectedAdmin, adminData: payload });
       resetForm();
-      await fetchAdmins();
     } catch (error) {
       console.error('Error:', error);
-      toast.error('Failed to update admin');
-    } finally {
-      setIsLoading(false);
     }
   };
 
@@ -156,32 +132,26 @@ function AdminManagementPageContent() {
   };
 
   const handleDeleteAdmin = async (adminId) => {
-    setIsLoading(true);
     try {
-      await adminService.deleteAdmin(adminId);
-      toast.success('Admin deleted successfully');
-      await fetchAdmins();
+      await deleteAdminMutation.mutateAsync(adminId);
     } catch (error) {
       console.error('Error:', error);
-      toast.error('Failed to delete admin');
-    } finally {
-      setIsLoading(false);
     }
   };
 
-  const handleOpenAddModal = () => {
+  const handleOpenAddModal = useCallback(() => {
     resetForm();
     setIsModalOpen(true);
-  };
+  }, [resetForm]);
 
-  const handleOpenEditModal = (admin) => {
+  const handleOpenEditModal = useCallback((admin) => {
     setFullName(admin.full_name);
     setEmail(admin.email);
     setPassword(""); // Clear password for security
     setUserType(admin.UserType?.description || "Admin"); 
     setSelectedAdmin(admin.admin_id);
     setIsModalOpen(true);
-  };
+  }, []);
 
   return (
     <div className="space-y-8 p-6">
@@ -198,7 +168,15 @@ function AdminManagementPageContent() {
         </CardHeader>
         <CardContent>
           {isLoading && <div className="flex justify-center py-6">Loading administrators...</div>}
-          {!isLoading && (
+          {error && (
+            <div className="flex flex-col items-center py-6 space-y-4">
+              <p className="text-red-600">Failed to load administrators</p>
+              <Button onClick={handleRefresh} variant="outline">
+                Retry
+              </Button>
+            </div>
+          )}
+          {!isLoading && !error && (
             <>
               <AdminList 
                 admins={paginatedAdmins} 
@@ -327,9 +305,9 @@ function AdminManagementPageContent() {
             </Button>
             <Button 
               type="submit" 
-              disabled={isLoading}
+              disabled={createAdminMutation.isPending || updateAdminMutation.isPending}
             >
-              {isLoading ? "Processing..." : (selectedAdmin ? "Update Administrator" : "Add Administrator")}
+              {(createAdminMutation.isPending || updateAdminMutation.isPending) ? "Processing..." : (selectedAdmin ? "Update Administrator" : "Add Administrator")}
             </Button>
           </div>
         </form>

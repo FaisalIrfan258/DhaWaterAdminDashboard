@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useMemo, useEffect, useCallback } from "react";
 import { DashboardShell } from "@/components/dashboard/dashboard-shell";
 import { DashboardHeader } from "@/components/dashboard/dashboard-header";
 import { Button } from "@/components/ui/button";
@@ -22,7 +22,6 @@ import {
 import { Badge } from "@/components/ui/badge";
 import { MessageSquare, Search, RefreshCw, ChevronLeft, ChevronRight } from "lucide-react";
 import { Input } from "@/components/ui/input";
-import { toast } from "sonner";
 import {
   Dialog,
   DialogContent,
@@ -41,17 +40,14 @@ import {
   SelectItem,
 } from "@/components/ui/select";
 
-import complaintService from "@/services/complaintService";
+import { useComplaints, useUpdateComplaintRemarks } from "@/hooks";
 
 export default function ComplaintsPage() {
   const { user } = useUser();
-  const [adminId, setAdminId] = useState(null);
-  const [complaints, setComplaints] = useState([]);
-  const [filteredComplaints, setFilteredComplaints] = useState([]);
+  const { data: complaints = [], isLoading: loading, error, refetch } = useComplaints();
+  const updateComplaintMutation = useUpdateComplaintRemarks();
+  
   const [searchQuery, setSearchQuery] = useState("");
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(null);
-  const [isRefreshing, setIsRefreshing] = useState(false);
   const [statusFilter, setStatusFilter] = useState("All");
   const [isUpdateDialogOpen, setIsUpdateDialogOpen] = useState(false);
   const [selectedComplaint, setSelectedComplaint] = useState(null);
@@ -59,30 +55,44 @@ export default function ComplaintsPage() {
   // Pagination states
   const [currentPage, setCurrentPage] = useState(1);
   const [itemsPerPage, setItemsPerPage] = useState(10);
-  const [paginatedComplaints, setPaginatedComplaints] = useState([]);
-  const [totalPages, setTotalPages] = useState(1);
 
-  useEffect(() => {
-    // Get admin_id from UserContext
-    if (user?.id) {
-      setAdminId(user.id);
+  // Filter and sort complaints using useMemo
+  const filteredComplaints = useMemo(() => {
+    let filtered = complaints;
+
+    // Apply status filter
+    if (statusFilter !== "All") {
+      filtered = filtered.filter(complaint => complaint.status === statusFilter);
     }
-  }, [user]);
 
-  // Apply pagination whenever complaints or pagination settings change
-  useEffect(() => {
-    paginateComplaints();
+    // Apply search filter
+    if (searchQuery.trim()) {
+      const query = searchQuery.toLowerCase();
+      filtered = filtered.filter(complaint => 
+        complaint.complain_id?.toString().includes(query) ||
+        complaint.Customer?.full_name?.toLowerCase().includes(query) ||
+        complaint.Customer?.phone_number?.includes(query) ||
+        complaint.complain_description?.toLowerCase().includes(query)
+      );
+    }
+
+    // Sort by date (newest first)
+    return filtered.sort((a, b) => new Date(b.complain_date) - new Date(a.complain_date));
+  }, [complaints, statusFilter, searchQuery]);
+
+  const totalPages = useMemo(() => Math.ceil(filteredComplaints.length / itemsPerPage), [filteredComplaints, itemsPerPage]);
+
+  const paginatedComplaints = useMemo(() => {
+    const startIndex = (currentPage - 1) * itemsPerPage;
+    const endIndex = startIndex + itemsPerPage;
+    return filteredComplaints.slice(startIndex, endIndex);
   }, [filteredComplaints, currentPage, itemsPerPage]);
 
-  // Paginate complaints function
-  const paginateComplaints = () => {
-    const indexOfLastItem = currentPage * itemsPerPage;
-    const indexOfFirstItem = indexOfLastItem - itemsPerPage;
-    const currentComplaints = filteredComplaints.slice(indexOfFirstItem, indexOfLastItem);
-    
-    setPaginatedComplaints(currentComplaints);
-    setTotalPages(Math.ceil(filteredComplaints.length / itemsPerPage));
-  };
+  useEffect(() => {
+    if (currentPage > totalPages && totalPages > 0) {
+      setCurrentPage(totalPages);
+    }
+  }, [totalPages, currentPage]);
 
   const goToNextPage = () => {
     if (currentPage < totalPages) {
@@ -96,110 +106,51 @@ export default function ComplaintsPage() {
     }
   };
 
-  const handleItemsPerPageChange = (value) => {
+  const handleItemsPerPageChange = useCallback((value) => {
     setItemsPerPage(Number(value));
     setCurrentPage(1); // Reset to first page when changing items per page
-  };
-
-  // Fetch all complaints
-  const fetchComplaints = async () => {
-    setLoading(true);
-    try {
-      const data = await complaintService.getAllComplaints();
-      setComplaints(data || []);
-      setFilteredComplaints(data || []);
-      setError(null);
-    } catch (err) {
-      console.error("Error fetching complaints:", err);
-      setError("Failed to load complaints. Please try again.");
-      toast.error("Failed to load complaints", {
-        description: "Please refresh the page to try again.",
-      });
-    } finally {
-      setLoading(false);
-    }
-  };
+  }, []);
 
   // Handle search
-  const handleSearch = (e) => {
-    const query = e.target.value.toLowerCase();
-    setSearchQuery(query);
-
-    if (!query.trim()) {
-      setFilteredComplaints(complaints);
-      return;
-    }
-
-    const filtered = complaints.filter(
-      (complaint) =>
-        complaint.Customer?.full_name?.toLowerCase().includes(query) ||
-        complaint.complain_id?.toString().includes(query) ||
-        complaint.status?.toLowerCase().includes(query) ||
-        complaint.complain_description?.toLowerCase().includes(query)
-    );
-
-    setFilteredComplaints(filtered);
-  };
-
-  // Update filtered complaints based on status filter and sorting
-  useEffect(() => {
-    // Sort complaints in descending order by date
-    const sortedComplaints = [...complaints].sort(
-      (a, b) => new Date(b.complain_date) - new Date(a.complain_date)
-    );
-
-    if (statusFilter === "All") {
-      setFilteredComplaints(sortedComplaints);
-    } else {
-      const status = statusFilter === "Pending" ? "Pending" : "Resolved";
-      setFilteredComplaints(
-        sortedComplaints.filter((complaint) => complaint.status === status)
-      );
-    }
-  }, [statusFilter, complaints]);
+  const handleSearch = useCallback((e) => {
+    setSearchQuery(e.target.value);
+    setCurrentPage(1); // Reset to first page when searching
+  }, []);
 
   // Handle refresh
   const handleRefresh = async () => {
-    setIsRefreshing(true);
     try {
-      await fetchComplaints();
-      toast.success("Complaints refreshed successfully");
+      await refetch();
     } catch (error) {
       console.error("Error refreshing complaints:", error);
-      toast.error("Failed to refresh complaints");
-    } finally {
-      setIsRefreshing(false);
     }
   };
 
   // Handle update complaint
   const handleUpdateComplaint = async () => {
     try {
-      if (!selectedComplaint || !adminId) return;
+      if (!selectedComplaint || !user?.id) return;
 
-      await complaintService.updateComplaintRemarks(selectedComplaint.complain_id, {
+      await updateComplaintMutation.mutateAsync({
+        complaintId: selectedComplaint.complain_id,
         remarks: remarks,
-        admin_id: adminId,
+        adminId: user.id,
       });
 
       setIsUpdateDialogOpen(false);
-      toast.success("Complaint updated successfully");
-      await fetchComplaints(); // Refresh the list
+      await refetch(); // Refresh the list
     } catch (error) {
       console.error("Error updating complaint:", error);
-      toast.error("Failed to update complaint");
     }
   };
 
-  const handleViewDetails = (complaint) => {
+  const handleViewDetails = useCallback((complaint) => {
     setSelectedComplaint(complaint);
     setRemarks(complaint.remarks || "");
     setIsUpdateDialogOpen(true);
-  };
-
-  useEffect(() => {
-    fetchComplaints();
   }, []);
+
+
 
   // Get status badge variant
   const getStatusBadgeVariant = (status) => {
@@ -233,16 +184,16 @@ export default function ComplaintsPage() {
             </SelectContent>
           </Select>
           <Button
-            variant="outline"
-            size="icon"
-            onClick={handleRefresh}
-            disabled={isRefreshing}
-          >
-            <RefreshCw
-              className={`h-4 w-4 ${isRefreshing ? "animate-spin" : ""}`}
-            />
-            <span className="sr-only">Refresh</span>
-          </Button>
+              variant="outline"
+              size="icon"
+              onClick={handleRefresh}
+              disabled={loading}
+            >
+              <RefreshCw
+                className={`h-4 w-4 ${loading ? "animate-spin" : ""}`}
+              />
+              <span className="sr-only">Refresh</span>
+            </Button>
         </div>
       </DashboardHeader>
 
@@ -277,7 +228,7 @@ export default function ComplaintsPage() {
 
             {error && (
               <div className="bg-destructive/15 text-destructive p-3 rounded-md mb-4">
-                {error}
+                {error?.message || "Failed to load complaints. Please try again."}
               </div>
             )}
 

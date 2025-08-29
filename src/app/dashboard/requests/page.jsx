@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo, useCallback } from "react";
 import { DashboardShell } from "@/components/dashboard/dashboard-shell";
 import { DashboardHeader } from "@/components/dashboard/dashboard-header";
 import { Button } from "@/components/ui/button";
@@ -43,17 +43,12 @@ import {
   SelectItem,
 } from "@/components/ui/select";
 
-import requestService from "@/services/requestService";
-import notificationService from "@/services/notificationService";
+import { useRequests, useAcceptRequest, useRejectRequest, useCreateNotification } from "@/hooks";
 
 export default function RequestsPage() {
   const { user } = useUser();
   const [adminId, setAdminId] = useState(null);
-  const [requests, setRequests] = useState([]);
-  const [filteredRequests, setFilteredRequests] = useState([]);
   const [searchQuery, setSearchQuery] = useState("");
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(null);
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [rejectDialogOpen, setRejectDialogOpen] = useState(false);
   const [selectedRequestId, setSelectedRequestId] = useState(null);
@@ -65,8 +60,7 @@ export default function RequestsPage() {
   // Pagination states
   const [currentPage, setCurrentPage] = useState(1);
   const [itemsPerPage, setItemsPerPage] = useState(10);
-  const [paginatedRequests, setPaginatedRequests] = useState([]);
-  const [totalPages, setTotalPages] = useState(1);
+
 
   useEffect(() => {
     // Get admin_id from UserContext
@@ -75,20 +69,52 @@ export default function RequestsPage() {
     }
   }, [user]);
 
-  // Apply pagination whenever requests or pagination settings change
-  useEffect(() => {
-    paginateRequests();
-  }, [filteredRequests, currentPage, itemsPerPage]);
+  // React Query hooks
+  const { data: requests = [], isLoading: loading, error, refetch } = useRequests();
+  const acceptRequestMutation = useAcceptRequest();
+  const rejectRequestMutation = useRejectRequest();
+  const createNotificationMutation = useCreateNotification();
 
-  // Paginate requests function
-  const paginateRequests = () => {
+  // Filter and sort requests
+  const filteredRequests = useMemo(() => {
+    let filtered = [...requests];
+    
+    // Sort by request date (newest first)
+    filtered.sort((a, b) => new Date(b.request_date) - new Date(a.request_date));
+    
+    // Apply status filter
+    if (statusFilter !== "All") {
+      filtered = filtered.filter(request => request.request_status === statusFilter);
+    }
+    
+    // Apply search filter
+    if (searchQuery.trim()) {
+      const query = searchQuery.toLowerCase();
+      filtered = filtered.filter(
+        (request) =>
+          request.Customer?.full_name?.toLowerCase().includes(query) ||
+          request.request_id?.toString().includes(query) ||
+          request.request_status?.toLowerCase().includes(query) ||
+          request.description?.toLowerCase().includes(query)
+      );
+    }
+    
+    return filtered;
+  }, [requests, statusFilter, searchQuery]);
+
+  const totalPages = useMemo(() => Math.ceil(filteredRequests.length / itemsPerPage), [filteredRequests, itemsPerPage]);
+
+  const paginatedRequests = useMemo(() => {
     const indexOfLastItem = currentPage * itemsPerPage;
     const indexOfFirstItem = indexOfLastItem - itemsPerPage;
-    const currentRequests = filteredRequests.slice(indexOfFirstItem, indexOfLastItem);
-    
-    setPaginatedRequests(currentRequests);
-    setTotalPages(Math.ceil(filteredRequests.length / itemsPerPage));
-  };
+    return filteredRequests.slice(indexOfFirstItem, indexOfLastItem);
+  }, [filteredRequests, currentPage, itemsPerPage]);
+
+  useEffect(() => {
+    if (currentPage > totalPages && totalPages > 0) {
+      setCurrentPage(totalPages);
+    }
+  }, [totalPages]);
 
   const goToNextPage = () => {
     if (currentPage < totalPages) {
@@ -102,75 +128,25 @@ export default function RequestsPage() {
     }
   };
 
-  const handleItemsPerPageChange = (value) => {
+  const handleItemsPerPageChange = useCallback((value) => {
     setItemsPerPage(Number(value));
     setCurrentPage(1); // Reset to first page when changing items per page
-  };
+  }, []);
 
-  // Fetch all requests
-  const fetchRequests = async () => {
-    setLoading(true);
-    try {
-      const data = await requestService.getAllRequests();
-      // API returns array directly, not wrapped in requests object
-      setRequests(data || []);
-      setFilteredRequests(data || []);
-      setError(null);
-    } catch (err) {
-      console.error("Error fetching requests:", err);
-      setError("Failed to load requests. Please try again.");
-      toast.error("Failed to load requests", {
-        description: "Please refresh the page to try again.",
-      });
-    } finally {
-      setLoading(false);
-    }
-  };
+
 
   // Handle search
-  const handleSearch = (e) => {
-    const query = e.target.value.toLowerCase();
-    setSearchQuery(query);
+  const handleSearch = useCallback((e) => {
+    setSearchQuery(e.target.value);
+  }, []);
 
-    if (!query.trim()) {
-      setFilteredRequests(requests);
-      return;
-    }
 
-    const filtered = requests.filter(
-      (request) =>
-        request.Customer?.full_name?.toLowerCase().includes(query) ||
-        request.request_id?.toString().includes(query) ||
-        request.request_status?.toLowerCase().includes(query) ||
-        request.description?.toLowerCase().includes(query)
-    );
-
-    setFilteredRequests(filtered);
-  };
-
-  // Update filtered requests based on status filter and sorting
-  useEffect(() => {
-    // Sort requests in descending order by request date
-    const sortedRequests = [...requests].sort(
-      (a, b) => new Date(b.request_date) - new Date(a.request_date)
-    );
-
-    if (statusFilter === "All") {
-      setFilteredRequests(sortedRequests);
-    } else {
-      setFilteredRequests(
-        sortedRequests.filter(
-          (request) => request.request_status === statusFilter
-        )
-      );
-    }
-  }, [statusFilter, requests]);
 
   // Handle refresh
   const handleRefresh = async () => {
     setIsRefreshing(true);
     try {
-      await fetchRequests();
+      await refetch();
       toast.success("Requests refreshed successfully");
     } catch (error) {
       console.error("Error refreshing requests:", error);
@@ -183,12 +159,13 @@ export default function RequestsPage() {
   // Handle accept request
   const handleAccept = async (requestId) => {
     try {
-      // Add your accept API call here
-      toast.success("Request accepted successfully");
-      await fetchRequests(); // Refresh the list
+      await acceptRequestMutation.mutateAsync({
+        request_id: requestId,
+        admin_id: adminId,
+        customer_id: selectedCustomerId,
+      });
     } catch (error) {
       console.error("Error accepting request:", error);
-      toast.error("Failed to accept request");
     }
   };
 
@@ -197,11 +174,11 @@ export default function RequestsPage() {
     try {
       if (!selectedRequestId || !selectedCustomerId) return;
 
-      // Use the specified API for rejection
-      await requestService.rejectRequest(selectedRequestId);
+      // Reject the request
+      await rejectRequestMutation.mutateAsync(selectedRequestId);
 
       // Send notification with customer_id included
-      await notificationService.createNotification({
+      await createNotificationMutation.mutateAsync({
         title: notificationTitle,
         message: rejectReason,
         admin_id: adminId,
@@ -209,23 +186,18 @@ export default function RequestsPage() {
       });
 
       setRejectDialogOpen(false);
-      toast.success("Request rejected successfully");
-      await fetchRequests(); // Refresh the list
     } catch (error) {
       console.error("Error rejecting request:", error);
-      toast.error("Failed to reject request");
     }
   };
 
-  const handleAcceptClick = (requestId, customerId) => {
+  const handleAcceptClick = useCallback((requestId, customerId) => {
     setSelectedRequestId(requestId);
     setSelectedCustomerId(customerId);
     setIsModalOpen(true);
-  };
-
-  useEffect(() => {
-    fetchRequests();
   }, []);
+
+
 
   // Get status badge variant
   const getStatusBadgeVariant = (status) => {
@@ -249,18 +221,7 @@ export default function RequestsPage() {
     });
   };
 
-  const handleSubmit = async () => {
-    try {
-      await requestService.acceptRequest({
-        request_id: selectedRequestId,
-        admin_id: adminId,
-        customer_id: selectedCustomerId,
-      });
-      // Handle response...
-    } catch (error) {
-      console.error("Error accepting request:", error);
-    }
-  };
+
 
   return (
     <DashboardShell>
@@ -325,7 +286,7 @@ export default function RequestsPage() {
 
             {error && (
               <div className="bg-destructive/15 text-destructive p-3 rounded-md mb-4">
-                {error}
+                {error?.message || "Failed to load requests. Please try again."}
               </div>
             )}
 

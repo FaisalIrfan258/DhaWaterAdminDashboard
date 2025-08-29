@@ -1,10 +1,10 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo, useCallback } from "react";
 import { DashboardShell } from "@/components/dashboard/dashboard-shell";
 import { DashboardHeader } from "@/components/dashboard/dashboard-header";
 import { Button } from "@/components/ui/button";
-import { bookingService } from "@/services";
+import { useBookings, useUpdateBooking, useDeleteBooking } from "@/hooks";
 import {
   Card,
   CardContent,
@@ -53,11 +53,13 @@ import { useUser } from "@/context/UserContext"
 
 export default function BookingsPage() {
   const { user } = useUser();
-  const [bookings, setBookings] = useState([]);
-  const [filteredBookings, setFilteredBookings] = useState([]);
+  
+  // React Query hooks
+  const { data: bookingsData = [], isLoading, error, refetch } = useBookings();
+  const updateBookingMutation = useUpdateBooking();
+  const deleteBookingMutation = useDeleteBooking();
+  
   const [searchQuery, setSearchQuery] = useState("");
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(null);
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [isViewModalOpen, setIsViewModalOpen] = useState(false);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
@@ -68,8 +70,7 @@ export default function BookingsPage() {
   // Pagination states
   const [currentPage, setCurrentPage] = useState(1);
   const [itemsPerPage, setItemsPerPage] = useState(10);
-  const [paginatedBookings, setPaginatedBookings] = useState([]);
-  const [totalPages, setTotalPages] = useState(1);
+  
   
 
 
@@ -80,20 +81,48 @@ export default function BookingsPage() {
     }
   }, [user]);
 
-  // Apply pagination whenever bookings or pagination settings change
-  useEffect(() => {
-    paginateBookings();
-  }, [filteredBookings, currentPage, itemsPerPage]);
+  // Sort bookings by scheduled date (newest first)
+  const sortedBookings = useMemo(() => {
+    return [...bookingsData].sort(
+      (a, b) => new Date(b.scheduled_date) - new Date(a.scheduled_date)
+    );
+  }, [bookingsData]);
 
-  // Paginate bookings function
-  const paginateBookings = () => {
+  // Filter bookings based on search query and status
+  const filteredBookings = useMemo(() => {
+    let filtered = sortedBookings;
+
+    // Filter by status
+    if (statusFilter !== "All") {
+      filtered = filtered.filter((booking) => booking.status === statusFilter);
+    }
+
+    // Filter by search query
+    if (searchQuery && searchQuery.trim()) {
+      const query = searchQuery.toLowerCase();
+      filtered = filtered.filter(
+        (booking) =>
+          booking.status.toLowerCase().includes(query) ||
+          booking.scheduled_date.toLowerCase().includes(query)
+      );
+    }
+
+    return filtered;
+  }, [sortedBookings, searchQuery, statusFilter]);
+
+  const totalPages = useMemo(() => Math.ceil(filteredBookings.length / itemsPerPage), [filteredBookings, itemsPerPage]);
+
+  const paginatedBookings = useMemo(() => {
     const indexOfLastItem = currentPage * itemsPerPage;
     const indexOfFirstItem = indexOfLastItem - itemsPerPage;
-    const currentBookings = filteredBookings.slice(indexOfFirstItem, indexOfLastItem);
-    
-    setPaginatedBookings(currentBookings);
-    setTotalPages(Math.ceil(filteredBookings.length / itemsPerPage));
-  };
+    return filteredBookings.slice(indexOfFirstItem, indexOfLastItem);
+  }, [filteredBookings, currentPage, itemsPerPage]);
+
+  useEffect(() => {
+    if (currentPage > totalPages && totalPages > 0) {
+      setCurrentPage(totalPages);
+    }
+  }, [totalPages, currentPage]);
 
   const goToNextPage = () => {
     if (currentPage < totalPages) {
@@ -107,67 +136,39 @@ export default function BookingsPage() {
     }
   };
 
-  const handleItemsPerPageChange = (value) => {
+  const handleItemsPerPageChange = useCallback((value) => {
     setItemsPerPage(Number(value));
     setCurrentPage(1); // Reset to first page when changing items per page
-  };
+  }, []);
 
-  const fetchBookings = async () => {
-    setLoading(true);
-    try {
-      const data = await bookingService.getAllBookings();
-      // Sort bookings in ascending order by scheduled date
-      const sortedData = data.sort(
-        (a, b) => new Date(b.scheduled_date) - new Date(a.scheduled_date)
-      );
-      setBookings(sortedData);
-      setFilteredBookings(sortedData);
-      setError(null);
-    } catch (err) {
-      console.error("Error fetching bookings:", err);
-      setError("Failed to load bookings");
-      toast.error("Failed to load bookings");
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const handleSearch = (e) => {
-    const query = e.target.value.toLowerCase();
-    setSearchQuery(query);
-
-    if (!query.trim()) {
-      setFilteredBookings(bookings);
-      return;
-    }
-
-    const filtered = bookings.filter(
-      (booking) =>
-        booking.status.toLowerCase().includes(query) ||
-        booking.scheduled_date.toLowerCase().includes(query)
-    );
-
-    setFilteredBookings(filtered);
-  };
+  const handleSearch = useCallback((e) => {
+    setSearchQuery(e.target.value);
+  }, []);
 
   const handleRefresh = async () => {
     setIsRefreshing(true);
-    await fetchBookings();
-    toast.success("Bookings refreshed successfully");
-    setIsRefreshing(false);
+    try {
+      await refetch();
+      toast.success("Bookings refreshed successfully");
+    } catch (error) {
+      console.error("Error refreshing bookings:", error);
+      toast.error("Failed to refresh bookings");
+    } finally {
+      setIsRefreshing(false);
+    }
   };
 
-  const handleViewBooking = (booking) => {
+  const handleViewBooking = useCallback((booking) => {
     setSelectedBooking(booking);
     setIsViewModalOpen(true);
-  };
+  }, []);
 
-  const handleEditBooking = (booking) => {
+  const handleEditBooking = useCallback((booking) => {
     setSelectedBooking(booking);
     setIsEditModalOpen(true);
-  };
+  }, []);
 
-  const handleDeleteBooking = (booking) => {
+  const handleDeleteBooking = useCallback((booking) => {
     // Check if user is a super admin before allowing delete
     if (!isSuper) {
       toast.error("You don't have permission to delete bookings");
@@ -175,7 +176,7 @@ export default function BookingsPage() {
     }
     setSelectedBooking(booking);
     setIsDeleteDialogOpen(true);
-  };
+  }, [isSuper]);
 
   const confirmDeleteBooking = async () => {
     if (!selectedBooking) return;
@@ -188,31 +189,17 @@ export default function BookingsPage() {
     }
 
     try {
-      await bookingService.deleteBooking(selectedBooking.booking_id);
-      toast.success("Booking deleted successfully");
-      fetchBookings();
+      await deleteBookingMutation.mutateAsync(selectedBooking.booking_id);
     } catch (error) {
       console.error("Error deleting booking:", error);
-      toast.error("Failed to delete booking");
     } finally {
       setIsDeleteDialogOpen(false);
       setSelectedBooking(null);
     }
   };
 
-  useEffect(() => {
-    fetchBookings();
-  }, []);
-
-  useEffect(() => {
-    if (statusFilter === "All") {
-      setFilteredBookings(bookings);
-    } else {
-      setFilteredBookings(
-        bookings.filter((booking) => booking.status === statusFilter)
-      );
-    }
-  }, [statusFilter, bookings]);
+  // Data is automatically fetched by React Query
+  // Filtering is handled by useMemo
 
   return (
     <DashboardShell>
@@ -269,12 +256,22 @@ export default function BookingsPage() {
 
           {error && (
             <div className="bg-destructive/15 text-destructive p-3 rounded-md mb-4">
-              {error}
+              <div className="flex items-center justify-between">
+                <span>Error loading bookings: {error.message}</span>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => refetch()}
+                >
+                  <RefreshCw className="h-4 w-4 mr-2" />
+                  Retry
+                </Button>
+              </div>
             </div>
           )}
 
           <div className="relative w-full overflow-auto">
-            {loading ? (
+            {isLoading ? (
               <div className="flex justify-center items-center py-8">
                 <RefreshCw className="h-8 w-8 animate-spin text-muted-foreground" />
               </div>
@@ -425,7 +422,7 @@ export default function BookingsPage() {
         isOpen={isEditModalOpen}
         onClose={() => setIsEditModalOpen(false)}
         booking={selectedBooking}
-        onRefresh={fetchBookings}
+        onRefresh={refetch}
       />
 
       <AlertDialog
