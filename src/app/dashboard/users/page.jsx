@@ -323,11 +323,24 @@ export default function UsersPage() {
   // When formattedUsers change, update filtered users
   useEffect(() => {
     if (searchQuery) {
-      handleSearch({ target: { value: searchQuery } });
+      // Use inline filtering logic instead of calling handleSearch
+      const query = searchQuery.toLowerCase();
+      const filtered = formattedUsers.filter(
+        (user) =>
+          user.full_name?.toLowerCase().includes(query) ||
+          user.email?.toLowerCase().includes(query) ||
+          user.phone_number?.includes(query) ||
+          user.home_address?.toLowerCase().includes(query) ||
+          user.street_address?.toLowerCase().includes(query) ||
+          (user.phase_number && user.phase_number.toString().includes(query)) ||
+          user.username?.toLowerCase().includes(query) ||
+          user.customer_id?.toString().includes(query)
+      );
+      setFilteredUsers(filtered);
     } else {
       setFilteredUsers(formattedUsers);
     }
-  }, [formattedUsers, searchQuery, handleSearch]);
+  }, [formattedUsers, searchQuery]);
 
   // Format date to local string
   const formatDate = (dateString) => {
