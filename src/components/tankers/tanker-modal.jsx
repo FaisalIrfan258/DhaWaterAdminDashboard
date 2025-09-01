@@ -308,7 +308,7 @@ export function TankerModal({ open, onClose, tanker, onSubmit }) {
             <Button type="button" variant="outline" onClick={onClose}>
               Cancel
             </Button>
-            <Button type="submit">
+            <Button type="submit" variant="primary">
               {tanker ? "Update Tanker" : "Add Tanker"}
             </Button>
           </div>

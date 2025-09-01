@@ -2,6 +2,7 @@
 import { useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { useUser } from '../../context/UserContext';
+import { Button } from '@/components/ui/button';
 
 const ProtectedRoute = ({ children, requireSuperAdmin = false }) => {
   const { user, isLoading } = useUser();
@@ -44,12 +45,12 @@ const ProtectedRoute = ({ children, requireSuperAdmin = false }) => {
         <div className="text-center">
           <h2 className="text-2xl font-bold text-red-600 mb-4">Access Denied</h2>
           <p className="text-gray-600 mb-4">You don't have permission to access this page.</p>
-          <button 
+          <Button 
             onClick={() => router.push('/dashboard')}
-            className="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded"
+            variant="primary"
           >
             Go to Dashboard
-          </button>
+          </Button>
         </div>
       </div>
     );

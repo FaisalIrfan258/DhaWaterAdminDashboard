@@ -371,7 +371,7 @@ export function UserModal({
               {isViewOnly ? "Close" : "Cancel"}
             </Button>
             {!isViewOnly && (
-              <Button type="submit" disabled={isLoading}>
+              <Button type="submit" variant="primary" disabled={isLoading}>
                 {isLoading ? (
                   <>
                     <span className="mr-2">{mode === "edit" ? "Updating..." : "Creating..."}</span>

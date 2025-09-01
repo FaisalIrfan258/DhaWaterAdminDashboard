@@ -52,7 +52,7 @@ const CustomSidebar = () => {
     : baseNavItems;
 
   return (
-    <div className="w-64 fixed top-0 left-0 z-50 h-screen bg-gradient-to-b from-[#004D77] to-[#43A2B3] text-white">
+    <div className="w-64 fixed top-0 left-0 z-50 h-screen bg-gradient-to-r from-cyan-600 to-blue-600 text-white">
       <div className="flex items-center justify-center h-24 px-6 gap-4">
         <Image src="/assets/dhalogo.png" alt="DHA Logo" width={80} height={80} priority={true}  />
         <Image src="/assets/dhasrviceslogo.jpg" alt="DHA Services Logo" width={80} height={80} priority={true}  />
@@ -63,8 +63,8 @@ const CustomSidebar = () => {
             <Link
               key={item.href}
               href={item.href}
-              className={`flex items-center p-2 rounded-md transition-colors duration-200 ${
-                pathname === item.href ? "bg-[#43A2B3]" : "hover:bg-[#43A2B3]"
+              className={`flex items-center p-2 rounded-md transition-all duration-300 ${
+                pathname === item.href ? "bg-gradient-to-r from-cyan-700 to-blue-700" : "hover:bg-gradient-to-r hover:from-cyan-700 hover:to-blue-700"
               }`}
             >
               <item.icon size={20} className="mr-2" />

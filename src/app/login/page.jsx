@@ -84,7 +84,7 @@ export default function LoginPage() {
             <h2 className="text-2xl font-bold text-gray-800">Admin Dashboard</h2>
             <p className="text-gray-500 mt-2">Login to manage your water supply system</p>
           </div>
-          <div className="bg-white p-8 rounded-xl shadow-lg border border-blue-100">
+          <div className="bg-white p-8 rounded-xl shadow-lg border border-cyan-100">
             <LoginForm />
           </div>
           <div className="text-center text-sm text-gray-500">

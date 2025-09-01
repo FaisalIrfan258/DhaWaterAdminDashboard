@@ -190,7 +190,7 @@ const UserDetailsPage = () => {
       case 'completed': return 'bg-green-500';
       case 'pending': return 'bg-yellow-500';
       case 'cancelled': return 'bg-red-500';
-      default: return 'bg-blue-500';
+      default: return 'bg-cyan-500';
     }
   };
 
@@ -220,7 +220,7 @@ const UserDetailsPage = () => {
             <Card className="shadow-md h-full overflow-hidden border-0">
               <CardHeader className="bg-slate-50 border-b pb-3">
                 <CardTitle className="text-slate-800 flex items-center">
-                  <span className="inline-block w-2 h-6 bg-blue-500 mr-3 rounded"></span>
+                  <span className="inline-block w-2 h-6 bg-cyan-500 mr-3 rounded"></span>
                   User Information
                 </CardTitle>
               </CardHeader>
@@ -311,8 +311,8 @@ const UserDetailsPage = () => {
             <Card className="shadow-md h-full border-0">
               <CardHeader className="bg-slate-50 border-b pb-3">
                 <CardTitle className="text-slate-800 flex items-center">
-                  <span className="inline-block w-2 h-6 bg-blue-500 mr-3 rounded"></span>
-                  Water Tank Status
+                  <span className="inline-block w-2 h-6 bg-cyan-500 mr-3 rounded"></span>
+                Water Tank Status
                 </CardTitle>
               </CardHeader>
               <CardContent className="flex flex-col justify-center items-center p-6">
@@ -349,7 +349,7 @@ const UserDetailsPage = () => {
           <Card className="shadow-md border-0">
             <CardHeader className="bg-slate-50 border-b pb-3">
               <CardTitle className="text-slate-800 flex items-center">
-                <span className="inline-block w-2 h-6 bg-blue-500 mr-3 rounded"></span>
+                <span className="inline-block w-2 h-6 bg-cyan-500 mr-3 rounded"></span>
                 Tank Status Report
               </CardTitle>
             </CardHeader>
@@ -406,7 +406,7 @@ const UserDetailsPage = () => {
                 <div className="flex items-end">
                   <Button 
                     onClick={fetchHourlyTankStatus}
-                    className="w-full bg-blue-600 hover:bg-blue-700 text-white"
+                    className="w-full bg-gradient-to-r from-cyan-600 to-blue-600 hover:from-cyan-700 hover:to-blue-700 text-white transition-all duration-300"
                   >
                     Generate Report
                   </Button>
@@ -479,7 +479,7 @@ const UserDetailsPage = () => {
           <Card className="shadow-md border-0">
             <CardHeader className="bg-slate-50 border-b pb-3">
               <CardTitle className="text-slate-800 flex items-center">
-                <span className="inline-block w-2 h-6 bg-blue-500 mr-3 rounded"></span>
+                <span className="inline-block w-2 h-6 bg-cyan-500 mr-3 rounded"></span>
                 Recent Bookings
               </CardTitle>
             </CardHeader>

@@ -305,6 +305,7 @@ function AdminManagementPageContent() {
             </Button>
             <Button 
               type="submit" 
+              variant="primary"
               disabled={createAdminMutation.isPending || updateAdminMutation.isPending}
             >
               {(createAdminMutation.isPending || updateAdminMutation.isPending) ? "Processing..." : (selectedAdmin ? "Update Administrator" : "Add Administrator")}

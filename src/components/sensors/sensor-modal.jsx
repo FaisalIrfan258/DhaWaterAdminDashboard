@@ -121,7 +121,7 @@ export function SensorModal({
               Cancel
             </Button>
             {!isViewOnly && (
-              <Button type="submit">
+              <Button type="submit" variant="primary">
                 {mode === "add" ? "Add Sensor" : "Save Changes"}
               </Button>
             )}
@@ -130,4 +130,4 @@ export function SensorModal({
       </DialogContent>
     </Dialog>
   )
-} 
+}

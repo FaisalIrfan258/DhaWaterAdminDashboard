@@ -98,7 +98,7 @@ const AcceptRequestModal = ({ isOpen, onClose, requestId, customerId, adminId })
           />
         </div>
         <div className="flex justify-end">
-          <Button type="submit" className="bg-primary text-white">
+          <Button type="submit" variant="primary">
             Accept
           </Button>
         </div>
