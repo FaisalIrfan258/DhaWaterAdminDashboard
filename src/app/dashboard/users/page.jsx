@@ -59,9 +59,9 @@ export default function UsersPage() {
   const [filteredUsers, setFilteredUsers] = useState([]);
   const [searchQuery, setSearchQuery] = useState("");
   
-  // Extract data from React Query responses
-  const users = usersData || [];
-  const sensors = sensorsData?.sensors || [];
+  // Extract data from React Query responses with memoization
+  const users = useMemo(() => usersData?.users || [], [usersData]);
+  const sensors = useMemo(() => sensorsData?.sensors || [], [sensorsData]);
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [isViewModalOpen, setIsViewModalOpen] = useState(false);
@@ -90,7 +90,7 @@ export default function UsersPage() {
     if (currentPage > totalPages && totalPages > 0) {
       setCurrentPage(totalPages);
     }
-  }, [totalPages]);
+  }, [totalPages, currentPage]);
 
   const goToNextPage = () => {
     if (currentPage < totalPages) {
@@ -156,26 +156,7 @@ export default function UsersPage() {
   const handleSearch = useCallback((e) => {
     const query = e.target.value.toLowerCase();
     setSearchQuery(query);
-
-    if (!query.trim()) {
-      setFilteredUsers(formattedUsers);
-      return;
-    }
-
-    const filtered = formattedUsers.filter(
-      (user) =>
-        user.full_name?.toLowerCase().includes(query) ||
-        user.email?.toLowerCase().includes(query) ||
-        user.phone_number?.includes(query) ||
-        user.home_address?.toLowerCase().includes(query) ||
-        user.street_address?.toLowerCase().includes(query) ||
-        (user.phase_number && user.phase_number.toString().includes(query)) ||
-        user.username?.toLowerCase().includes(query) ||
-        user.customer_id?.toString().includes(query)
-    );
-
-    setFilteredUsers(filtered);
-  }, [formattedUsers]);
+  }, []);
 
   // Add new user
   const handleAddUser = async (userData) => {
@@ -320,26 +301,27 @@ export default function UsersPage() {
 
 
 
-  // When formattedUsers change, update filtered users
+  // Initialize filtered users when formattedUsers changes
   useEffect(() => {
-    if (searchQuery) {
-      // Use inline filtering logic instead of calling handleSearch
-      const query = searchQuery.toLowerCase();
-      const filtered = formattedUsers.filter(
-        (user) =>
-          user.full_name?.toLowerCase().includes(query) ||
-          user.email?.toLowerCase().includes(query) ||
-          user.phone_number?.includes(query) ||
-          user.home_address?.toLowerCase().includes(query) ||
-          user.street_address?.toLowerCase().includes(query) ||
-          (user.phase_number && user.phase_number.toString().includes(query)) ||
-          user.username?.toLowerCase().includes(query) ||
-          user.customer_id?.toString().includes(query)
-      );
-      setFilteredUsers(filtered);
-    } else {
+    if (!searchQuery.trim()) {
       setFilteredUsers(formattedUsers);
+      return;
     }
+
+    const query = searchQuery.toLowerCase();
+    const filtered = formattedUsers.filter(
+      (user) =>
+        user.full_name?.toLowerCase().includes(query) ||
+        user.email?.toLowerCase().includes(query) ||
+        user.phone_number?.includes(query) ||
+        user.home_address?.toLowerCase().includes(query) ||
+        user.street_address?.toLowerCase().includes(query) ||
+        (user.phase_number && user.phase_number.toString().includes(query)) ||
+        user.username?.toLowerCase().includes(query) ||
+        user.customer_id?.toString().includes(query)
+    );
+
+    setFilteredUsers(filtered);
   }, [formattedUsers, searchQuery]);
 
   // Format date to local string
@@ -526,6 +508,7 @@ export default function UsersPage() {
                   Showing {paginatedUsers.length} of {filteredUsers.length} users
                 </p>
                 <Select 
+                  key="items-per-page-select"
                   value={itemsPerPage.toString()} 
                   onValueChange={handleItemsPerPageChange}
                 >

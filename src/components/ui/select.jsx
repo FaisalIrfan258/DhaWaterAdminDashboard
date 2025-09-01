@@ -10,7 +10,7 @@ function Select({
   modal = true,
   ...props
 }) {
-  return <SelectPrimitive.Root data-slot="select" modal={modal} {...props} />;
+  return <SelectPrimitive.Root data-slot="select" modal={modal.toString()} {...props} />;
 }
 
 function SelectGroup({
@@ -66,7 +66,7 @@ function SelectContent({
           className
         )}
         position={position}
-        modal={modal}
+        modal={modal.toString()}
         {...props}>
         <SelectScrollUpButton />
         <SelectPrimitive.Viewport

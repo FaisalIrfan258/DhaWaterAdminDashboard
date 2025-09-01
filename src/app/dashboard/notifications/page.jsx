@@ -72,8 +72,10 @@ export default function NotificationsPage() {
 
   // Update filtered notifications when notifications data changes
   useEffect(() => {
-    setFilteredNotifications(notifications)
-  }, [notifications])
+    if (!searchQuery.trim()) {
+      setFilteredNotifications(notifications)
+    }
+  }, [notifications, searchQuery])
 
   // Paginate notifications function
   const totalPages = useMemo(() => {
@@ -120,17 +122,22 @@ export default function NotificationsPage() {
     setIsViewDialogOpen(true)
   }, [])
 
+  // Sort notifications in descending order by date
+  const sortedNotifications = useMemo(() => {
+    return [...notifications].sort((a, b) => new Date(b.created_at) - new Date(a.created_at))
+  }, [notifications])
+
   // Handle search
   const handleSearch = useCallback((e) => {
     const query = e.target.value.toLowerCase()
     setSearchQuery(query)
 
     if (!query.trim()) {
-      setFilteredNotifications(notifications)
+      setFilteredNotifications(sortedNotifications)
       return
     }
 
-    const filtered = notifications.filter(
+    const filtered = sortedNotifications.filter(
       (notification) =>
         notification.title?.toLowerCase().includes(query) ||
         notification.message?.toLowerCase().includes(query) ||
@@ -140,16 +147,13 @@ export default function NotificationsPage() {
     )
 
     setFilteredNotifications(filtered)
-  }, [notifications])
+  }, [sortedNotifications])
 
-  // Sort notifications in descending order by date
-  const sortedNotifications = useMemo(() => {
-    return [...notifications].sort((a, b) => new Date(b.created_at) - new Date(a.created_at))
-  }, [notifications])
-
-  // Update filtered notifications to use sorted notifications
+  // Initialize filtered notifications when notifications data changes
   useEffect(() => {
-    setFilteredNotifications(sortedNotifications)
+    if (!searchQuery.trim()) {
+      setFilteredNotifications(sortedNotifications)
+    }
   }, [sortedNotifications])
 
   // Handle refresh
