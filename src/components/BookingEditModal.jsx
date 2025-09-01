@@ -24,6 +24,7 @@ import { toast } from "sonner";
 import { useUser } from "@/context/UserContext";
 import { useRouter } from "next/navigation";
 import { Calendar, Loader2 } from "lucide-react";
+import { useAdmins } from "@/hooks";
 
 const BookingEditModal = ({ isOpen, onClose, booking, onRefresh }) => {
   const { user } = useUser();
@@ -46,6 +47,10 @@ const BookingEditModal = ({ isOpen, onClose, booking, onRefresh }) => {
   const [isSuper, setIsSuper] = useState(false);
   const [tankers, setTankers] = useState([]);
   const [isTankersLoading, setIsTankersLoading] = useState(false);
+  
+  // Fetch admins data
+  const { data: adminsData, isLoading: isAdminsLoading } = useAdmins();
+  const admins = adminsData?.admins || [];
 
   // Check if user is super admin
   useEffect(() => {
@@ -185,6 +190,17 @@ const BookingEditModal = ({ isOpen, onClose, booking, onRefresh }) => {
     }
   };
 
+  const handleAdminChange = (value) => {
+    // Update admin_id in formData
+    setFormData((prev) => ({ ...prev, admin_id: value }));
+    
+    // Find admin name for display
+    const selectedAdmin = admins.find(a => a.admin_id.toString() === value.toString());
+    if (selectedAdmin) {
+      setDisplayData((prev) => ({ ...prev, admin_name: selectedAdmin.full_name }));
+    }
+  };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     setIsSubmitting(true);
@@ -231,18 +247,39 @@ const BookingEditModal = ({ isOpen, onClose, booking, onRefresh }) => {
           <form onSubmit={handleSubmit} className="space-y-4 py-4">
             <div className="grid gap-4">
               <div className="grid gap-2">
-                <Label htmlFor="admin_name">Admin</Label>
-                <Input
-                  id="admin_name"
-                  name="admin_name"
-                  value={displayData.admin_name}
-                  onChange={handleChangeDisplay}
-                  required
-                  disabled={true}
-                />
-                <p className="text-xs text-muted-foreground">
-                  ID: {formData.admin_id}
-                </p>
+                <Label htmlFor="admin_id">Assign Admin</Label>
+                {isAdminsLoading ? (
+                  <div className="flex items-center gap-2">
+                    <Loader2 className="h-4 w-4 animate-spin" />
+                    <span>Loading admins...</span>
+                  </div>
+                ) : (
+                  <Select 
+                    value={formData.admin_id.toString()} 
+                    onValueChange={handleAdminChange}
+                    disabled={isSubmitting}
+                    modal={false}
+                  >
+                    <SelectTrigger>
+                      <SelectValue placeholder="Select an admin" />
+                    </SelectTrigger>
+                    <SelectContent modal={false}>
+                      {admins.map((admin) => (
+                        <SelectItem 
+                          key={admin.admin_id} 
+                          value={admin.admin_id.toString()}
+                        >
+                          {admin.full_name}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                )}
+                {formData.admin_id && (
+                  <p className="text-xs text-muted-foreground">
+                    ID: {formData.admin_id}
+                  </p>
+                )}
               </div>
               
               <div className="grid gap-2">

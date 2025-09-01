@@ -14,6 +14,7 @@ import {
   Cpu,
   ChartNoAxesCombined,
   NotebookPen,
+  Clock,
 } from "lucide-react";
 import { useUser } from "@/context/UserContext";
 
@@ -32,6 +33,7 @@ const CustomSidebar = () => {
     { title: "Dashboard", icon: LayoutDashboard, href: "/dashboard" },
     { title: "Water Supply Request", icon: Droplet, href: "/dashboard/requests" },
     { title: "Confirmed Bookings", icon: Calendar, href: "/dashboard/bookings" },
+    { title: "Shift Assignments", icon: Clock, href: "/dashboard/shift-assignments" },
     { title: "Tanker Management", icon: Truck, href: "/dashboard/tankers" },
     { title: "Driver Management", icon: Users, href: "/dashboard/drivers" },
     { title: "IOT Devices", icon: Cpu, href: "/dashboard/devices" },

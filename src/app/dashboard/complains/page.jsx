@@ -133,8 +133,10 @@ export default function ComplaintsPage() {
 
       await updateComplaintMutation.mutateAsync({
         complaintId: selectedComplaint.complain_id,
-        remarks: remarks,
-        adminId: user.id,
+        remarksData: {
+          remarks: remarks,
+          adminId: user.id,
+        },
       });
 
       setIsUpdateDialogOpen(false);

@@ -9,8 +9,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import jsPDF from "jspdf";
-import autoTable from "jspdf-autotable";
+import { createPDFGenerator } from "../../../lib/pdfGenerator";
 import { toast } from "sonner";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 
@@ -87,33 +86,11 @@ function ReportsPageContent() {
   };
 
   const generateHydrantPDF = () => {
-    const doc = new jsPDF();
-    let yPosition = 20; // Starting position
-    
-    // Format date for display
     const formattedDate = new Date(hydrantData.date).toLocaleDateString('en-US', {
       year: 'numeric', 
       month: 'long', 
       day: 'numeric'
     });
-    
-    // Title
-    doc.setFontSize(18);
-    doc.text("HYDRANT SUMMARY", 105, yPosition, { align: "center" });
-    doc.setFontSize(12);
-    
-    // Header Info
-    yPosition = 40;
-    doc.text(`1. Level at 7 AM Starting: ${hydrantData.startingLevel}`, 20, yPosition);
-    doc.text(`DATE: ${formattedDate}`, 150, yPosition);
-    
-    yPosition = 50;
-    doc.text("2. Water Distribution", 20, yPosition);
-    
-    // Water Distribution Table
-    const distributionData = hydrantData.distributions.map(d => [
-      d.name, d.gallons, d.cashSale, d.creditSale
-    ]);
     
     // Calculate totals
     const totalGallons = hydrantData.distributions.reduce((sum, d) => sum + (Number(d.gallons) || 0), 0);
@@ -121,31 +98,40 @@ function ReportsPageContent() {
     const totalCreditSale = hydrantData.distributions.reduce((sum, d) => sum + (Number(d.creditSale) || 0), 0);
     const grandTotal = totalCashSale + totalCreditSale;
     
-    // Add total row
-    distributionData.push(['Total', totalGallons.toString(), totalCashSale.toString(), totalCreditSale.toString()]);
+    const pdf = createPDFGenerator().init();
     
-    yPosition = 55;
-    let finalY;
-    autoTable(doc, {
-      startY: yPosition,
-      head: [['', 'Total Gallons', 'Cash Sale', 'Credit Sale']],
-      body: distributionData,
-      theme: 'grid',
-      styles: { fontSize: 10 },
-      headStyles: { fillColor: [200, 200, 200], textColor: [0, 0, 0] },
-      didDrawPage: (data) => {
-        finalY = data.cursor.y;
-      }
+    // Header
+    pdf.addHeader({
+      title: 'HYDRANT SUMMARY',
+      subtitle: 'Defence Housing Authority Services – Karachi',
+      showLogo: false
     });
     
-    yPosition = finalY + 10;
-    doc.text(`Grand Total (Cash + Credit): ${grandTotal}`, 120, yPosition);
+    // Key information
+    const keyInfo = [
+      { key: 'Report Date', value: formattedDate },
+      { key: 'Level at 7 AM Starting', value: hydrantData.startingLevel },
+      { key: 'Level at 11:00 PM Closure', value: hydrantData.closureLevel },
+      { key: 'Grand Total (Cash + Credit)', value: grandTotal.toLocaleString() }
+    ];
     
-    // Attendances
-    yPosition += 10;
-    doc.text("3. Attendances", 20, yPosition);
+    pdf.addKeyValueSection(keyInfo, { columns: 2 });
     
-    // Shift A Table
+    // Water Distribution Table
+    const distributionData = hydrantData.distributions.map(d => [
+      d.name, d.gallons, d.cashSale, d.creditSale
+    ]);
+    distributionData.push(['Total', totalGallons.toString(), totalCashSale.toString(), totalCreditSale.toString()]);
+    
+    pdf.addTable({
+      title: '2. Water Distribution',
+      headers: ['', 'Total Gallons', 'Cash Sale', 'Credit Sale'],
+      data: distributionData,
+      theme: 'grid',
+      headerStyles: { fillColor: [66, 139, 202], textColor: [255, 255, 255] }
+    });
+    
+    // Shift A Attendance Table
     const shiftAData = [
       ['Supervisor', 
         hydrantData.attendances.shiftA.supervisor.auth,
@@ -171,10 +157,18 @@ function ReportsPageContent() {
         hydrantData.attendances.shiftA.helper.auth,
         hydrantData.attendances.shiftA.helper.held,
         '', '', 
-        hydrantData.attendances.shiftA.helper.present],
+        hydrantData.attendances.shiftA.helper.present]
     ];
     
-    // Shift B Table
+    pdf.addTable({
+      title: '3. Attendances - Shift A',
+      headers: ['', 'Auth', 'Held', 'Leave', 'Absent', 'Present'],
+      data: shiftAData,
+      theme: 'grid',
+      headerStyles: { fillColor: [40, 167, 69], textColor: [255, 255, 255] }
+    });
+    
+    // Shift B Attendance Table
     const shiftBData = [
       ['Supervisor', 
         hydrantData.attendances.shiftB.supervisor.auth,
@@ -200,133 +194,63 @@ function ReportsPageContent() {
         hydrantData.attendances.shiftB.helper.auth,
         hydrantData.attendances.shiftB.helper.held,
         '', '', 
-        hydrantData.attendances.shiftB.helper.present],
+        hydrantData.attendances.shiftB.helper.present]
     ];
     
-    // Add the attendance tables side by side
-    yPosition += 15;
-    const attendanceTableY = yPosition;
-    let shiftAfinalY, shiftBfinalY;
-    
-    // Shift A Table
-    autoTable(doc, {
-      startY: attendanceTableY,
-      head: [['', 'Auth', 'Held', 'Leave', 'Absent', 'Present']],
-      body: shiftAData,
+    pdf.addTable({
+      title: 'Attendances - Shift B',
+      headers: ['', 'Auth', 'Held', 'Leave', 'Absent', 'Present'],
+      data: shiftBData,
       theme: 'grid',
-      styles: { fontSize: 9 },
-      headStyles: { fillColor: [150, 150, 150], textColor: [0, 0, 0] },
-      margin: { left: 20 },
-      tableWidth: 80,
-      didDrawPage: (data) => {
-        shiftAfinalY = data.cursor.y;
-      }
+      headerStyles: { fillColor: [255, 193, 7], textColor: [0, 0, 0] }
     });
-    
-    // Shift B Table
-    autoTable(doc, {
-      startY: attendanceTableY,
-      head: [['', 'Auth', 'Held', 'Leave', 'Absent', 'Present']],
-      body: shiftBData,
-      theme: 'grid',
-      styles: { fontSize: 9 },
-      headStyles: { fillColor: [150, 150, 150], textColor: [0, 0, 0] },
-      margin: { left: 110 },
-      tableWidth: 80,
-      didDrawPage: (data) => {
-        shiftBfinalY = data.cursor.y;
-      }
-    });
-    
-    // Get the highest Y value from both tables
-    yPosition = Math.max(shiftAfinalY || attendanceTableY, shiftBfinalY || attendanceTableY);
     
     // Vehicle Status
-    yPosition += 15;
-    doc.text("4. Vehicle Status", 20, yPosition);
+    pdf.addSectionTitle('4. Vehicle Status');
+    const vehicleInfo = [
+      { key: 'Total Vehicles (Own)', value: hydrantData.vehicles.owned },
+      { key: 'Total Vehicles (3rd Party)', value: hydrantData.vehicles.thirdParty },
+      { key: 'Vehicles in Mt Workshop', value: hydrantData.vehicles.workshop }
+    ];
+    pdf.addKeyValueSection(vehicleInfo, { columns: 1 });
     
-    yPosition += 10;
-    doc.text(`• Total Vehicles (Own) - ${hydrantData.vehicles.owned}`, 25, yPosition);
-    
-    yPosition += 10;
-    doc.text(`• Total Vehicles (3rdParty) - ${hydrantData.vehicles.thirdParty}`, 25, yPosition);
-    
-    yPosition += 10;
-    doc.text(`• Vehicles in Mt Workshop - ${hydrantData.vehicles.workshop}`, 25, yPosition);
-    
-    // Closure Level
-    yPosition += 20;
-    doc.text(`Level at 11:00 PM Closure: ${hydrantData.closureLevel}`, 20, yPosition);
-    
-    doc.save("hydrant-summary.pdf");
+    pdf.addFooter();
+    pdf.save("hydrant-summary.pdf");
+    toast.success("Hydrant Summary PDF generated successfully");
   };
 
   const generateShiftPDF = () => {
-    const doc = new jsPDF();
-    let yPosition = 20; // Starting position
-    
-    // Format date for display
     const formattedDate = new Date(shiftData.date).toLocaleDateString('en-US', {
       year: 'numeric', 
       month: 'long', 
       day: 'numeric'
     });
     
+    const pdf = createPDFGenerator().init();
+    
     // Header
-    doc.setFontSize(14);
-    doc.text("Defence Housing Authority Services – Karachi", 105, yPosition, { align: "center" });
+    pdf.addHeader({
+      title: 'SHIFT CLOSING CERTIFICATE',
+      subtitle: 'Defence Housing Authority Services – Karachi',
+      department: 'Evening Shift',
+      showLogo: false
+    });
     
-    yPosition = 30;
-    doc.setFontSize(12);
-    doc.text("174/B, QASIM STREET-1, KHAYABAN-E-SHUJAAT, PHASE-VIII, KARACHI", 105, yPosition, { align: "center" });
+    // Key information
+    const keyInfo = [
+      { key: 'Date', value: formattedDate },
+      { key: 'Shift Timing', value: shiftData.shiftTiming },
+      { key: 'RO Plant', value: shiftData.roPlant }
+    ];
     
-    // Contact Info
-    yPosition = 40;
-    doc.setFontSize(10);
-    doc.text("Phone: 111-111-895 / 35250061", 150, yPosition);
-    
-    yPosition = 45;
-    doc.text("35251942", 150, yPosition);
-    
-    yPosition = 50;
-    doc.text("Email: info@dhaservices.com", 150, yPosition);
-    
-    // Title
-    yPosition = 60;
-    doc.setFontSize(14);
-    doc.text("Shift Closing Certificate", 105, yPosition, { align: "center" });
-    
-    yPosition = 70;
-    doc.text("Evening Shift", 105, yPosition, { align: "center" });
-    
-    // Details boxes
-    // Date Box
-    yPosition = 80;
-    doc.rect(20, yPosition, 50, 15);
-    doc.text("Date:", 25, yPosition + 10);
-    doc.rect(20, yPosition + 15, 50, 15);
-    doc.text(formattedDate, 25, yPosition + 25);
-    
-    // Shift Timing Box
-    yPosition = 110;
-    doc.rect(20, yPosition, 50, 15);
-    doc.text("Shift Timing:", 25, yPosition + 10);
-    doc.rect(20, yPosition + 15, 50, 15);
-    doc.text(shiftData.shiftTiming, 25, yPosition + 25);
-    
-    // TDS Details Box
-    yPosition = 80;
-    doc.rect(140, yPosition, 50, 15);
-    doc.text("TDS Details:", 145, yPosition + 10);
-    doc.rect(140, yPosition + 15, 50, 15);
-    doc.text("RO Plant: " + shiftData.roPlant, 145, yPosition + 25);
-    doc.rect(140, yPosition + 30, 50, 15);
-    doc.text("Hydrant:", 145, yPosition + 40);
+    pdf.addKeyValueSection(keyInfo, { columns: 3 });
     
     // Handover text
-    yPosition = 150;
-    doc.setFontSize(11);
-    doc.text("We have jointly handed/taken over the charge of morning shift. Details is as under:", 105, yPosition, { align: "center" });
+    pdf.addText('We have jointly handed/taken over the charge of morning shift. Details is as under:', { 
+      fontSize: 11, 
+      align: 'center',
+      marginTop: 20 
+    });
     
     // Main table
     const tableData = [
@@ -347,49 +271,38 @@ function ReportsPageContent() {
       ["Level at 11:00 PM", shiftData.levelAtEnd]
     ];
     
-    yPosition = 160;
-    let tableFinalY;
-    
-    autoTable(doc, {
-      startY: yPosition,
-      body: tableData,
+    pdf.addTable({
+      title: 'Shift Details',
+      headers: ['Particulars', 'Value', 'Total'],
+      data: tableData,
       theme: 'grid',
-      styles: { fontSize: 10 },
+      headerStyles: { fillColor: [52, 58, 64], textColor: [255, 255, 255] },
       columnStyles: {
-        0: { cellWidth: 80 },
-        1: { cellWidth: 50 },
-        2: { cellWidth: 40 }
-      },
-      didDrawPage: (data) => {
-        tableFinalY = data.cursor.y;
+        0: { halign: 'left', cellWidth: 80 },
+        1: { halign: 'center', cellWidth: 50 },
+        2: { halign: 'center', cellWidth: 40 }
       }
     });
     
-    // Update yPosition after table is drawn
-    yPosition = tableFinalY || yPosition + 100;
-    
     // Final text
-    yPosition += 15;
-    doc.text("There is no outstanding issue except mentioned above.", 20, yPosition);
+    pdf.addText('There is no outstanding issue except mentioned above.', { 
+      fontSize: 11, 
+      marginTop: 15 
+    });
     
     // Signature blocks
-    yPosition += 25;
-    doc.rect(20, yPosition, 50, 15);
-    doc.text("Handed Over By", 30, yPosition + 8);
+    const signatures = [
+      { title: 'Handed Over By', name: '_____________' },
+      { title: 'Manager', name: '_____________' },
+      { title: 'A/Supervisor', name: '_____________' },
+      { title: 'DEO', name: '_____________' }
+    ];
     
-    yPosition += 25;
-    doc.text("Manager", 20, yPosition);
-    doc.line(20, yPosition + 2, 120, yPosition + 2);
+    pdf.addSignatureBlocks(signatures, { columns: 4, marginTop: 25 });
     
-    yPosition += 15;
-    doc.text("A/Supervisor", 20, yPosition);
-    doc.line(20, yPosition + 2, 120, yPosition + 2);
-    
-    yPosition += 15;
-    doc.text("DEO", 20, yPosition);
-    doc.line(20, yPosition + 2, 120, yPosition + 2);
-    
-    doc.save("shift-closing-report.pdf");
+    pdf.addFooter();
+    pdf.save("shift-closing-report.pdf");
+    toast.success("Shift Closing Certificate PDF generated successfully");
   };
 
   return (
