@@ -1,13 +1,13 @@
 'use client'
 
-import React, { useEffect, useState } from 'react';
+import React from 'react';
 import { Droplet } from 'lucide-react';
-import { tankService } from '@/services';
+import { useLatestWaterLevel } from '@/hooks';
 
 const ReservoirStatus = () => {
-  const [waterLevel, setWaterLevel] = useState(null);
-  const [loading, setLoading] = useState(true);
-
+  // React Query hook for fetching water level
+  const { data: waterLevelData, isLoading, error } = useLatestWaterLevel(2);
+  
   const reservoir = {
     id: 1,
     name: 'Reservoir A',
@@ -15,26 +15,15 @@ const ReservoirStatus = () => {
     icon: Droplet,
   };
 
-  // Fetch water level from API
-  useEffect(() => {
-    const fetchWaterLevel = async () => {
-      try {
-        const data = await tankService.getLatestWaterLevel(2);
-        setWaterLevel(data.water_level);
-        setLoading(false);
-      } catch (error) {
-        console.error('Error fetching water level:', error);
-        setLoading(false);
-      }
-    };
-
-    fetchWaterLevel();
-  }, []);
-
-  if (loading) {
+  if (isLoading) {
     return <div className="text-center text-blue-700">Loading...</div>;
   }
 
+  if (error) {
+    return <div className="text-center text-red-700">Error loading reservoir status</div>;
+  }
+
+  const waterLevel = waterLevelData?.water_level || 0;
   const percentage = Math.round((waterLevel / reservoir.capacity) * 100);
 
   return (

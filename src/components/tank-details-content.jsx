@@ -1,46 +1,44 @@
 'use client';
 
-import React, { Suspense, useEffect, useState } from 'react';
+import React, { Suspense, useMemo } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { WaterTank } from '@/components/water-tank';
 import { Skeleton } from '@/components/ui/skeleton';
 import { motion } from 'framer-motion';
 import { Badge } from '@/components/ui/badge';
-import { tankService } from '@/services';
+import { useTankData } from '@/hooks';
 
 const TankDetailsContent = () => {
-  const [waterLevel, setWaterLevel] = useState(0);
-  const [waterLevelGallons, setWaterLevelGallons] = useState(0);
-  const [waterLevelFeet, setWaterLevelFeet] = useState(0);
-  const [loading, setLoading] = useState(true);
+  // React Query hook for fetching tank data
+  const { waterLevel, waterLevelGallons, isLoading, error } = useTankData(2);
+  
   const totalCapacity = 1285777; // Total capacity in US gallons
   const totalHeight = 15; // Total height in feet
   const gallonsPerFeet = totalCapacity / totalHeight; // Calculation for gallons per feet
+  
+  // Calculate water level in feet
+  const waterLevelFeet = useMemo(() => {
+    return waterLevelGallons / gallonsPerFeet;
+  }, [waterLevelGallons, gallonsPerFeet]);
 
-  useEffect(() => {
-    const fetchTankData = async () => {
-      try {
-        // Fetch water level percentage
-        const levelData = await tankService.getLatestWaterLevel(2);
-        const level = levelData.water_level || 0;
-        setWaterLevel(level);
-        
-        // Fetch water level in gallons
-        const gallons = await tankService.getLatestWaterLevelGallons(2);
-        setWaterLevelGallons(parseInt(gallons) || 0);
-        
-        // Calculate water level in feet
-        const feetValue = parseInt(gallons) / gallonsPerFeet;
-        setWaterLevelFeet(feetValue);
-      } catch (error) {
-        console.error('Error fetching tank data:', error);
-      } finally {
-        setLoading(false);
-      }
-    };
+  if (isLoading) {
+    return (
+      <div className="p-6 space-y-6">
+        <div className="text-center text-indigo-600">Loading Tank Details...</div>
+        <div className="flex justify-center">
+          <Skeleton className="h-64 w-64" />
+        </div>
+      </div>
+    );
+  }
 
-    fetchTankData();
-  }, []);
+  if (error) {
+    return (
+      <div className="p-6 text-center text-red-600">
+        Error loading tank data. Please try again later.
+      </div>
+    );
+  }
 
   return (
     <div className="p-6 space-y-6">
@@ -63,9 +61,14 @@ const TankDetailsContent = () => {
           <Card className="shadow-lg hover:shadow-xl transition-shadow duration-300 w-full">
             
             <CardContent className="flex flex-col md:flex-row items-center justify-center p-6">
-              <div className="flex-shrink-0 mb-6 md:mb-0 md:mr-0">
+              <motion.div
+                initial={{ opacity: 0, scale: 0.8 }}
+                animate={{ opacity: 1, scale: 1 }}
+                transition={{ duration: 0.5 }}
+                className="flex-shrink-0 mb-6 md:mb-0 md:mr-0"
+              >
                 <WaterTank waterLevel={waterLevel} />
-              </div>
+              </motion.div>
               <div className="flex flex-col gap-4 ml-0 md:ml-4">
                 <div className="bg-blue-100 p-4 rounded-xl shadow-sm">
                   <h3 className="text-lg font-semibold text-blue-800 mb-1">Current Volume</h3>

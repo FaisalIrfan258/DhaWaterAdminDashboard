@@ -10,6 +10,6 @@ export * from './useNotifications';
 // Additional hooks can be added here as they are created
 export * from './useAdmins';
 export * from './useSensors';
-// export * from './useTanks';
-// export * from './useAudit';
-// export * from './useAuth';
+export * from './useTanks';
+export * from './useAudit';
+export * from './useSecureAuth';

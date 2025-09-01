@@ -1,9 +1,9 @@
 "use client";
 
-import { useState, useEffect, useMemo, useCallback } from "react";
+import { useState, useMemo, useCallback } from "react";
 import { DashboardShell } from "@/components/dashboard/dashboard-shell";
 import { DashboardHeader } from "@/components/dashboard/dashboard-header";
-import { auditService } from "@/services";
+import { useAuditLogs, useRefreshAuditLogs } from "@/hooks";
 import {
   Card,
   CardContent,
@@ -42,16 +42,33 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from "@/components/ui/select";
 
 export default function SystemLogsPage() {
-  const [logs, setLogs] = useState([]);
-  const [filteredLogs, setFilteredLogs] = useState([]);
+  // React Query hooks
+  const { data: logs = [], isLoading, error } = useAuditLogs();
+  const refreshAuditLogs = useRefreshAuditLogs();
+  
+  // Local state
   const [searchQuery, setSearchQuery] = useState("");
-  const [isLoading, setIsLoading] = useState(false);
-  const [isRefreshing, setIsRefreshing] = useState(false);
   const [viewingLog, setViewingLog] = useState(null);
   const [isViewModalOpen, setIsViewModalOpen] = useState(false);
   // Pagination states
   const [currentPage, setCurrentPage] = useState(1);
   const [itemsPerPage, setItemsPerPage] = useState(10);
+  
+  // Filtered logs based on search query
+  const filteredLogs = useMemo(() => {
+    if (!searchQuery.trim()) {
+      return logs;
+    }
+
+    return logs.filter(
+      (log) =>
+        log.table_name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        log.operation_type?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        log.primary_key_value?.toString().toLowerCase().includes(searchQuery.toLowerCase()) ||
+        log.changed_by?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        (log.changed_data && log.changed_data.toLowerCase().includes(searchQuery.toLowerCase()))
+    );
+  }, [logs, searchQuery]);
   
   const totalPages = useMemo(() => {
     return Math.ceil(filteredLogs.length / itemsPerPage);
@@ -86,54 +103,16 @@ export default function SystemLogsPage() {
     setCurrentPage(1); // Reset to first page when changing items per page
   }, []);
 
-  // Fetch audit logs
-  const fetchLogs = async () => {
-    setIsLoading(true);
-    try {
-      const data = await auditService.getAuditLogs();
-      setLogs(data);
-      setFilteredLogs(data);
-    } catch (error) {
-      console.error("Error fetching audit logs:", error);
-      toast.error("Failed to load audit logs", {
-        description: "Please refresh the page to try again.",
-      });
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
-  useEffect(() => {
-    fetchLogs();
-  }, []);
-
   // Handle search
   const handleSearch = useCallback((e) => {
-    const query = e.target.value.toLowerCase();
+    const query = e.target.value;
     setSearchQuery(query);
-
-    if (!query.trim()) {
-      setFilteredLogs(logs);
-      return;
-    }
-
-    const filtered = logs.filter(
-      (log) =>
-        log.table_name?.toLowerCase().includes(query) ||
-        log.operation_type?.toLowerCase().includes(query) ||
-        log.primary_key_value?.toString().toLowerCase().includes(query) ||
-        log.changed_by?.toLowerCase().includes(query) ||
-        (log.changed_data && log.changed_data.toLowerCase().includes(query))
-    );
-
-    setFilteredLogs(filtered);
-  }, [logs]);
+    setCurrentPage(1); // Reset to first page when searching
+  }, []);
 
   // Handle refresh
-  const handleRefresh = async () => {
-    setIsRefreshing(true);
-    await fetchLogs();
-    setIsRefreshing(false);
+  const handleRefresh = () => {
+    refreshAuditLogs.mutate();
   };
 
   // Format date
@@ -191,9 +170,9 @@ export default function SystemLogsPage() {
             variant="outline"
             size="sm"
             onClick={handleRefresh}
-            disabled={isRefreshing}
+            disabled={refreshAuditLogs.isPending}
           >
-            <RefreshCw className={`h-4 w-4 mr-2 ${isRefreshing ? "animate-spin" : ""}`} />
+            <RefreshCw className={`h-4 w-4 mr-2 ${refreshAuditLogs.isPending ? "animate-spin" : ""}`} />
             Refresh
           </Button>
         </div>
@@ -223,6 +202,18 @@ export default function SystemLogsPage() {
             {isLoading ? (
               <div className="py-6 text-center text-muted-foreground">
                 Loading logs...
+              </div>
+            ) : error ? (
+              <div className="py-6 text-center text-muted-foreground">
+                <p>Failed to load audit logs.</p>
+                <Button 
+                  variant="outline" 
+                  size="sm" 
+                  onClick={handleRefresh}
+                  className="mt-2"
+                >
+                  Try Again
+                </Button>
               </div>
             ) : filteredLogs.length === 0 ? (
               <div className="py-6 text-center text-muted-foreground">
