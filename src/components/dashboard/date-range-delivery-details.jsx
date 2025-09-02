@@ -8,7 +8,7 @@ import { Label } from "@/components/ui/label"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { Badge } from "@/components/ui/badge"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { CalendarDays, TrendingUp, FileText, Download } from "lucide-react"
+import { CalendarDays, TrendingUp, FileText, Download, Truck, MapPin } from "lucide-react"
 import { useBookings } from "@/hooks"
 import { toast } from "sonner"
 import { PDFTemplates } from "../../lib/pdfGenerator"
@@ -72,7 +72,7 @@ export default function DateRangeDeliveryDetails() {
     const pendingCount = filteredDeliveries.filter(d => d.status === "Pending").length
     const cancelledCount = filteredDeliveries.filter(d => d.status === "Cancelled").length
     
-    const totalCapacity = filteredDeliveries.reduce((sum, d) => sum + (d.Tanker?.capacity || 0), 0)
+    const totalWaterDelivered = filteredDeliveries.reduce((sum, d) => sum + (d.Tanker?.capacity || 0), 0)
     const uniqueTankers = new Set(filteredDeliveries.map(d => d.Tanker?.tanker_name)).size
     const uniqueAreas = new Set(filteredDeliveries.map(d => d.Customer?.Phase?.phase_name)).size
     
@@ -99,7 +99,7 @@ export default function DateRangeDeliveryDetails() {
       deliveredCount,
       pendingCount,
       cancelledCount,
-      totalCapacity,
+      totalWaterDelivered,
       uniqueTankers,
       uniqueAreas,
       dailyBreakdown
@@ -109,11 +109,11 @@ export default function DateRangeDeliveryDetails() {
   const generateDetailedPDF = () => {
     const summaryStats = [
       { label: 'Total Deliveries', value: analytics.totalDeliveries, color: [66, 139, 202] },
+      { label: 'Areas Served', value: analytics.uniqueAreas, color: [40, 167, 69] },
+      { label: 'Water Delivered', value: `${analytics.totalWaterDelivered.toLocaleString()}G`, color: [23, 162, 184] },
       { label: 'Delivered', value: analytics.deliveredCount, color: [40, 167, 69] },
       { label: 'Pending', value: analytics.pendingCount, color: [255, 193, 7] },
-      { label: 'Cancelled', value: analytics.cancelledCount, color: [220, 53, 69] },
-      { label: 'Total Capacity', value: `${analytics.totalCapacity.toLocaleString()}G`, color: [108, 117, 125] },
-      { label: 'Unique Tankers', value: analytics.uniqueTankers, color: [23, 162, 184] }
+      { label: 'Cancelled', value: analytics.cancelledCount, color: [220, 53, 69] }
     ]
 
     const keyInfo = [
@@ -289,6 +289,7 @@ export default function DateRangeDeliveryDetails() {
                 onClick={generateDetailedPDF}
                 disabled={filteredDeliveries.length === 0}
                 size="sm"
+                className="max-w-[120px]"
               >
                 <FileText className="mr-2 h-4 w-4" />
                 PDF
@@ -298,6 +299,7 @@ export default function DateRangeDeliveryDetails() {
                 disabled={filteredDeliveries.length === 0}
                 variant="outline"
                 size="sm"
+                className="max-w-[120px]"
               >
                 <Download className="mr-2 h-4 w-4" />
                 CSV
@@ -306,57 +308,29 @@ export default function DateRangeDeliveryDetails() {
           </div>
           
           {/* Analytics Cards */}
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
             <Card>
-              <CardContent className="p-4">
+              <CardContent className="p-6">
                 <div className="flex items-center justify-between">
                   <div>
                     <p className="text-sm font-medium text-muted-foreground">Total Deliveries</p>
-                    <p className="text-2xl font-bold">{analytics.totalDeliveries}</p>
+                    <p className="text-3xl font-bold">{analytics.totalDeliveries}</p>
+                    <p className="text-xs text-muted-foreground mt-1">Water Delivered: {analytics.totalWaterDelivered.toLocaleString()}G</p>
                   </div>
-                  <TrendingUp className="h-8 w-8 text-blue-500" />
+                  <Truck className="h-10 w-10 text-blue-500" />
                 </div>
               </CardContent>
             </Card>
             
             <Card>
-              <CardContent className="p-4">
+              <CardContent className="p-6">
                 <div className="flex items-center justify-between">
                   <div>
-                    <p className="text-sm font-medium text-muted-foreground">Delivered</p>
-                    <p className="text-2xl font-bold text-green-600">{analytics.deliveredCount}</p>
+                    <p className="text-sm font-medium text-muted-foreground">Areas Served</p>
+                    <p className="text-3xl font-bold">{analytics.uniqueAreas}</p>
+                    <p className="text-xs text-muted-foreground mt-1">Unique locations covered</p>
                   </div>
-                  <div className="h-8 w-8 rounded-full bg-green-100 flex items-center justify-center">
-                    <div className="h-4 w-4 rounded-full bg-green-500"></div>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-            
-            <Card>
-              <CardContent className="p-4">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <p className="text-sm font-medium text-muted-foreground">Pending</p>
-                    <p className="text-2xl font-bold text-yellow-600">{analytics.pendingCount}</p>
-                  </div>
-                  <div className="h-8 w-8 rounded-full bg-yellow-100 flex items-center justify-center">
-                    <div className="h-4 w-4 rounded-full bg-yellow-500"></div>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-            
-            <Card>
-              <CardContent className="p-4">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <p className="text-sm font-medium text-muted-foreground">Total Capacity</p>
-                    <p className="text-2xl font-bold">{analytics.totalCapacity.toLocaleString()}G</p>
-                  </div>
-                  <div className="h-8 w-8 rounded-full bg-purple-100 flex items-center justify-center">
-                    <div className="h-4 w-4 rounded-full bg-purple-500"></div>
-                  </div>
+                  <MapPin className="h-10 w-10 text-green-500" />
                 </div>
               </CardContent>
             </Card>

@@ -3,6 +3,7 @@
 import { useEffect } from "react";
 import { useSearchParams } from "next/navigation";
 import { toast } from "sonner";
+import { useUser } from "@/context/UserContext";
 import DashboardStats from "@/components/dashboard/dashboard-stats";
 import TankDetailsContent from "@/components/tank-details-content";
 import DailyDeliveryTracking from "@/components/dashboard/daily-delivery-tracking";
@@ -11,6 +12,7 @@ import DateRangeDeliveryDetails from "@/components/dashboard/date-range-delivery
 export default function DashboardPage() {
   const searchParams = useSearchParams();
   const error = searchParams.get('error');
+  const { user } = useUser();
 
   useEffect(() => {
     if (error === 'access_denied') {
@@ -22,9 +24,13 @@ export default function DashboardPage() {
     <div className="space-y-6">
       <div className="flex items-center justify-between"></div>
       <DashboardStats />
-      <DailyDeliveryTracking />
-      <DateRangeDeliveryDetails />
       <TankDetailsContent />
+      {user?.isSuperAdmin && (
+        <>
+          <DailyDeliveryTracking />
+          <DateRangeDeliveryDetails />
+        </>
+      )}
     </div>
   );
 }

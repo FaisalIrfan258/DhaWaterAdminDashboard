@@ -206,7 +206,12 @@ class PDFGenerator {
         const x = this.margin + j * (cardWidth + 10)
         
         // Draw card background
-        this.doc.setFillColor(stat.color || [240, 240, 240])
+        const color = stat.color || [240, 240, 240]
+        if (Array.isArray(color)) {
+          this.doc.setFillColor(color[0], color[1], color[2])
+        } else {
+          this.doc.setFillColor(color)
+        }
         this.doc.rect(x, this.currentY, cardWidth, cardHeight, 'F')
         
         // Draw border

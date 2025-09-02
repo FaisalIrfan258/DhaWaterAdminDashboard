@@ -532,13 +532,14 @@ export default function DriversPage() {
         </div>
       </DashboardHeader>
 
-      <Tabs defaultValue="drivers" className="w-full">
-        <TabsList className="grid w-full grid-cols-2">
-          <TabsTrigger value="drivers">Drivers Management</TabsTrigger>
-          <TabsTrigger value="reports">Delivery Reports</TabsTrigger>
-        </TabsList>
-        
-        <TabsContent value="drivers" className="space-y-4">
+      {user?.isSuperAdmin ? (
+        <Tabs defaultValue="drivers" className="w-full">
+          <TabsList className="grid w-full grid-cols-2">
+            <TabsTrigger value="drivers">Drivers Management</TabsTrigger>
+            <TabsTrigger value="reports">Delivery Reports</TabsTrigger>
+          </TabsList>
+          
+          <TabsContent value="drivers" className="space-y-4">
           <Card className="max-w-full">
           <CardHeader>
             <CardTitle className="flex items-center">
@@ -839,7 +840,158 @@ export default function DriversPage() {
             </CardContent>
           </Card>
         </TabsContent>
-      </Tabs>
+        </Tabs>
+      ) : (
+        // For regular admins, show only drivers management without tabs
+        <Card className="max-w-full">
+          <CardHeader>
+            <CardTitle className="flex items-center">
+              <Car className="mr-2 h-5 w-5" />
+              Water Tanker Drivers
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="flex justify-between items-center mb-4">
+              <div className="relative w-64">
+                <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
+                <Input
+                  type="search"
+                  placeholder="Search drivers..."
+                  className="pl-8"
+                  value={searchQuery}
+                  onChange={handleSearch}
+                />
+              </div>
+              <div className="flex items-center gap-2">
+                <Select onValueChange={handleItemsPerPageChange} defaultValue="10">
+                  <SelectTrigger className="w-[100px]">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="5">5</SelectItem>
+                    <SelectItem value="10">10</SelectItem>
+                    <SelectItem value="20">20</SelectItem>
+                    <SelectItem value="50">50</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+            {isLoading ? (
+              <div className="flex justify-center items-center py-8">
+                <div className="text-center">
+                  <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto mb-2"></div>
+                  <p className="text-muted-foreground">Loading drivers...</p>
+                </div>
+              </div>
+            ) : (
+              <>
+                <div className="border rounded-md">
+                  <Table>
+                    <TableHeader>
+                      <TableRow>
+                        <TableHead>ID</TableHead>
+                        <TableHead>Name</TableHead>
+                        <TableHead>Contact</TableHead>
+                        <TableHead>License</TableHead>
+                        <TableHead>Username</TableHead>
+                        <TableHead>Status</TableHead>
+                        <TableHead>Actions</TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {paginatedDrivers.length === 0 ? (
+                        <TableRow>
+                          <TableCell colSpan={7} className="text-center py-8 text-muted-foreground">
+                            {searchQuery ? "No drivers found matching your search" : "No drivers found"}
+                          </TableCell>
+                        </TableRow>
+                      ) : (
+                        paginatedDrivers.map((driver) => (
+                          <TableRow key={driver.driver_id}>
+                            <TableCell className="font-medium">#{driver.driver_id}</TableCell>
+                            <TableCell>{driver.full_name}</TableCell>
+                            <TableCell>
+                              <div className="flex flex-col">
+                                <span>{driver.phone_number}</span>
+                                <span className="text-xs text-muted-foreground">{driver.email}</span>
+                              </div>
+                            </TableCell>
+                            <TableCell>{driver.license_number}</TableCell>
+                            <TableCell>{driver.username}</TableCell>
+                            <TableCell>
+                              <Badge variant={getStatusBadgeVariant(driver.availability_status)}>
+                                {driver.availability_status}
+                              </Badge>
+                            </TableCell>
+                            <TableCell>
+                              <DropdownMenu modal={false}>
+                                <DropdownMenuTrigger asChild>
+                                  <Button variant="ghost" size="sm">
+                                    <MoreHorizontal className="h-4 w-4" />
+                                    <span className="sr-only">Open menu</span>
+                                  </Button>
+                                </DropdownMenuTrigger>
+                                <DropdownMenuContent align="end">
+                                  <DropdownMenuItem onClick={() => handleViewDriver(driver)}>
+                                    <Eye className="mr-2 h-4 w-4" />
+                                    View
+                                  </DropdownMenuItem>
+                                  <DropdownMenuItem onClick={() => openEditDialog(driver)}>
+                                    <Pencil className="mr-2 h-4 w-4" />
+                                    Edit
+                                  </DropdownMenuItem>
+                                  <DropdownMenuItem 
+                                    onClick={() => {
+                                      setSelectedDriver(driver)
+                                      setIsDeleteDialogOpen(true)
+                                    }}
+                                    className="text-destructive"
+                                  >
+                                    <Trash2 className="mr-2 h-4 w-4" />
+                                    Delete
+                                  </DropdownMenuItem>
+                                </DropdownMenuContent>
+                              </DropdownMenu>
+                            </TableCell>
+                          </TableRow>
+                        ))
+                      )}
+                    </TableBody>
+                  </Table>
+                </div>
+                
+                <div className="flex items-center justify-between space-x-2 py-4">
+                  <div className="text-sm text-muted-foreground">
+                    Showing {((currentPage - 1) * itemsPerPage) + 1} to {Math.min(currentPage * itemsPerPage, filteredDrivers.length)} of {filteredDrivers.length} drivers
+                  </div>
+                  
+                  <div className="flex items-center space-x-2">
+                    <Button
+                      variant="outline"
+                      size="icon"
+                      onClick={goToPreviousPage}
+                      disabled={currentPage === 1}
+                    >
+                      <ChevronLeft className="h-4 w-4" />
+                    </Button>
+                    <p className="text-sm text-muted-foreground">
+                      Page {currentPage} of {totalPages}
+                    </p>
+                    <Button
+                      variant="outline"
+                      size="icon"
+                      onClick={goToNextPage}
+                      disabled={currentPage === totalPages}
+                    >
+                      <ChevronRight className="h-4 w-4" />
+                    </Button>
+                  </div>
+                </div>
+              </>
+            )}
+          </CardContent>
+        </Card>
+      )}
 
       <Dialog open={isViewDialogOpen} onOpenChange={setIsViewDialogOpen}>
         <DialogContent className="sm:max-w-[500px]">

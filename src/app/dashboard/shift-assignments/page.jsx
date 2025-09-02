@@ -52,17 +52,16 @@ export default function ShiftAssignmentsPage() {
 
   // Define shift time ranges
   const shifts = [
-    { id: "morning", name: "Morning Shift", start: "06:00", end: "14:00" },
-    { id: "afternoon", name: "Afternoon Shift", start: "14:00", end: "22:00" },
-    { id: "night", name: "Night Shift", start: "22:00", end: "06:00" },
+    { id: "morning", name: "Morning Shift", start: "07:00", end: "15:00" },
+    { id: "evening", name: "Evening Shift", start: "15:00", end: "23:00" },
   ];
 
   // Helper function to determine shift based on time
   const getShiftFromTime = (dateTime) => {
     const hour = new Date(dateTime).getHours();
-    if (hour >= 6 && hour < 14) return "morning";
-    if (hour >= 14 && hour < 22) return "afternoon";
-    return "night";
+    if (hour >= 7 && hour < 15) return "morning";
+    if (hour >= 15 && hour < 23) return "evening";
+    return "morning"; // Default to morning for hours outside range
   };
 
   // Filter bookings by date and shift
@@ -123,21 +122,16 @@ export default function ShiftAssignmentsPage() {
           adminAssignments[adminId] = {
             adminName,
             bookings: [],
-            tankers: new Set(),
           };
         }
         
         adminAssignments[adminId].bookings.push(booking);
-        if (booking.Tanker?.tanker_name) {
-          adminAssignments[adminId].tankers.add(booking.Tanker.tanker_name);
-        }
       });
 
       summary[shift.id] = {
         ...shift,
         totalBookings: shiftBookings.length,
         adminAssignments: Object.values(adminAssignments),
-        uniqueTankers: new Set(shiftBookings.map(b => b.Tanker?.tanker_name).filter(Boolean)).size,
       };
     });
 
@@ -260,7 +254,7 @@ export default function ShiftAssignmentsPage() {
         </Card>
 
         {/* Shift Summary Cards */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           {Object.values(shiftSummary).map((shift) => (
             <Card key={shift.id}>
               <CardHeader className="pb-3">
@@ -280,10 +274,7 @@ export default function ShiftAssignmentsPage() {
                     <span className="text-sm text-muted-foreground">Total Bookings</span>
                     <Badge variant="secondary">{shift.totalBookings}</Badge>
                   </div>
-                  <div className="flex justify-between items-center">
-                    <span className="text-sm text-muted-foreground">Unique Tankers</span>
-                    <Badge variant="outline">{shift.uniqueTankers}</Badge>
-                  </div>
+
                   <div className="flex justify-between items-center">
                     <span className="text-sm text-muted-foreground">Assigned Admins</span>
                     <Badge variant="outline">{shift.adminAssignments.length}</Badge>
@@ -296,7 +287,7 @@ export default function ShiftAssignmentsPage() {
                         <div key={index} className="text-xs bg-muted p-2 rounded">
                           <div className="font-medium">{assignment.adminName}</div>
                           <div className="text-muted-foreground">
-                            {assignment.bookings.length} bookings, {assignment.tankers.size} tankers
+                            {assignment.bookings.length} bookings
                           </div>
                         </div>
                       ))}
