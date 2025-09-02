@@ -239,7 +239,7 @@ export default function DateRangeDeliveryDetails() {
                 type="date"
                 value={startDate}
                 onChange={(e) => setStartDate(e.target.value)}
-                className="mt-1"
+                className="mt-1 w-full max-w-[200px]"
               />
             </div>
             
@@ -250,7 +250,7 @@ export default function DateRangeDeliveryDetails() {
                 type="date"
                 value={endDate}
                 onChange={(e) => setEndDate(e.target.value)}
-                className="mt-1"
+                className="mt-1 w-full max-w-[200px]"
               />
             </div>
             

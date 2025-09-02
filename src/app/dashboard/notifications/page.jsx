@@ -70,12 +70,7 @@ export default function NotificationsPage() {
     }
   }, [user])
 
-  // Update filtered notifications when notifications data changes
-  useEffect(() => {
-    if (!searchQuery.trim()) {
-      setFilteredNotifications(notifications)
-    }
-  }, [notifications, searchQuery])
+
 
   // Paginate notifications function
   const totalPages = useMemo(() => {
@@ -154,7 +149,7 @@ export default function NotificationsPage() {
     if (!searchQuery.trim()) {
       setFilteredNotifications(sortedNotifications)
     }
-  }, [sortedNotifications])
+  }, [sortedNotifications, searchQuery])
 
   // Handle refresh
   const handleRefreshData = async () => {

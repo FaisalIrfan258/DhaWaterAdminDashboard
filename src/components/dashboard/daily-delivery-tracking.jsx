@@ -184,7 +184,7 @@ export default function DailyDeliveryTracking() {
                 type="date"
                 value={selectedDate}
                 onChange={(e) => setSelectedDate(e.target.value)}
-                className="mt-1"
+                className="mt-1 w-full max-w-[200px]"
               />
             </div>
             

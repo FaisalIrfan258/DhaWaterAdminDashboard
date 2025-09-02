@@ -744,6 +744,7 @@ export default function DriversPage() {
                     type="date"
                     value={driverReportData.startDate}
                     onChange={(e) => setDriverReportData({...driverReportData, startDate: e.target.value})}
+                    className="w-full max-w-[200px]"
                   />
                 </div>
                 <div className="space-y-2">
@@ -753,6 +754,7 @@ export default function DriversPage() {
                     type="date"
                     value={driverReportData.endDate}
                     onChange={(e) => setDriverReportData({...driverReportData, endDate: e.target.value})}
+                    className="w-full max-w-[200px]"
                   />
                 </div>
               </div>

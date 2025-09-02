@@ -203,6 +203,7 @@ export default function ShiftAssignmentsPage() {
                   type="date"
                   value={selectedDate}
                   onChange={(e) => setSelectedDate(e.target.value)}
+                  className="w-full max-w-[200px]"
                 />
               </div>
               
