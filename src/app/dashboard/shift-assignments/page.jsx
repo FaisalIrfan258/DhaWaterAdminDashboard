@@ -43,7 +43,11 @@ export default function ShiftAssignmentsPage() {
   const [isRefreshing, setIsRefreshing] = useState(false);
 
   // Fetch data
-  const { data: bookingsData = [], isLoading: isBookingsLoading, refetch: refetchBookings } = useBookings();
+  const {
+    data: bookingsData = [],
+    isLoading: isBookingsLoading,
+    refetch: refetchBookings,
+  } = useBookings();
   const { data: adminsData, isLoading: isAdminsLoading } = useAdmins();
   const { data: tankersData, isLoading: isTankersLoading } = useTankers();
 
@@ -67,7 +71,9 @@ export default function ShiftAssignmentsPage() {
   // Filter bookings by date and shift
   const filteredBookings = useMemo(() => {
     let filtered = bookingsData.filter((booking) => {
-      const bookingDate = new Date(booking.scheduled_date).toISOString().split("T")[0];
+      const bookingDate = new Date(booking.scheduled_date)
+        .toISOString()
+        .split("T")[0];
       return bookingDate === selectedDate;
     });
 
@@ -105,7 +111,7 @@ export default function ShiftAssignmentsPage() {
   // Group bookings by shift for summary
   const shiftSummary = useMemo(() => {
     const summary = {};
-    
+
     shifts.forEach((shift) => {
       const shiftBookings = filteredBookings.filter((booking) => {
         const bookingShift = getShiftFromTime(booking.scheduled_date);
@@ -117,14 +123,14 @@ export default function ShiftAssignmentsPage() {
       shiftBookings.forEach((booking) => {
         const adminId = booking.Admin?.admin_id;
         const adminName = booking.Admin?.full_name || "Unassigned";
-        
+
         if (!adminAssignments[adminId]) {
           adminAssignments[adminId] = {
             adminName,
             bookings: [],
           };
         }
-        
+
         adminAssignments[adminId].bookings.push(booking);
       });
 
@@ -180,7 +186,9 @@ export default function ShiftAssignmentsPage() {
         text="Track and manage tanker assignments by admin users across different shifts"
       >
         <Button onClick={handleRefresh} disabled={isRefreshing}>
-          <RefreshCw className={`mr-2 h-4 w-4 ${isRefreshing ? "animate-spin" : ""}`} />
+          <RefreshCw
+            className={`mr-2 h-4 w-4 ${isRefreshing ? "animate-spin" : ""}`}
+          />
           Refresh
         </Button>
       </DashboardHeader>
@@ -206,7 +214,7 @@ export default function ShiftAssignmentsPage() {
                   className="w-full max-w-[200px]"
                 />
               </div>
-              
+
               <div className="space-y-2">
                 <Label htmlFor="shift">Shift</Label>
                 <Select value={selectedShift} onValueChange={setSelectedShift}>
@@ -223,7 +231,7 @@ export default function ShiftAssignmentsPage() {
                   </SelectContent>
                 </Select>
               </div>
-              
+
               <div className="space-y-2">
                 <Label htmlFor="admin">Admin</Label>
                 <Select value={selectedAdmin} onValueChange={setSelectedAdmin}>
@@ -233,14 +241,17 @@ export default function ShiftAssignmentsPage() {
                   <SelectContent>
                     <SelectItem value="All">All Admins</SelectItem>
                     {admins.map((admin) => (
-                      <SelectItem key={admin.admin_id} value={admin.admin_id.toString()}>
+                      <SelectItem
+                        key={admin.admin_id}
+                        value={admin.admin_id.toString()}
+                      >
                         {admin.full_name}
                       </SelectItem>
                     ))}
                   </SelectContent>
                 </Select>
               </div>
-              
+
               <div className="space-y-2">
                 <Label htmlFor="search">Search</Label>
                 <Input
@@ -272,21 +283,34 @@ export default function ShiftAssignmentsPage() {
               <CardContent>
                 <div className="space-y-3">
                   <div className="flex justify-between items-center">
-                    <span className="text-sm text-muted-foreground">Total Bookings</span>
+                    <span className="text-sm text-muted-foreground">
+                      Total Bookings
+                    </span>
                     <Badge variant="secondary">{shift.totalBookings}</Badge>
                   </div>
 
                   <div className="flex justify-between items-center">
-                    <span className="text-sm text-muted-foreground">Assigned Admins</span>
-                    <Badge variant="outline">{shift.adminAssignments.length}</Badge>
+                    <span className="text-sm text-muted-foreground">
+                      Assigned Admins
+                    </span>
+                    <Badge variant="outline">
+                      {shift.adminAssignments.length}
+                    </Badge>
                   </div>
-                  
+
                   {shift.adminAssignments.length > 0 && (
                     <div className="mt-3 space-y-2">
-                      <h4 className="text-sm font-medium">Admin Assignments:</h4>
+                      <h4 className="text-sm font-medium">
+                        Admin Assignments:
+                      </h4>
                       {shift.adminAssignments.map((assignment, index) => (
-                        <div key={index} className="text-xs bg-muted p-2 rounded">
-                          <div className="font-medium">{assignment.adminName}</div>
+                        <div
+                          key={index}
+                          className="text-xs bg-muted p-2 rounded"
+                        >
+                          <div className="font-medium">
+                            {assignment.adminName}
+                          </div>
                           <div className="text-muted-foreground">
                             {assignment.bookings.length} bookings
                           </div>
@@ -309,13 +333,16 @@ export default function ShiftAssignmentsPage() {
             </CardTitle>
             <CardDescription>
               Showing {filteredBookings.length} assignments for {selectedDate}
-              {selectedShift !== "All" && ` - ${shifts.find(s => s.id === selectedShift)?.name}`}
+              {selectedShift !== "All" &&
+                ` - ${shifts.find((s) => s.id === selectedShift)?.name}`}
             </CardDescription>
           </CardHeader>
           <CardContent>
             {isBookingsLoading ? (
               <div className="flex justify-center py-8">
-                <div className="text-muted-foreground">Loading assignments...</div>
+                <div className="text-muted-foreground">
+                  Loading assignments...
+                </div>
               </div>
             ) : filteredBookings.length === 0 ? (
               <div className="text-center py-8 text-muted-foreground">
@@ -338,8 +365,8 @@ export default function ShiftAssignmentsPage() {
                   <TableBody>
                     {filteredBookings.map((booking) => {
                       const shift = getShiftFromTime(booking.scheduled_date);
-                      const shiftInfo = shifts.find(s => s.id === shift);
-                      
+                      const shiftInfo = shifts.find((s) => s.id === shift);
+
                       return (
                         <TableRow key={booking.booking_id}>
                           <TableCell className="font-medium">
@@ -366,7 +393,9 @@ export default function ShiftAssignmentsPage() {
                             </div>
                           </TableCell>
                           <TableCell>
-                            <Badge variant={getStatusBadgeVariant(booking.status)}>
+                            <Badge
+                              variant={getStatusBadgeVariant(booking.status)}
+                            >
                               {booking.status || "Unknown"}
                             </Badge>
                           </TableCell>

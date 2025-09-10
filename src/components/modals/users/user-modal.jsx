@@ -4,27 +4,27 @@ import {
   DialogDescription,
   DialogHeader,
   DialogTitle,
-} from "@/components/ui/dialog"
+} from "@/components/ui/dialog";
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from "@/components/ui/select"
-import { Input } from "@/components/ui/input"
-import { Label } from "@/components/ui/label"
-import { Button } from "@/components/ui/button"
-import { useState, useEffect } from "react"
-import { sensorService } from "@/services"
+} from "@/components/ui/select";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Button } from "@/components/ui/button";
+import { useState, useEffect } from "react";
+import { sensorService } from "@/services";
 
-export function UserModal({ 
-  isOpen, 
+export function UserModal({
+  isOpen,
   onClose,
   mode = "add", // "add" | "edit" | "view"
   user = null,
   onSubmit,
-  isLoading 
+  isLoading,
 }) {
   const defaultFormData = {
     full_name: "",
@@ -37,16 +37,16 @@ export function UserModal({
     tank_capacity: "",
     balance: "",
     device_id: "",
-    category: "Corporate"
-  }
+    category: "Corporate",
+  };
 
-  const [formData, setFormData] = useState(defaultFormData)
-  const [sensors, setSensors] = useState([])
-  const [isSensorDropdownOpen, setIsSensorDropdownOpen] = useState(false)
+  const [formData, setFormData] = useState(defaultFormData);
+  const [sensors, setSensors] = useState([]);
+  const [isSensorDropdownOpen, setIsSensorDropdownOpen] = useState(false);
 
   useEffect(() => {
     let isMounted = true;
-    
+
     if (!isOpen) {
       // Reset state when modal closes
       setFormData(defaultFormData);
@@ -54,15 +54,15 @@ export function UserModal({
       setIsSensorDropdownOpen(false);
       return;
     }
-    
+
     if (mode === "edit" && user) {
       // For editing, if we receive home_address, split it into street_address and phase_number
-      let streetAddress = user.street_address || ""
-      let phaseNumber = user.Phase?.phase_id || user.phase_number || ""
-      
+      let streetAddress = user.street_address || "";
+      let phaseNumber = user.Phase?.phase_id || user.phase_number || "";
+
       // Get the sensor ID from WaterTanks if available
-      const sensorId = user.WaterTanks?.[0]?.sensor_id?.toString() || ""
-      
+      const sensorId = user.WaterTanks?.[0]?.sensor_id?.toString() || "";
+
       if (isMounted) {
         setFormData({
           ...user,
@@ -70,61 +70,63 @@ export function UserModal({
           phase_number: phaseNumber,
           device_id: sensorId, // Set the sensor ID from WaterTanks
           tank_capacity: user.WaterTanks?.[0]?.capacity?.toString() || "",
-          password: "" // Clear password when editing
-        })
+          password: "", // Clear password when editing
+        });
       }
 
       // If we have a sensor ID, fetch available sensors to show it in the dropdown
       if (sensorId && isMounted) {
-        fetchAvailableSensors(isMounted)
+        fetchAvailableSensors(isMounted);
       }
     } else if (mode === "add" && isMounted) {
-      setFormData(defaultFormData)
+      setFormData(defaultFormData);
     }
-    
+
     return () => {
       isMounted = false;
     };
-  }, [mode, user, isOpen])
+  }, [mode, user, isOpen]);
 
   const fetchAvailableSensors = async (isMounted = true) => {
     try {
-      const data = await sensorService.getAvailableSensors()
+      const data = await sensorService.getAvailableSensors();
       // Include both available sensors and the current user's sensor
-      const allSensors = data.sensors || []
-      const currentSensor = user?.WaterTanks?.[0]?.sensor_id
-      
+      const allSensors = data.sensors || [];
+      const currentSensor = user?.WaterTanks?.[0]?.sensor_id;
+
       // If we have a current sensor, make sure it's included in the list
       if (currentSensor) {
-        const currentSensorExists = allSensors.some(s => s.sensor_id === currentSensor)
+        const currentSensorExists = allSensors.some(
+          (s) => s.sensor_id === currentSensor
+        );
         if (!currentSensorExists) {
           allSensors.push({
             sensor_id: currentSensor,
-            status: "Assigned"
-          })
+            status: "Assigned",
+          });
         }
       }
-      
+
       if (isMounted) {
-        setSensors(allSensors)
+        setSensors(allSensors);
       }
     } catch (error) {
       if (isMounted) {
-        console.error("Error fetching available sensors:", error)
+        console.error("Error fetching available sensors:", error);
       }
     }
-  }
+  };
 
   const handleSensorDropdownOpen = () => {
     if (!isSensorDropdownOpen) {
-      fetchAvailableSensors()
+      fetchAvailableSensors();
     }
-    setIsSensorDropdownOpen(true)
-  }
+    setIsSensorDropdownOpen(true);
+  };
 
   const handleSubmit = (e) => {
-    e.preventDefault()
-    
+    e.preventDefault();
+
     // Format the data according to the API requirements
     const submitData = {
       ...formData,
@@ -132,8 +134,8 @@ export function UserModal({
       balance: Number(formData.balance),
       device_id: Number(formData.device_id), // Ensure device_id is a number
       category: formData.category,
-      phase_number: Number(formData.phase_number)
-    }
+      phase_number: Number(formData.phase_number),
+    };
 
     if (mode === "edit") {
       // For update API, we need to format the data differently
@@ -142,31 +144,33 @@ export function UserModal({
         full_name: submitData.full_name,
         email: submitData.email,
         phone_number: submitData.phone_number,
-        home_address: `${submitData.street_address}${submitData.phase_number ? ` Phase ${submitData.phase_number}` : ""}`,
+        home_address: `${submitData.street_address}${
+          submitData.phase_number ? ` Phase ${submitData.phase_number}` : ""
+        }`,
         username: submitData.username,
         tank_capacity: submitData.tank_capacity,
         balance: submitData.balance,
-        device_id: submitData.device_id // Include the sensor ID in the update
-      }
+        device_id: submitData.device_id, // Include the sensor ID in the update
+      };
 
       // Only include password if it was changed
       if (submitData.password) {
-        updateData.password = submitData.password
+        updateData.password = submitData.password;
       }
 
-      onSubmit(updateData)
+      onSubmit(updateData);
     } else {
       // For create API, we can use the data as is
-      onSubmit(submitData)
+      onSubmit(submitData);
     }
-  }
+  };
 
-  const isViewOnly = mode === "view"
+  const isViewOnly = mode === "view";
   const title = {
     add: "Add New User",
     edit: "Edit User",
-    view: "User Details"
-  }[mode]
+    view: "User Details",
+  }[mode];
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
@@ -174,8 +178,8 @@ export function UserModal({
         <DialogHeader>
           <DialogTitle>{title}</DialogTitle>
           <DialogDescription>
-            {isViewOnly 
-              ? "View user account details" 
+            {isViewOnly
+              ? "View user account details"
               : mode === "edit"
               ? "Edit user account information"
               : "Fill in the details to create a new user account"}
@@ -190,7 +194,9 @@ export function UserModal({
               <Input
                 id="full_name"
                 value={formData.full_name}
-                onChange={(e) => setFormData({ ...formData, full_name: e.target.value })}
+                onChange={(e) =>
+                  setFormData({ ...formData, full_name: e.target.value })
+                }
                 className="col-span-3"
                 disabled={isViewOnly}
                 required
@@ -205,7 +211,9 @@ export function UserModal({
                 id="email"
                 type="email"
                 value={formData.email}
-                onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+                onChange={(e) =>
+                  setFormData({ ...formData, email: e.target.value })
+                }
                 className="col-span-3"
                 disabled={isViewOnly}
                 required
@@ -219,7 +227,9 @@ export function UserModal({
               <Input
                 id="phone_number"
                 value={formData.phone_number}
-                onChange={(e) => setFormData({ ...formData, phone_number: e.target.value })}
+                onChange={(e) =>
+                  setFormData({ ...formData, phone_number: e.target.value })
+                }
                 className="col-span-3"
                 disabled={isViewOnly}
                 required
@@ -233,7 +243,9 @@ export function UserModal({
               <Input
                 id="street_address"
                 value={formData.street_address}
-                onChange={(e) => setFormData({ ...formData, street_address: e.target.value })}
+                onChange={(e) =>
+                  setFormData({ ...formData, street_address: e.target.value })
+                }
                 className="col-span-3"
                 disabled={isViewOnly}
                 required
@@ -248,7 +260,9 @@ export function UserModal({
                 id="phase_number"
                 type="number"
                 value={formData.phase_number}
-                onChange={(e) => setFormData({ ...formData, phase_number: e.target.value })}
+                onChange={(e) =>
+                  setFormData({ ...formData, phase_number: e.target.value })
+                }
                 className="col-span-3"
                 disabled={isViewOnly}
                 required
@@ -262,7 +276,9 @@ export function UserModal({
               <Input
                 id="username"
                 value={formData.username}
-                onChange={(e) => setFormData({ ...formData, username: e.target.value })}
+                onChange={(e) =>
+                  setFormData({ ...formData, username: e.target.value })
+                }
                 className="col-span-3"
                 disabled={isViewOnly}
                 required
@@ -278,10 +294,14 @@ export function UserModal({
                   id="password"
                   type="password"
                   value={formData.password}
-                  onChange={(e) => setFormData({ ...formData, password: e.target.value })}
+                  onChange={(e) =>
+                    setFormData({ ...formData, password: e.target.value })
+                  }
                   className="col-span-3"
                   required={mode === "add"}
-                  placeholder={mode === "edit" ? "Leave blank to keep current" : ""}
+                  placeholder={
+                    mode === "edit" ? "Leave blank to keep current" : ""
+                  }
                 />
               </div>
             )}
@@ -294,7 +314,9 @@ export function UserModal({
                 id="tank_capacity"
                 type="number"
                 value={formData.tank_capacity}
-                onChange={(e) => setFormData({ ...formData, tank_capacity: e.target.value })}
+                onChange={(e) =>
+                  setFormData({ ...formData, tank_capacity: e.target.value })
+                }
                 className="col-span-3"
                 disabled={isViewOnly}
                 required
@@ -309,7 +331,9 @@ export function UserModal({
                 id="balance"
                 type="number"
                 value={formData.balance}
-                onChange={(e) => setFormData({ ...formData, balance: e.target.value })}
+                onChange={(e) =>
+                  setFormData({ ...formData, balance: e.target.value })
+                }
                 className="col-span-3"
                 disabled={isViewOnly}
                 required
@@ -322,7 +346,9 @@ export function UserModal({
               </Label>
               <Select
                 value={formData.device_id}
-                onValueChange={(value) => setFormData({ ...formData, device_id: value })}
+                onValueChange={(value) =>
+                  setFormData({ ...formData, device_id: value })
+                }
                 onOpenChange={handleSensorDropdownOpen}
                 disabled={isViewOnly}
                 modal={false}
@@ -332,12 +358,16 @@ export function UserModal({
                 </SelectTrigger>
                 <SelectContent modal={false}>
                   {sensors.map((sensor) => (
-                    <SelectItem 
-                      key={sensor.sensor_id} 
+                    <SelectItem
+                      key={sensor.sensor_id}
                       value={sensor.sensor_id.toString()}
-                      disabled={sensor.status === "Assigned" && sensor.sensor_id.toString() !== formData.device_id}
+                      disabled={
+                        sensor.status === "Assigned" &&
+                        sensor.sensor_id.toString() !== formData.device_id
+                      }
                     >
-                      {sensor.sensor_id} {sensor.status === "Assigned" ? "(Assigned)" : ""}
+                      {sensor.sensor_id}{" "}
+                      {sensor.status === "Assigned" ? "(Assigned)" : ""}
                     </SelectItem>
                   ))}
                 </SelectContent>
@@ -350,7 +380,9 @@ export function UserModal({
               </Label>
               <Select
                 value={formData.category}
-                onValueChange={(value) => setFormData({ ...formData, category: value })}
+                onValueChange={(value) =>
+                  setFormData({ ...formData, category: value })
+                }
                 disabled={isViewOnly}
                 modal={false}
               >
@@ -374,11 +406,15 @@ export function UserModal({
               <Button type="submit" variant="primary" disabled={isLoading}>
                 {isLoading ? (
                   <>
-                    <span className="mr-2">{mode === "edit" ? "Updating..." : "Creating..."}</span>
+                    <span className="mr-2">
+                      {mode === "edit" ? "Updating..." : "Creating..."}
+                    </span>
                     <span className="h-4 w-4 animate-spin rounded-full border-2 border-current border-t-transparent" />
                   </>
+                ) : mode === "edit" ? (
+                  "Update User"
                 ) : (
-                  mode === "edit" ? "Update User" : "Add User"
+                  "Add User"
                 )}
               </Button>
             )}
@@ -386,5 +422,5 @@ export function UserModal({
         </form>
       </DialogContent>
     </Dialog>
-  )
+  );
 }

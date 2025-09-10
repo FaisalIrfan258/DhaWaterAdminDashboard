@@ -1,7 +1,7 @@
-'use client';
-import { useEffect } from 'react';
-import { useRouter } from 'next/navigation';
-import { useUser } from '../../context/UserContext';
+"use client";
+import { useEffect } from "react";
+import { useRouter } from "next/navigation";
+import { useUser } from "../../context/UserContext";
 import CustomSidebar from "@/components/dashboard/dashboard-sidebar";
 import TopBar from "@/components/dashboard/top-bar";
 
@@ -11,7 +11,7 @@ export default function DashboardLayout({ children }) {
 
   useEffect(() => {
     if (!isLoading && !user) {
-      router.push('/login');
+      router.push("/login");
     }
   }, [user, isLoading, router]);
 

@@ -1,16 +1,16 @@
-'use client'
+"use client";
 
-import React from 'react';
-import { Droplet } from 'lucide-react';
-import { useLatestWaterLevel } from '@/hooks';
+import React from "react";
+import { Droplet } from "lucide-react";
+import { useLatestWaterLevel } from "@/hooks";
 
 const ReservoirStatus = () => {
   // React Query hook for fetching water level
   const { data: waterLevelData, isLoading, error } = useLatestWaterLevel(2);
-  
+
   const reservoir = {
     id: 1,
-    name: 'Reservoir A',
+    name: "Reservoir A",
     capacity: 400000,
     icon: Droplet,
   };
@@ -20,7 +20,11 @@ const ReservoirStatus = () => {
   }
 
   if (error) {
-    return <div className="text-center text-red-700">Error loading reservoir status</div>;
+    return (
+      <div className="text-center text-red-700">
+        Error loading reservoir status
+      </div>
+    );
   }
 
   const waterLevel = waterLevelData?.water_level || 0;
@@ -28,7 +32,9 @@ const ReservoirStatus = () => {
 
   return (
     <div className="p-6 bg-gradient-to-br from-cyan-50 to-blue-100 rounded-lg shadow-lg">
-      <h2 className="text-3xl font-bold mb-8 text-cyan-800 text-center">Reservoir Status</h2>
+      <h2 className="text-3xl font-bold mb-8 text-cyan-800 text-center">
+        Reservoir Status
+      </h2>
 
       <div className="bg-white p-6 rounded-xl shadow-md transform hover:scale-105 transition-transform duration-300">
         <h3 className="text-xl font-semibold mb-4 text-cyan-700 flex items-center justify-center">
@@ -40,7 +46,7 @@ const ReservoirStatus = () => {
             className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-cyan-500 to-blue-400 transition-all duration-1000 ease-in-out"
             style={{
               height: `${percentage}%`,
-              animation: 'wave 2s ease-in-out infinite'
+              animation: "wave 2s ease-in-out infinite",
             }}
           ></div>
           <div className="absolute inset-0 flex items-center justify-center">
@@ -51,7 +57,8 @@ const ReservoirStatus = () => {
         </div>
         <div className="text-center mt-4">
           <span className="text-sm font-semibold text-cyan-600">
-            {waterLevel.toLocaleString()} / {reservoir.capacity.toLocaleString()} units
+            {waterLevel.toLocaleString()} /{" "}
+            {reservoir.capacity.toLocaleString()} units
           </span>
         </div>
       </div>

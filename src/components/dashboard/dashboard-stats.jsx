@@ -1,14 +1,21 @@
-"use client"
+"use client";
 
 import { Droplet, Truck, Calendar, Users } from "lucide-react";
-import { useTotalTankers, useTotalPendingRequests, useTotalUsers, usePendingBookings } from "@/hooks";
+import {
+  useTotalTankers,
+  useTotalPendingRequests,
+  useTotalUsers,
+  usePendingBookings,
+} from "@/hooks";
 
 export default function DashboardStats() {
   // Use React Query hooks for data fetching
   const { data: tankersData, isLoading: tankersLoading } = useTotalTankers();
-  const { data: requestsData, isLoading: requestsLoading } = useTotalPendingRequests();
+  const { data: requestsData, isLoading: requestsLoading } =
+    useTotalPendingRequests();
   const { data: usersData, isLoading: usersLoading } = useTotalUsers();
-  const { data: pendingBookings, isLoading: bookingsLoading } = usePendingBookings();
+  const { data: pendingBookings, isLoading: bookingsLoading } =
+    usePendingBookings();
 
   // Extract values from API responses
   const totalTankers = tankersData?.total_tankers;
@@ -17,7 +24,8 @@ export default function DashboardStats() {
   const pendingDeliveries = pendingBookings?.length || 0;
 
   // Check if any data is still loading
-  const isLoading = tankersLoading || requestsLoading || usersLoading || bookingsLoading;
+  const isLoading =
+    tankersLoading || requestsLoading || usersLoading || bookingsLoading;
 
   // Prepare the stats array based on fetched data
   const stats = [
@@ -56,14 +64,22 @@ export default function DashboardStats() {
       {stats.map((stat, index) => (
         <div key={index} className="rounded-lg border bg-card p-6 shadow-sm">
           <div className="flex items-center justify-between">
-            <div className="text-sm font-medium text-muted-foreground">{stat.title}</div>
+            <div className="text-sm font-medium text-muted-foreground">
+              {stat.title}
+            </div>
             <div className="rounded-full bg-primary/10 p-2">
               <stat.icon className="h-4 w-4 text-primary" />
             </div>
           </div>
           <div className="mt-2 flex items-baseline gap-2">
             <div className="text-3xl font-bold">{stat.value}</div>
-            <div className={`text-sm ${stat.changeType === "positive" ? "text-green-600" : "text-red-600"}`}>
+            <div
+              className={`text-sm ${
+                stat.changeType === "positive"
+                  ? "text-green-600"
+                  : "text-red-600"
+              }`}
+            >
               {stat.change}
             </div>
           </div>
@@ -72,4 +88,3 @@ export default function DashboardStats() {
     </div>
   );
 }
-

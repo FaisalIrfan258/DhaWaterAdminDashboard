@@ -5,7 +5,12 @@ import { useUser } from "@/context/UserContext"; // Add this missing import
 import { DashboardShell } from "@/components/dashboard/dashboard-shell";
 import { DashboardHeader } from "@/components/dashboard/dashboard-header";
 import { Button } from "@/components/ui/button";
-import { useSensors, useCreateSensor, useUpdateSensor, useDeleteSensor } from "@/hooks";
+import {
+  useSensors,
+  useCreateSensor,
+  useUpdateSensor,
+  useDeleteSensor,
+} from "@/hooks";
 import {
   Card,
   CardContent,
@@ -13,34 +18,17 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
-import {
-  Cpu,
-  Plus,
-  RefreshCw,
-  MoreHorizontal,
-  Eye,
-  Pencil,
-  Trash2,
-} from "lucide-react";
+import { Cpu, Plus, RefreshCw, Eye, Pencil, Trash2 } from "lucide-react";
 import { SensorModal } from "@/components/modals/sensors/sensor-modal";
 import { toast } from "sonner";
 import { usePagination } from "@/hooks";
 import { Pagination } from "@/components/common/pagination";
 import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
+  DataTable,
+  commonActions,
+  badgeVariants,
+} from "@/components/common/data-table";
 import {
   Select,
   SelectTrigger,
@@ -53,13 +41,18 @@ import { SearchInput } from "@/components/common/search-input";
 
 export default function DevicesPage() {
   const { user } = useUser();
-  const { data: sensorsData, isLoading: loading, error, refetch } = useSensors();
+  const {
+    data: sensorsData,
+    isLoading: loading,
+    error,
+    refetch,
+  } = useSensors();
   const createSensorMutation = useCreateSensor();
   const updateSensorMutation = useUpdateSensor();
   const deleteSensorMutation = useDeleteSensor();
-  
+
   // Filtered devices using useMemo for better performance
-  
+
   // Extract devices from React Query response
   const devices = sensorsData?.sensors || [];
   const [modalState, setModalState] = useState({
@@ -71,26 +64,35 @@ export default function DevicesPage() {
   const [statusFilter, setStatusFilter] = useState("All");
   const [isSuper, setIsSuper] = useState(false);
   // Filter devices based on search query and status using useMemo
-  const sortedDevices = useMemo(() => [...devices].sort(
-    (a, b) => new Date(b.created_at) - new Date(a.created_at)
-  ), [devices]);
+  const sortedDevices = useMemo(
+    () =>
+      [...devices].sort(
+        (a, b) => new Date(b.created_at) - new Date(a.created_at)
+      ),
+    [devices]
+  );
 
   // Search functionality
   const {
     searchQuery,
     filteredData: searchFilteredDevices,
     handleSearch,
-    clearSearch
-  } = useSearch(sortedDevices, ['sensor_name', 'sensor_id', 'sensor_type', 'location']);
+    clearSearch,
+  } = useSearch(sortedDevices, [
+    "sensor_name",
+    "sensor_id",
+    "sensor_type",
+    "location",
+  ]);
 
   const filteredDevices = useMemo(() => {
     let filtered = [...searchFilteredDevices];
-    
+
     // Apply status filter
     if (statusFilter !== "All") {
       filtered = filtered.filter((device) => device.status === statusFilter);
     }
-    
+
     return filtered;
   }, [searchFilteredDevices, statusFilter]);
 
@@ -114,10 +116,6 @@ export default function DevicesPage() {
   }, [user]);
 
   // Data is automatically fetched by React Query
-
-
-
-
 
   // Add new sensor
   const addSensor = async (sensorData) => {
@@ -263,11 +261,7 @@ export default function DevicesPage() {
               <div className="bg-destructive/15 text-destructive p-3 rounded-md mb-4">
                 <div className="flex items-center justify-between">
                   <span>Error loading devices: {error.message}</span>
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={() => refetch()}
-                  >
+                  <Button variant="outline" size="sm" onClick={() => refetch()}>
                     <RefreshCw className="h-4 w-4 mr-2" />
                     Retry
                   </Button>
@@ -281,98 +275,69 @@ export default function DevicesPage() {
               </div>
             ) : (
               <>
-                <Table>
-                  <TableHeader>
-                    <TableRow>
-                      <TableHead>Sensor ID</TableHead>
-                      <TableHead>Name</TableHead>
-                      <TableHead>Details</TableHead>
-                      <TableHead>Manufacturing Date</TableHead>
-                      <TableHead>Status</TableHead>
-                      <TableHead>Actions</TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {paginatedDevices.length === 0 ? (
-                      <TableRow>
-                        <TableCell
-                          colSpan={6}
-                          className="text-center py-8 text-muted-foreground"
-                        >
-                          {searchQuery
-                            ? "No devices found matching your search"
-                            : "No devices found"}
-                        </TableCell>
-                      </TableRow>
-                    ) : (
-                      paginatedDevices.map((device) => (
-                        <TableRow key={device.sensor_id || Math.random()}>
-                          <TableCell className="font-medium">
-                            {device.sensor_id}
-                          </TableCell>
-                          <TableCell>{device.sensor_name}</TableCell>
-                          <TableCell>{device.sensor_details}</TableCell>
-                          <TableCell>
-                            {device.manufacturing_date
-                              ? new Date(
-                                  device.manufacturing_date
-                                ).toLocaleDateString()
-                              : "N/A"}
-                          </TableCell>
-                          <TableCell>
-                            <Badge
-                              variant={
-                                device.status === "Assigned"
-                                  ? "success"
-                                  : "destructive"
-                              }
-                            >
-                              {device.status || "Unknown"}
-                            </Badge>
-                          </TableCell>
-                          <TableCell>
-                            <DropdownMenu modal={false}>
-                              <DropdownMenuTrigger asChild>
-                                <Button variant="ghost" size="sm">
-                                  <MoreHorizontal className="h-4 w-4" />
-                                  <span className="sr-only">Open menu</span>
-                                </Button>
-                              </DropdownMenuTrigger>
-                              <DropdownMenuContent align="end" modal={false}>
-                                <DropdownMenuItem
-                                  onClick={() => openModal("view", device)}
-                                >
-                                  <Eye className="mr-2 h-4 w-4" />
-                                  View details
-                                </DropdownMenuItem>
-                                {isSuper && (
-                                  <>
-                                    <DropdownMenuItem
-                                      onClick={() => openModal("edit", device)}
-                                    >
-                                      <Pencil className="mr-2 h-4 w-4" />
-                                      Edit device
-                                    </DropdownMenuItem>
-                                    <DropdownMenuItem
-                                      onClick={() =>
-                                        handleDeleteDevice(device.sensor_id)
-                                      }
-                                      className="text-destructive"
-                                    >
-                                      <Trash2 className="mr-2 h-4 w-4" />
-                                      Delete device
-                                    </DropdownMenuItem>
-                                  </>
-                                )}
-                              </DropdownMenuContent>
-                            </DropdownMenu>
-                          </TableCell>
-                        </TableRow>
-                      ))
-                    )}
-                  </TableBody>
-                </Table>
-                
+                <DataTable
+                  data={paginatedDevices}
+                  columns={[
+                    {
+                      key: "sensor_id",
+                      header: "Sensor ID",
+                      accessor: "sensor_id",
+                      cellClassName: "font-medium",
+                    },
+                    {
+                      key: "sensor_name",
+                      header: "Name",
+                      accessor: "sensor_name",
+                    },
+                    {
+                      key: "sensor_details",
+                      header: "Details",
+                      accessor: "sensor_details",
+                    },
+                    {
+                      key: "manufacturing_date",
+                      header: "Manufacturing Date",
+                      render: (_, device) =>
+                        device.manufacturing_date
+                          ? new Date(
+                              device.manufacturing_date
+                            ).toLocaleDateString()
+                          : "N/A",
+                    },
+                    {
+                      key: "status",
+                      header: "Status",
+                      accessor: "status",
+                      type: "badge",
+                      badgeVariant: (value) =>
+                        value === "Assigned" ? "success" : "destructive",
+                      render: (value) => value || "Unknown",
+                    },
+                  ]}
+                  actions={[
+                    commonActions.view((device) => openModal("view", device)),
+                    ...(isSuper
+                      ? [
+                          commonActions.edit((device) =>
+                            openModal("edit", device)
+                          ),
+                          {
+                            label: "Delete device",
+                            icon: Trash2,
+                            onClick: (device) =>
+                              handleDeleteDevice(device.sensor_id),
+                            variant: "destructive",
+                          },
+                        ]
+                      : []),
+                  ]}
+                  isLoading={loading}
+                  emptyMessage="No devices found"
+                  searchQuery={searchQuery}
+                  searchEmptyMessage="No devices found matching your search"
+                  className="mt-4"
+                />
+
                 {/* Pagination Controls */}
                 <Pagination
                   currentPage={currentPage}

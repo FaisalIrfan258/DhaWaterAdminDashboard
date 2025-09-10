@@ -6,7 +6,7 @@ import {
   DialogDescription,
   DialogHeader,
   DialogTitle,
-  DialogFooter
+  DialogFooter,
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -19,10 +19,10 @@ const BookingViewModal = ({ isOpen, onClose, booking }) => {
 
   useEffect(() => {
     let isMounted = true;
-    
+
     const fetchBookingDetails = async () => {
       if (!booking || !isOpen) return;
-      
+
       setLoading(true);
       try {
         const data = await bookingService.getBookingById(booking.booking_id);
@@ -67,7 +67,7 @@ const BookingViewModal = ({ isOpen, onClose, booking }) => {
             Viewing details for booking #{booking.booking_id}
           </DialogDescription>
         </DialogHeader>
-        
+
         {loading ? (
           <div className="py-8 flex justify-center items-center">
             <div className="animate-spin h-6 w-6 border-2 border-primary border-t-transparent rounded-full"></div>
@@ -76,52 +76,64 @@ const BookingViewModal = ({ isOpen, onClose, booking }) => {
           <div className="space-y-6 py-4">
             <div className="flex justify-between items-center">
               <span className="font-medium">Status:</span>
-              <Badge variant={bookingData?.status === "Pending" ? "default" : "success"}>
+              <Badge
+                variant={
+                  bookingData?.status === "Pending" ? "default" : "success"
+                }
+              >
                 {bookingData?.status || booking.status}
               </Badge>
             </div>
-            
+
             <div className="rounded-lg border p-4 space-y-4">
               <div className="flex items-center gap-3">
                 <Calendar className="h-5 w-5 text-muted-foreground" />
                 <div>
                   <p className="text-sm font-medium">Scheduled Date</p>
                   <p className="text-sm text-muted-foreground">
-                    {bookingData ? new Date(bookingData.scheduled_date).toLocaleString() : new Date(booking.scheduled_date).toLocaleString()}
+                    {bookingData
+                      ? new Date(bookingData.scheduled_date).toLocaleString()
+                      : new Date(booking.scheduled_date).toLocaleString()}
                   </p>
                 </div>
               </div>
-              
+
               <div className="flex items-center gap-3">
                 <User className="h-5 w-5 text-muted-foreground" />
                 <div>
                   <p className="text-sm font-medium">Customer</p>
                   <p className="text-sm text-muted-foreground">
-                    {bookingData?.Customer?.full_name || booking.Customer?.full_name || "Loading..."}
+                    {bookingData?.Customer?.full_name ||
+                      booking.Customer?.full_name ||
+                      "Loading..."}
                   </p>
                 </div>
               </div>
-              
+
               <div className="flex items-center gap-3">
                 <Truck className="h-5 w-5 text-muted-foreground" />
                 <div>
                   <p className="text-sm font-medium">Tanker</p>
                   <p className="text-sm text-muted-foreground">
-                    {bookingData?.Tanker?.tanker_name || booking.Tanker?.tanker_name || "Loading..."}
+                    {bookingData?.Tanker?.tanker_name ||
+                      booking.Tanker?.tanker_name ||
+                      "Loading..."}
                   </p>
                 </div>
               </div>
-              
+
               <div className="flex items-center gap-3">
                 <User className="h-5 w-5 text-muted-foreground" />
                 <div>
                   <p className="text-sm font-medium">Admin</p>
                   <p className="text-sm text-muted-foreground">
-                    {bookingData?.Admin?.full_name || booking.Admin?.full_name || "Loading..."}
+                    {bookingData?.Admin?.full_name ||
+                      booking.Admin?.full_name ||
+                      "Loading..."}
                   </p>
                 </div>
               </div>
-              
+
               <div className="flex items-center gap-3">
                 <FileText className="h-5 w-5 text-muted-foreground" />
                 <div>
@@ -134,7 +146,7 @@ const BookingViewModal = ({ isOpen, onClose, booking }) => {
             </div>
           </div>
         )}
-        
+
         <DialogFooter>
           <Button onClick={onClose}>Close</Button>
         </DialogFooter>

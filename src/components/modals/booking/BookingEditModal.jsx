@@ -6,7 +6,7 @@ import {
   DialogDescription,
   DialogHeader,
   DialogTitle,
-  DialogFooter
+  DialogFooter,
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -29,7 +29,7 @@ import { useAdmins } from "@/hooks";
 const BookingEditModal = ({ isOpen, onClose, booking, onRefresh }) => {
   const { user } = useUser();
   const router = useRouter();
-  
+
   const [formData, setFormData] = useState({
     admin_id: "",
     tanker_id: "",
@@ -47,7 +47,7 @@ const BookingEditModal = ({ isOpen, onClose, booking, onRefresh }) => {
   const [isSuper, setIsSuper] = useState(false);
   const [tankers, setTankers] = useState([]);
   const [isTankersLoading, setIsTankersLoading] = useState(false);
-  
+
   // Fetch admins data
   const { data: adminsData, isLoading: isAdminsLoading } = useAdmins();
   const admins = adminsData?.admins || [];
@@ -56,7 +56,7 @@ const BookingEditModal = ({ isOpen, onClose, booking, onRefresh }) => {
   useEffect(() => {
     if (user?.user_type) {
       setIsSuper(user.user_type === "superAdmin");
-      
+
       // If not a super admin and modal is open, redirect to dashboard
       if (user.user_type !== "superAdmin" && isOpen) {
         toast.error("You don't have permission to edit bookings");
@@ -69,7 +69,7 @@ const BookingEditModal = ({ isOpen, onClose, booking, onRefresh }) => {
   // Fetch all tankers
   useEffect(() => {
     let isMounted = true;
-    
+
     const fetchTankers = async () => {
       if (!isOpen) {
         // Reset state when modal closes
@@ -77,7 +77,7 @@ const BookingEditModal = ({ isOpen, onClose, booking, onRefresh }) => {
         setIsTankersLoading(false);
         return;
       }
-      
+
       setIsTankersLoading(true);
       try {
         const data = await tankerService.getAllTankers();
@@ -97,7 +97,7 @@ const BookingEditModal = ({ isOpen, onClose, booking, onRefresh }) => {
     };
 
     fetchTankers();
-    
+
     return () => {
       isMounted = false;
     };
@@ -105,7 +105,7 @@ const BookingEditModal = ({ isOpen, onClose, booking, onRefresh }) => {
 
   useEffect(() => {
     let isMounted = true;
-    
+
     const fetchBookingDetails = async () => {
       if (!booking || !isOpen) {
         // Reset state when modal closes or no booking
@@ -124,16 +124,16 @@ const BookingEditModal = ({ isOpen, onClose, booking, onRefresh }) => {
         setIsLoading(false);
         return;
       }
-      
+
       setIsLoading(true);
       try {
         const data = await bookingService.getBookingById(booking.booking_id);
         if (isMounted) {
           setBookingDetails(data);
-          
+
           // Format date for datetime-local input
           const formattedDate = formatDateForInput(data.scheduled_date);
-          
+
           // Set form values (IDs for submission)
           setFormData({
             admin_id: data.Admin.admin_id,
@@ -162,7 +162,7 @@ const BookingEditModal = ({ isOpen, onClose, booking, onRefresh }) => {
     };
 
     fetchBookingDetails();
-    
+
     return () => {
       isMounted = false;
     };
@@ -182,22 +182,32 @@ const BookingEditModal = ({ isOpen, onClose, booking, onRefresh }) => {
   const handleTankerChange = (value) => {
     // Update tanker_id in formData
     setFormData((prev) => ({ ...prev, tanker_id: value }));
-    
+
     // Find tanker name for display
-    const selectedTanker = tankers.find(t => t.tanker_id.toString() === value.toString());
+    const selectedTanker = tankers.find(
+      (t) => t.tanker_id.toString() === value.toString()
+    );
     if (selectedTanker) {
-      setDisplayData((prev) => ({ ...prev, tanker_name: selectedTanker.tanker_name }));
+      setDisplayData((prev) => ({
+        ...prev,
+        tanker_name: selectedTanker.tanker_name,
+      }));
     }
   };
 
   const handleAdminChange = (value) => {
     // Update admin_id in formData
     setFormData((prev) => ({ ...prev, admin_id: value }));
-    
+
     // Find admin name for display
-    const selectedAdmin = admins.find(a => a.admin_id.toString() === value.toString());
+    const selectedAdmin = admins.find(
+      (a) => a.admin_id.toString() === value.toString()
+    );
     if (selectedAdmin) {
-      setDisplayData((prev) => ({ ...prev, admin_name: selectedAdmin.full_name }));
+      setDisplayData((prev) => ({
+        ...prev,
+        admin_name: selectedAdmin.full_name,
+      }));
     }
   };
 
@@ -232,13 +242,18 @@ const BookingEditModal = ({ isOpen, onClose, booking, onRefresh }) => {
           </DialogTitle>
           <DialogDescription>
             {bookingDetails ? (
-              <>Update booking for customer <span className="font-medium">{bookingDetails.Customer.full_name}</span></>
+              <>
+                Update booking for customer{" "}
+                <span className="font-medium">
+                  {bookingDetails.Customer.full_name}
+                </span>
+              </>
             ) : (
               "Update booking details"
             )}
           </DialogDescription>
         </DialogHeader>
-        
+
         {isLoading ? (
           <div className="py-8 flex justify-center items-center">
             <Loader2 className="h-6 w-6 animate-spin text-primary" />
@@ -254,8 +269,8 @@ const BookingEditModal = ({ isOpen, onClose, booking, onRefresh }) => {
                     <span>Loading admins...</span>
                   </div>
                 ) : (
-                  <Select 
-                    value={formData.admin_id.toString()} 
+                  <Select
+                    value={formData.admin_id.toString()}
                     onValueChange={handleAdminChange}
                     disabled={isSubmitting}
                     modal={false}
@@ -265,8 +280,8 @@ const BookingEditModal = ({ isOpen, onClose, booking, onRefresh }) => {
                     </SelectTrigger>
                     <SelectContent modal={false}>
                       {admins.map((admin) => (
-                        <SelectItem 
-                          key={admin.admin_id} 
+                        <SelectItem
+                          key={admin.admin_id}
                           value={admin.admin_id.toString()}
                         >
                           {admin.full_name}
@@ -281,7 +296,7 @@ const BookingEditModal = ({ isOpen, onClose, booking, onRefresh }) => {
                   </p>
                 )}
               </div>
-              
+
               <div className="grid gap-2">
                 <Label htmlFor="tanker_id">Tanker</Label>
                 {isTankersLoading ? (
@@ -290,8 +305,8 @@ const BookingEditModal = ({ isOpen, onClose, booking, onRefresh }) => {
                     <span>Loading tankers...</span>
                   </div>
                 ) : (
-                  <Select 
-                    value={formData.tanker_id.toString()} 
+                  <Select
+                    value={formData.tanker_id.toString()}
                     onValueChange={handleTankerChange}
                     disabled={isSubmitting}
                     modal={false}
@@ -301,8 +316,8 @@ const BookingEditModal = ({ isOpen, onClose, booking, onRefresh }) => {
                     </SelectTrigger>
                     <SelectContent modal={false}>
                       {tankers.map((tanker) => (
-                        <SelectItem 
-                          key={tanker.tanker_id} 
+                        <SelectItem
+                          key={tanker.tanker_id}
                           value={tanker.tanker_id.toString()}
                         >
                           {tanker.tanker_name}
@@ -317,7 +332,7 @@ const BookingEditModal = ({ isOpen, onClose, booking, onRefresh }) => {
                   </p>
                 )}
               </div>
-              
+
               <div className="grid gap-2">
                 <Label htmlFor="customer_name">Customer</Label>
                 <Input
@@ -332,7 +347,7 @@ const BookingEditModal = ({ isOpen, onClose, booking, onRefresh }) => {
                   ID: {formData.customer_id}
                 </p>
               </div>
-              
+
               <div className="grid gap-2">
                 <Label htmlFor="scheduled_date">Scheduled Date</Label>
                 <Input
@@ -340,19 +355,31 @@ const BookingEditModal = ({ isOpen, onClose, booking, onRefresh }) => {
                   type="datetime-local"
                   name="scheduled_date"
                   value={formData.scheduled_date}
-                  onChange={(e) => setFormData(prev => ({ ...prev, scheduled_date: e.target.value }))}
+                  onChange={(e) =>
+                    setFormData((prev) => ({
+                      ...prev,
+                      scheduled_date: e.target.value,
+                    }))
+                  }
                   required
                   disabled={isSubmitting}
                 />
               </div>
             </div>
-            
+
             <DialogFooter>
-              <Button type="button" variant="outline" onClick={onClose} disabled={isSubmitting}>
+              <Button
+                type="button"
+                variant="outline"
+                onClick={onClose}
+                disabled={isSubmitting}
+              >
                 Cancel
               </Button>
               <Button type="submit" variant="primary" disabled={isSubmitting}>
-                {isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                {isSubmitting && (
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                )}
                 Save Changes
               </Button>
             </DialogFooter>

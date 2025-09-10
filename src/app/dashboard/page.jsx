@@ -11,12 +11,14 @@ import DateRangeDeliveryDetails from "@/components/dashboard/date-range-delivery
 
 export default function DashboardPage() {
   const searchParams = useSearchParams();
-  const error = searchParams.get('error');
+  const error = searchParams.get("error");
   const { user } = useUser();
 
   useEffect(() => {
-    if (error === 'access_denied') {
-      toast.error('Access denied. You do not have permission to access that page.');
+    if (error === "access_denied") {
+      toast.error(
+        "Access denied. You do not have permission to access that page."
+      );
     }
   }, [error]);
 

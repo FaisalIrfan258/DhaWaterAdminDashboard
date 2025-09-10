@@ -4,49 +4,51 @@ import {
   DialogDescription,
   DialogHeader,
   DialogTitle,
-} from "@/components/ui/dialog"
-import { Input } from "@/components/ui/input"
-import { Label } from "@/components/ui/label"
-import { Button } from "@/components/ui/button"
-import { useState, useEffect } from "react"
+} from "@/components/ui/dialog";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Button } from "@/components/ui/button";
+import { useState, useEffect } from "react";
 
-export function SensorModal({ 
-  isOpen, 
-  onClose, 
+export function SensorModal({
+  isOpen,
+  onClose,
   mode = "view", // "view" | "edit" | "add"
   sensor,
-  onSubmit 
+  onSubmit,
 }) {
   const defaultFormData = {
     sensor_name: "",
     sensor_details: "",
-    manufacturing_date: new Date().toISOString().split('T')[0],
-    status: "Not Assigned"
-  }
+    manufacturing_date: new Date().toISOString().split("T")[0],
+    status: "Not Assigned",
+  };
 
-  const [formData, setFormData] = useState(mode === "add" ? defaultFormData : sensor || defaultFormData)
+  const [formData, setFormData] = useState(
+    mode === "add" ? defaultFormData : sensor || defaultFormData
+  );
 
   // Update formData when sensor prop changes
   useEffect(() => {
     if (mode === "add") {
-      setFormData(defaultFormData)
+      setFormData(defaultFormData);
     } else if (sensor) {
-      setFormData(sensor)
+      setFormData(sensor);
     }
-  }, [sensor, mode])
+  }, [sensor, mode]);
 
   const handleSubmit = (e) => {
-    e.preventDefault()
-    onSubmit(formData)
-    onClose()
-  }
+    e.preventDefault();
+    onSubmit(formData);
+    onClose();
+  };
 
-  const isViewOnly = mode === "view"
+  const isViewOnly = mode === "view";
   const title = {
     view: "View Sensor",
     edit: "Edit Sensor",
-    add: "Add New Sensor"
-  }[mode]
+    add: "Add New Sensor",
+  }[mode];
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
@@ -54,8 +56,8 @@ export function SensorModal({
         <DialogHeader>
           <DialogTitle>{title}</DialogTitle>
           <DialogDescription>
-            {isViewOnly 
-              ? "View sensor details" 
+            {isViewOnly
+              ? "View sensor details"
               : "Fill in the information for the sensor"}
           </DialogDescription>
         </DialogHeader>
@@ -68,7 +70,9 @@ export function SensorModal({
               <Input
                 id="sensor_name"
                 value={formData.sensor_name}
-                onChange={(e) => setFormData({ ...formData, sensor_name: e.target.value })}
+                onChange={(e) =>
+                  setFormData({ ...formData, sensor_name: e.target.value })
+                }
                 className="col-span-3"
                 disabled={isViewOnly}
                 required
@@ -81,7 +85,9 @@ export function SensorModal({
               <Input
                 id="sensor_details"
                 value={formData.sensor_details}
-                onChange={(e) => setFormData({ ...formData, sensor_details: e.target.value })}
+                onChange={(e) =>
+                  setFormData({ ...formData, sensor_details: e.target.value })
+                }
                 className="col-span-3"
                 disabled={isViewOnly}
                 required
@@ -95,7 +101,12 @@ export function SensorModal({
                 id="manufacturing_date"
                 type="date"
                 value={formData.manufacturing_date}
-                onChange={(e) => setFormData({ ...formData, manufacturing_date: e.target.value })}
+                onChange={(e) =>
+                  setFormData({
+                    ...formData,
+                    manufacturing_date: e.target.value,
+                  })
+                }
                 className="col-span-3"
                 disabled={isViewOnly}
                 required
@@ -109,7 +120,9 @@ export function SensorModal({
                 <Input
                   id="status"
                   value={formData.status}
-                  onChange={(e) => setFormData({ ...formData, status: e.target.value })}
+                  onChange={(e) =>
+                    setFormData({ ...formData, status: e.target.value })
+                  }
                   className="col-span-3"
                   disabled={isViewOnly}
                 />
@@ -129,5 +142,5 @@ export function SensorModal({
         </form>
       </DialogContent>
     </Dialog>
-  )
+  );
 }

@@ -13,26 +13,27 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table";
+  DataTable,
+  commonActions,
+  badgeVariants,
+} from "@/components/common/data-table";
+
 import { Badge } from "@/components/ui/badge";
-import { Calendar, RefreshCw, MoreHorizontal } from "lucide-react";
+import {
+  Calendar,
+  RefreshCw,
+  Eye,
+  Pencil,
+  Trash2,
+  Users,
+  Plus,
+  Search,
+} from "lucide-react";
 import { Pagination } from "@/components/common/pagination";
 import { usePagination } from "@/hooks";
 import { useSearch } from "@/hooks/useSearch";
 import { SearchInput } from "@/components/common/search-input";
 import { toast } from "sonner";
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
 import BookingViewModal from "@/components/modals/booking/BookingViewModal";
 import BookingEditModal from "@/components/modals/booking/BookingEditModal";
 import {
@@ -52,16 +53,16 @@ import {
   SelectContent,
   SelectItem,
 } from "@/components/ui/select";
-import { useUser } from "@/context/UserContext"
+import { useUser } from "@/context/UserContext";
 
 export default function BookingsPage() {
   const { user } = useUser();
-  
+
   // React Query hooks
   const { data: bookingsData = [], isLoading, error, refetch } = useBookings();
   const updateBookingMutation = useUpdateBooking();
   const deleteBookingMutation = useDeleteBooking();
-  
+
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [isViewModalOpen, setIsViewModalOpen] = useState(false);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
@@ -96,8 +97,14 @@ export default function BookingsPage() {
     searchQuery,
     filteredData: filteredBookings,
     handleSearch,
-    clearSearch
-  } = useSearch(statusFilteredBookings, ['status', 'scheduled_date', 'Customer.full_name', 'Tanker.tanker_name', 'Admin.full_name']);
+    clearSearch,
+  } = useSearch(statusFilteredBookings, [
+    "status",
+    "scheduled_date",
+    "Customer.full_name",
+    "Tanker.tanker_name",
+    "Admin.full_name",
+  ]);
 
   // Pagination hook
   const {
@@ -108,12 +115,8 @@ export default function BookingsPage() {
     goToNextPage,
     goToPreviousPage,
     handlePageChange,
-    handleItemsPerPageChange
+    handleItemsPerPageChange,
   } = usePagination(filteredBookings, 10);
-
-
-
-
 
   const handleRefresh = async () => {
     setIsRefreshing(true);
@@ -138,15 +141,18 @@ export default function BookingsPage() {
     setIsEditModalOpen(true);
   }, []);
 
-  const handleDeleteBooking = useCallback((booking) => {
-    // Check if user is a super admin before allowing delete
-    if (!isSuper) {
-      toast.error("You don't have permission to delete bookings");
-      return;
-    }
-    setSelectedBooking(booking);
-    setIsDeleteDialogOpen(true);
-  }, [isSuper]);
+  const handleDeleteBooking = useCallback(
+    (booking) => {
+      // Check if user is a super admin before allowing delete
+      if (!isSuper) {
+        toast.error("You don't have permission to delete bookings");
+        return;
+      }
+      setSelectedBooking(booking);
+      setIsDeleteDialogOpen(true);
+    },
+    [isSuper]
+  );
 
   const confirmDeleteBooking = async () => {
     if (!selectedBooking) return;
@@ -224,11 +230,7 @@ export default function BookingsPage() {
             <div className="bg-destructive/15 text-destructive p-3 rounded-md mb-4">
               <div className="flex items-center justify-between">
                 <span>Error loading bookings: {error.message}</span>
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() => refetch()}
-                >
+                <Button variant="outline" size="sm" onClick={() => refetch()}>
                   <RefreshCw className="h-4 w-4 mr-2" />
                   Retry
                 </Button>
@@ -243,89 +245,75 @@ export default function BookingsPage() {
               </div>
             ) : (
               <>
-                <Table>
-                  <TableHeader>
-                    <TableRow>
-                      <TableHead> ID </TableHead>
-                      <TableHead>Customer Name</TableHead>
-                      <TableHead>Tanker Name</TableHead>
-                      <TableHead>Admin Name</TableHead>
-                      <TableHead>Status</TableHead>
-                      <TableHead>Scheduled Date</TableHead>
-                      <TableHead>Actions</TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {paginatedBookings.length === 0 ? (
-                      <TableRow>
-                        <TableCell
-                          colSpan={7}
-                          className="text-center py-8 text-muted-foreground"
+                <DataTable
+                  data={paginatedBookings}
+                  columns={[
+                    {
+                      key: "booking_id",
+                      header: "ID",
+                      accessor: "booking_id",
+                    },
+                    {
+                      key: "customer_name",
+                      header: "Customer Name",
+                      render: (_, booking) => booking.Customer.full_name,
+                    },
+                    {
+                      key: "tanker_name",
+                      header: "Tanker Name",
+                      render: (_, booking) => booking.Tanker.tanker_name,
+                    },
+                    {
+                      key: "admin_name",
+                      header: "Admin Name",
+                      render: (_, booking) => booking.Admin.full_name,
+                    },
+                    {
+                      key: "status",
+                      header: "Status",
+                      render: (_, booking) => (
+                        <Badge
+                          variant={
+                            booking.status === "Pending" ? "default" : "success"
+                          }
                         >
-                          {searchQuery
-                            ? "No bookings found matching your search"
-                            : "No bookings found"}
-                        </TableCell>
-                      </TableRow>
-                    ) : (
-                      paginatedBookings.map((booking) => (
-                        <TableRow key={booking.booking_id}>
-                          <TableCell>{booking.booking_id}</TableCell>
-                          <TableCell>{booking.Customer.full_name}</TableCell>
-                          <TableCell>{booking.Tanker.tanker_name}</TableCell>
-                          <TableCell>{booking.Admin.full_name}</TableCell>
-                          <TableCell>
-                            <Badge
-                              variant={
-                                booking.status === "Pending"
-                                  ? "default"
-                                  : "success"
-                              }
-                            >
-                              {booking.status}
-                            </Badge>
-                          </TableCell>
-                          <TableCell>
-                            {new Date(booking.scheduled_date).toLocaleString()}
-                          </TableCell>
-
-                          <TableCell>
-                            <DropdownMenu modal={false}>
-                              <DropdownMenuTrigger asChild>
-                                <Button variant="ghost" size="sm">
-                                  <MoreHorizontal className="h-4 w-4" />
-                                  <span className="sr-only">Open menu</span>
-                                </Button>
-                              </DropdownMenuTrigger>
-                              <DropdownMenuContent align="end" modal={false}>
-                                <DropdownMenuItem
-                                  onClick={() => handleViewBooking(booking)}
-                                >
-                                  View Details
-                                </DropdownMenuItem>
-                                {isSuper && (
-                                  <>
-                                    <DropdownMenuItem
-                                      onClick={() => handleEditBooking(booking)}
-                                    >
-                                      Edit Booking
-                                    </DropdownMenuItem>
-                                    <DropdownMenuItem
-                                      onClick={() => handleDeleteBooking(booking)}
-                                      className="text-destructive"
-                                    >
-                                      Delete Booking
-                                    </DropdownMenuItem>
-                                  </>
-                                )}
-                              </DropdownMenuContent>
-                            </DropdownMenu>
-                          </TableCell>
-                        </TableRow>
-                      ))
-                    )}
-                  </TableBody>
-                </Table>
+                          {booking.status}
+                        </Badge>
+                      ),
+                    },
+                    {
+                      key: "scheduled_date",
+                      header: "Scheduled Date",
+                      render: (_, booking) =>
+                        new Date(booking.scheduled_date).toLocaleString(),
+                    },
+                  ]}
+                  actions={[
+                    commonActions.view(
+                      (booking) => handleViewBooking(booking),
+                      "View Details"
+                    ),
+                    ...(isSuper
+                      ? [
+                          commonActions.edit(
+                            (booking) => handleEditBooking(booking),
+                            "Edit Booking"
+                          ),
+                          {
+                            label: "Delete Booking",
+                            icon: Trash2,
+                            onClick: (booking) => handleDeleteBooking(booking),
+                            variant: "destructive",
+                          },
+                        ]
+                      : []),
+                  ]}
+                  isLoading={isLoading}
+                  emptyMessage="No bookings found"
+                  searchQuery={searchQuery}
+                  searchEmptyMessage="No bookings found matching your search"
+                  className="w-full"
+                />
 
                 {/* Pagination Controls */}
                 <Pagination

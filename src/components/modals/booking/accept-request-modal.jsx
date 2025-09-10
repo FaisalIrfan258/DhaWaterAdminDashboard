@@ -6,7 +6,13 @@ import { Button } from "@/components/ui/button"; // Adjust the import path as ne
 import { toast } from "sonner";
 import { tankerService, bookingService } from "@/services";
 
-const AcceptRequestModal = ({ isOpen, onClose, requestId, customerId, adminId }) => {
+const AcceptRequestModal = ({
+  isOpen,
+  onClose,
+  requestId,
+  customerId,
+  adminId,
+}) => {
   const [tankers, setTankers] = useState([]);
   const [selectedTankerId, setSelectedTankerId] = useState("");
   const [scheduledDate, setScheduledDate] = useState("");
@@ -64,7 +70,8 @@ const AcceptRequestModal = ({ isOpen, onClose, requestId, customerId, adminId })
             <option value="">Select a tanker</option>
             {tankers.map((tanker) => (
               <option key={tanker.tanker_id} value={tanker.tanker_id}>
-                {tanker.tanker_name} (ID: {tanker.tanker_id}) {/* Adjust based on your tanker object structure */}
+                {tanker.tanker_name} (ID: {tanker.tanker_id}){" "}
+                {/* Adjust based on your tanker object structure */}
               </option>
             ))}
           </select>

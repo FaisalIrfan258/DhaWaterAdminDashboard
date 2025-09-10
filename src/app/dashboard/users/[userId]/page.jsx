@@ -24,7 +24,7 @@ import { format } from "date-fns";
 const WaterTank = ({ waterLevel }) => {
   // Ensure water level is between 0 and 100
   const level = Math.max(0, Math.min(100, waterLevel));
-  
+
   // Map water level to a color gradient
   const getWaterColor = (level) => {
     if (level < 20) return "bg-red-500"; // Critical
@@ -35,7 +35,7 @@ const WaterTank = ({ waterLevel }) => {
 
   const waterColor = getWaterColor(level);
   const fillHeight = `${level}%`;
-  
+
   return (
     <div className="flex flex-col items-center justify-center">
       <div className="w-48 h-64 bg-gray-200 rounded-md relative overflow-hidden border-2 border-gray-300">
@@ -44,17 +44,35 @@ const WaterTank = ({ waterLevel }) => {
           style={{ height: fillHeight }}
         ></div>
         <div className="absolute inset-0 flex items-center justify-center">
-          <span className="text-2xl font-bold text-white drop-shadow-md">{level}%</span>
+          <span className="text-2xl font-bold text-white drop-shadow-md">
+            {level}%
+          </span>
         </div>
-        
+
         {/* Water tank level indicators */}
         <div className="absolute top-1/4 right-0 w-2 h-1 bg-gray-400"></div>
         <div className="absolute top-1/2 right-0 w-2 h-1 bg-gray-400"></div>
         <div className="absolute top-3/4 right-0 w-2 h-1 bg-gray-400"></div>
       </div>
       <div className="mt-4 text-center">
-        <Badge className={`${level < 20 ? 'bg-red-500' : level < 40 ? 'bg-orange-500' : level < 60 ? 'bg-yellow-500' : 'bg-emerald-500'} text-white py-1 px-3 text-sm font-medium`}>
-          {level < 20 ? 'Critical' : level < 40 ? 'Low' : level < 60 ? 'Medium' : 'Good'}
+        <Badge
+          className={`${
+            level < 20
+              ? "bg-red-500"
+              : level < 40
+              ? "bg-orange-500"
+              : level < 60
+              ? "bg-yellow-500"
+              : "bg-emerald-500"
+          } text-white py-1 px-3 text-sm font-medium`}
+        >
+          {level < 20
+            ? "Critical"
+            : level < 40
+            ? "Low"
+            : level < 60
+            ? "Medium"
+            : "Good"}
         </Badge>
       </div>
     </div>
@@ -112,8 +130,10 @@ const UserDetailsPage = () => {
         // Check if WaterTanks exist and if WaterTankStatuses has data
         if (data?.WaterTanks && data.WaterTanks.length > 0) {
           // Handle case where WaterTankStatuses might be empty
-          if (data.WaterTanks[0].WaterTankStatuses && 
-              data.WaterTanks[0].WaterTankStatuses.length > 0) {
+          if (
+            data.WaterTanks[0].WaterTankStatuses &&
+            data.WaterTanks[0].WaterTankStatuses.length > 0
+          ) {
             setWaterLevel(
               data.WaterTanks[0].WaterTankStatuses[0].water_level || 0
             );
@@ -155,7 +175,11 @@ const UserDetailsPage = () => {
     const formattedEndDate = format(endDate, "yyyy-MM-dd");
 
     try {
-      const data = await userService.getUserTankStatus(userId, formattedStartDate, formattedEndDate);
+      const data = await userService.getUserTankStatus(
+        userId,
+        formattedStartDate,
+        formattedEndDate
+      );
       setTankStatus(data);
     } catch (error) {
       console.error("Error fetching tank status:", error);
@@ -171,26 +195,35 @@ const UserDetailsPage = () => {
   }, [userId, startDate, endDate]);
 
   if (loading) return <LoadingSkeleton />;
-  if (!user) return (
-    <div className="flex items-center justify-center h-screen">
-      <Card className="w-full max-w-md">
-        <CardHeader>
-          <CardTitle className="text-center text-red-500">User Not Found</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <p className="text-center">The requested user information could not be found.</p>
-        </CardContent>
-      </Card>
-    </div>
-  );
+  if (!user)
+    return (
+      <div className="flex items-center justify-center h-screen">
+        <Card className="w-full max-w-md">
+          <CardHeader>
+            <CardTitle className="text-center text-red-500">
+              User Not Found
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <p className="text-center">
+              The requested user information could not be found.
+            </p>
+          </CardContent>
+        </Card>
+      </div>
+    );
 
   // Function to get status badge color
   const getStatusBadgeColor = (status) => {
     switch (status.toLowerCase()) {
-      case 'completed': return 'bg-green-500';
-      case 'pending': return 'bg-yellow-500';
-      case 'cancelled': return 'bg-red-500';
-      default: return 'bg-cyan-500';
+      case "completed":
+        return "bg-green-500";
+      case "pending":
+        return "bg-yellow-500";
+      case "cancelled":
+        return "bg-red-500";
+      default:
+        return "bg-cyan-500";
     }
   };
 
@@ -229,7 +262,9 @@ const UserDetailsPage = () => {
                   <div className="space-y-3">
                     <div>
                       <p className="text-sm text-slate-500">Full Name</p>
-                      <p className="font-medium text-slate-800">{user.full_name}</p>
+                      <p className="font-medium text-slate-800">
+                        {user.full_name}
+                      </p>
                     </div>
                     <div>
                       <p className="text-sm text-slate-500">Email</p>
@@ -237,11 +272,15 @@ const UserDetailsPage = () => {
                     </div>
                     <div>
                       <p className="text-sm text-slate-500">Phone</p>
-                      <p className="font-medium text-slate-800">{user.phone_number}</p>
+                      <p className="font-medium text-slate-800">
+                        {user.phone_number}
+                      </p>
                     </div>
                     <div>
                       <p className="text-sm text-slate-500">Username</p>
-                      <p className="font-medium text-slate-800">{user.username}</p>
+                      <p className="font-medium text-slate-800">
+                        {user.username}
+                      </p>
                     </div>
                   </div>
                   <div className="space-y-3">
@@ -249,17 +288,20 @@ const UserDetailsPage = () => {
                       <p className="text-sm text-slate-500">Address</p>
                       <p className="font-medium text-slate-800">
                         {user.street_address}{" "}
-                        {user.Phase?.phase_name 
-                          ? `Phase ${user.Phase.phase_name}` 
-                          : user.phase_number 
-                          ? `Phase ${user.phase_number}` 
+                        {user.Phase?.phase_name
+                          ? `Phase ${user.Phase.phase_name}`
+                          : user.phase_number
+                          ? `Phase ${user.phase_number}`
                           : ""}
                       </p>
                     </div>
                     <div>
                       <p className="text-sm text-slate-500">Balance</p>
                       <p className="font-medium text-slate-800">
-                        <Badge variant="outline" className="bg-blue-50 text-blue-700 border-blue-200">
+                        <Badge
+                          variant="outline"
+                          className="bg-blue-50 text-blue-700 border-blue-200"
+                        >
                           {user.balance?.toLocaleString() || 0}
                         </Badge>
                       </p>
@@ -267,7 +309,10 @@ const UserDetailsPage = () => {
                     <div>
                       <p className="text-sm text-slate-500">User Type</p>
                       <p className="font-medium text-slate-800">
-                        <Badge variant="outline" className="bg-purple-50 text-purple-700 border-purple-200">
+                        <Badge
+                          variant="outline"
+                          className="bg-purple-50 text-purple-700 border-purple-200"
+                        >
                           {user.UserType?.description || "Unknown"}
                         </Badge>
                       </p>
@@ -275,7 +320,10 @@ const UserDetailsPage = () => {
                     <div>
                       <p className="text-sm text-slate-500">Category</p>
                       <p className="font-medium text-slate-800">
-                        <Badge variant="outline" className="bg-green-50 text-green-700 border-green-200">
+                        <Badge
+                          variant="outline"
+                          className="bg-green-50 text-green-700 border-green-200"
+                        >
                           {user.category || "N/A"}
                         </Badge>
                       </p>
@@ -283,17 +331,22 @@ const UserDetailsPage = () => {
                     <div>
                       <p className="text-sm text-slate-500">Tank Capacity</p>
                       <p className="font-medium text-slate-800">
-                        {user.WaterTanks?.[0]?.capacity?.toLocaleString() || "N/A"} Gallons
+                        {user.WaterTanks?.[0]?.capacity?.toLocaleString() ||
+                          "N/A"}{" "}
+                        Gallons
                       </p>
                     </div>
                     <div>
                       <p className="text-sm text-slate-500">Account Created</p>
                       <p className="font-medium text-slate-800">
-                        {new Date(user.created_at).toLocaleDateString(undefined, {
-                          year: "numeric",
-                          month: "long",
-                          day: "numeric",
-                        })}
+                        {new Date(user.created_at).toLocaleDateString(
+                          undefined,
+                          {
+                            year: "numeric",
+                            month: "long",
+                            day: "numeric",
+                          }
+                        )}
                       </p>
                     </div>
                   </div>
@@ -312,7 +365,7 @@ const UserDetailsPage = () => {
               <CardHeader className="bg-slate-50 border-b pb-3">
                 <CardTitle className="text-slate-800 flex items-center">
                   <span className="inline-block w-2 h-6 bg-cyan-500 mr-3 rounded"></span>
-                Water Tank Status
+                  Water Tank Status
                 </CardTitle>
               </CardHeader>
               <CardContent className="flex flex-col justify-center items-center p-6">
@@ -320,20 +373,25 @@ const UserDetailsPage = () => {
                   <p className="text-sm text-slate-500 text-center">Sensor</p>
                   <p className="font-medium text-slate-800 text-center">
                     {user.WaterTanks && user.WaterTanks.length > 0
-                      ? user.WaterTanks[0].Sensor?.sensor_name || `Sensor ID: ${user.WaterTanks[0].sensor_id}`
+                      ? user.WaterTanks[0].Sensor?.sensor_name ||
+                        `Sensor ID: ${user.WaterTanks[0].sensor_id}`
                       : "No sensor assigned"}
                   </p>
                 </div>
                 <WaterTank waterLevel={waterLevel} />
-                {user.WaterTanks && user.WaterTanks.length > 0 && 
-                 user.WaterTanks[0].WaterTankStatuses && 
-                 user.WaterTanks[0].WaterTankStatuses.length === 0 && (
-                  <div className="mt-4 text-center text-amber-600">
-                    <Badge variant="outline" className="bg-amber-50 text-amber-700 border-amber-200">
-                      No recent tank status readings available
-                    </Badge>
-                  </div>
-                )}
+                {user.WaterTanks &&
+                  user.WaterTanks.length > 0 &&
+                  user.WaterTanks[0].WaterTankStatuses &&
+                  user.WaterTanks[0].WaterTankStatuses.length === 0 && (
+                    <div className="mt-4 text-center text-amber-600">
+                      <Badge
+                        variant="outline"
+                        className="bg-amber-50 text-amber-700 border-amber-200"
+                      >
+                        No recent tank status readings available
+                      </Badge>
+                    </div>
+                  )}
               </CardContent>
             </Card>
           </motion.div>
@@ -356,7 +414,12 @@ const UserDetailsPage = () => {
             <CardContent className="p-6">
               <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
                 <div>
-                  <Label htmlFor="start-date" className="text-sm text-slate-500">Start Date</Label>
+                  <Label
+                    htmlFor="start-date"
+                    className="text-sm text-slate-500"
+                  >
+                    Start Date
+                  </Label>
                   <Popover modal={false}>
                     <PopoverTrigger asChild>
                       <Button
@@ -378,9 +441,11 @@ const UserDetailsPage = () => {
                     </PopoverContent>
                   </Popover>
                 </div>
-                
+
                 <div>
-                  <Label htmlFor="end-date" className="text-sm text-slate-500">End Date</Label>
+                  <Label htmlFor="end-date" className="text-sm text-slate-500">
+                    End Date
+                  </Label>
                   <Popover modal={false}>
                     <PopoverTrigger asChild>
                       <Button
@@ -402,9 +467,9 @@ const UserDetailsPage = () => {
                     </PopoverContent>
                   </Popover>
                 </div>
-                
+
                 <div className="flex items-end">
-                  <Button 
+                  <Button
                     onClick={fetchHourlyTankStatus}
                     className="w-full bg-gradient-to-r from-cyan-600 to-blue-600 hover:from-cyan-700 hover:to-blue-700 text-white transition-all duration-300"
                   >
@@ -412,12 +477,12 @@ const UserDetailsPage = () => {
                   </Button>
                 </div>
               </div>
-              
+
               {/* Hourly Tank Status Table */}
               {tankStatus.length === 0 ? (
                 <div className="text-center py-8 text-slate-500">
-                  {startDate && endDate 
-                    ? "No data available for the selected date range" 
+                  {startDate && endDate
+                    ? "No data available for the selected date range"
                     : "Select date range to view tank status"}
                 </div>
               ) : (
@@ -438,17 +503,20 @@ const UserDetailsPage = () => {
                     </thead>
                     <tbody className="divide-y divide-slate-200">
                       {tankStatus.map((status, index) => (
-                        <tr 
-                          key={index} 
+                        <tr
+                          key={index}
                           className="hover:bg-slate-50 transition-colors"
                         >
                           <td className="px-4 py-3 whitespace-nowrap">
-                            {new Date(status.status_date).toLocaleDateString(undefined, {
-                              weekday: 'short',
-                              year: "numeric",
-                              month: "short",
-                              day: "numeric",
-                            })}
+                            {new Date(status.status_date).toLocaleDateString(
+                              undefined,
+                              {
+                                weekday: "short",
+                                year: "numeric",
+                                month: "short",
+                                day: "numeric",
+                              }
+                            )}
                           </td>
                           <td className="px-4 py-3 whitespace-nowrap">
                             <Badge className="bg-blue-100 text-blue-800 border-0">
@@ -509,22 +577,28 @@ const UserDetailsPage = () => {
                     </thead>
                     <tbody className="divide-y divide-slate-200">
                       {bookings.map((booking, index) => (
-                        <tr 
-                          key={index} 
+                        <tr
+                          key={index}
                           className="hover:bg-slate-50 transition-colors"
                         >
                           <td className="px-4 py-3 whitespace-nowrap font-medium text-slate-700">
                             {booking.booking_code}
                           </td>
                           <td className="px-4 py-3 whitespace-nowrap text-slate-700">
-                            {new Date(booking.scheduled_date).toLocaleDateString(undefined, {
+                            {new Date(
+                              booking.scheduled_date
+                            ).toLocaleDateString(undefined, {
                               year: "numeric",
                               month: "short",
                               day: "numeric",
                             })}
                           </td>
                           <td className="px-4 py-3 whitespace-nowrap">
-                            <Badge className={`${getStatusBadgeColor(booking.status)} text-white`}>
+                            <Badge
+                              className={`${getStatusBadgeColor(
+                                booking.status
+                              )} text-white`}
+                            >
                               {booking.status}
                             </Badge>
                           </td>

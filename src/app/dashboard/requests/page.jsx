@@ -13,20 +13,16 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table";
+  DataTable,
+  commonActions,
+  badgeVariants,
+} from "@/components/common/data-table";
 import { Badge } from "@/components/ui/badge";
-import { Droplets, RefreshCw } from "lucide-react";
+import { Droplets, RefreshCw, Eye, Pencil, Trash2 } from "lucide-react";
 import { useSearch } from "@/hooks/useSearch";
 import { SearchInput } from "@/components/common/search-input";
 import { Pagination } from "@/components/common/pagination";
 import { usePagination } from "@/hooks/usePagination";
-
 import { toast } from "sonner";
 import {
   AlertDialog,
@@ -48,7 +44,12 @@ import {
   SelectItem,
 } from "@/components/ui/select";
 
-import { useRequests, useAcceptRequest, useRejectRequest, useCreateNotification } from "@/hooks";
+import {
+  useRequests,
+  useAcceptRequest,
+  useRejectRequest,
+  useCreateNotification,
+} from "@/hooks";
 
 export default function RequestsPage() {
   const { user } = useUser();
@@ -63,8 +64,6 @@ export default function RequestsPage() {
   const [rejectReason, setRejectReason] = useState("hydrant closed");
   const [notificationTitle, setNotificationTitle] = useState("");
 
-
-
   useEffect(() => {
     // Get admin_id from UserContext
     if (user?.id) {
@@ -73,7 +72,12 @@ export default function RequestsPage() {
   }, [user]);
 
   // React Query hooks
-  const { data: requests = [], isLoading: loading, error, refetch } = useRequests();
+  const {
+    data: requests = [],
+    isLoading: loading,
+    error,
+    refetch,
+  } = useRequests();
   const acceptRequestMutation = useAcceptRequest();
   const rejectRequestMutation = useRejectRequest();
   const createNotificationMutation = useCreateNotification();
@@ -83,21 +87,30 @@ export default function RequestsPage() {
     searchQuery,
     filteredData: searchFilteredRequests,
     handleSearch,
-    clearSearch
-  } = useSearch(requests, ['Customer.full_name', 'request_id', 'request_status', 'description']);
+    clearSearch,
+  } = useSearch(requests, [
+    "Customer.full_name",
+    "request_id",
+    "request_status",
+    "description",
+  ]);
 
   // Filter and sort requests
   const filteredRequests = useMemo(() => {
     let filtered = [...searchFilteredRequests];
-    
+
     // Sort by request date (newest first)
-    filtered.sort((a, b) => new Date(b.request_date) - new Date(a.request_date));
-    
+    filtered.sort(
+      (a, b) => new Date(b.request_date) - new Date(a.request_date)
+    );
+
     // Apply status filter
     if (statusFilter !== "All") {
-      filtered = filtered.filter(request => request.request_status === statusFilter);
+      filtered = filtered.filter(
+        (request) => request.request_status === statusFilter
+      );
     }
-    
+
     return filtered;
   }, [searchFilteredRequests, statusFilter]);
 
@@ -110,14 +123,8 @@ export default function RequestsPage() {
     goToNextPage,
     goToPreviousPage,
     handlePageChange,
-    handleItemsPerPageChange
+    handleItemsPerPageChange,
   } = usePagination(filteredRequests, 10);
-
-
-
-
-
-
 
   // Handle refresh
   const handleRefresh = async () => {
@@ -174,8 +181,6 @@ export default function RequestsPage() {
     setIsModalOpen(true);
   }, []);
 
-
-
   // Get status badge variant
   const getStatusBadgeVariant = (status) => {
     const variants = {
@@ -197,8 +202,6 @@ export default function RequestsPage() {
       minute: "2-digit",
     });
   };
-
-
 
   return (
     <DashboardShell>
@@ -268,104 +271,79 @@ export default function RequestsPage() {
               </div>
             ) : (
               <>
-                <Table className="w-full">
-                  <TableHeader>
-                    <TableRow>
-                      <TableHead>Request ID</TableHead>
-                      <TableHead>Customer</TableHead>
-                      <TableHead>Request Date</TableHead>
-                      
-                      {/* <TableHead>Payment Mode</TableHead> */}
-                      <TableHead>Status</TableHead>
-                      <TableHead>Actions</TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {paginatedRequests.length === 0 ? (
-                      <TableRow>
-                        <TableCell
-                          colSpan={7}
-                          className="text-center py-8 text-muted-foreground"
+                <DataTable
+                  data={paginatedRequests}
+                  columns={[
+                    {
+                      key: "request_id",
+                      header: "Request ID",
+                      accessor: "request_id",
+                      cellClassName: "font-medium",
+                      render: (value) => `#${value}`,
+                    },
+                    {
+                      key: "customer",
+                      header: "Customer",
+                      render: (_, request) => (
+                        <div className="flex flex-col">
+                          <span className="font-medium">
+                            {request.Customer.full_name}
+                          </span>
+                          <span className="text-sm text-muted-foreground">
+                            ID: {request.Customer.customer_id}
+                          </span>
+                        </div>
+                      ),
+                    },
+                    {
+                      key: "request_date",
+                      header: "Request Date",
+                      render: (_, request) => formatDate(request.request_date),
+                    },
+                    {
+                      key: "status",
+                      header: "Status",
+                      render: (_, request) => (
+                        <Badge
+                          variant={getStatusBadgeVariant(
+                            request.request_status
+                          )}
                         >
-                          {searchQuery
-                            ? "No requests found matching your search"
-                            : "No requests found"}
-                        </TableCell>
-                      </TableRow>
-                    ) : (
-                      paginatedRequests.map((request) => (
-                        <TableRow key={request.request_id}>
-                          <TableCell className="font-medium">
-                            #{request.request_id}
-                          </TableCell>
-                          <TableCell>
-                            <div className="flex flex-col">
-                              <span className="font-medium">
-                                {request.Customer.full_name}
-                              </span>
-                              <span className="text-sm text-muted-foreground">
-                                ID: {request.Customer.customer_id}
-                              </span>
-                            </div>
-                          </TableCell>
-                          <TableCell>
-                            {formatDate(request.request_date)}
-                          </TableCell>
-                          
-                          {/* <TableCell>
-                            {request.description.replace('Payment Mode:', '').trim()}
-                          </TableCell> */}
-                          <TableCell>
-                            <Badge
-                              variant={getStatusBadgeVariant(
-                                request.request_status
-                              )}
-                            >
-                              {request.request_status}
-                            </Badge>
-                          </TableCell>
-                          <TableCell>
-                            <div className="flex items-center gap-2">
-                              <Button
-                                variant="success"
-                                size="sm"
-                                onClick={() =>
-                                  handleAcceptClick(
-                                    request.request_id,
-                                    request.Customer.customer_id
-                                  )
-                                }
-                                disabled={
-                                  request.request_status.toLowerCase() !==
-                                  "in progress"
-                                }
-                              >
-                                Accept
-                              </Button>
-                              <Button
-                                variant="destructive"
-                                size="sm"
-                                onClick={() => {
-                                  setSelectedRequestId(request.request_id);
-                                  setSelectedCustomerId(
-                                    request.Customer.customer_id
-                                  );
-                                  setRejectDialogOpen(true);
-                                }}
-                                disabled={
-                                  request.request_status.toLowerCase() !==
-                                  "in progress"
-                                }
-                              >
-                                Reject
-                              </Button>
-                            </div>
-                          </TableCell>
-                        </TableRow>
-                      ))
-                    )}
-                  </TableBody>
-                </Table>
+                          {request.request_status}
+                        </Badge>
+                      ),
+                    },
+                  ]}
+                  actions={[
+                    {
+                      label: "Accept",
+                      variant: "success",
+                      onClick: (request) =>
+                        handleAcceptClick(
+                          request.request_id,
+                          request.Customer.customer_id
+                        ),
+                      disabled: (request) =>
+                        request.request_status.toLowerCase() !== "in progress",
+                    },
+                    {
+                      label: "Reject",
+                      variant: "destructive",
+                      onClick: (request) => {
+                        setSelectedRequestId(request.request_id);
+                        setSelectedCustomerId(request.Customer.customer_id);
+                        setRejectDialogOpen(true);
+                      },
+                      disabled: (request) =>
+                        request.request_status.toLowerCase() !== "in progress",
+                    },
+                  ]}
+                  isLoading={loading}
+                  emptyMessage="No requests found"
+                  searchQuery={searchQuery}
+                  searchEmptyMessage="No requests found matching your search"
+                  className="w-full"
+                />
 
                 {/* Pagination Controls */}
                 <Pagination

@@ -1,4 +1,4 @@
-"use client"
+"use client";
 
 export default function RecentBookings() {
   // In a real app, you would fetch this data from your API
@@ -38,13 +38,16 @@ export default function RecentBookings() {
       status: "Pending",
       date: "2023-11-11",
     },
-  ]
+  ];
 
   return (
     <div className="rounded-lg border bg-card p-6 shadow-sm">
       <div className="flex items-center justify-between mb-4">
         <h3 className="text-lg font-medium">Recent Bookings</h3>
-        <a href="/dashboard/bookings" className="text-sm text-primary hover:underline">
+        <a
+          href="/dashboard/bookings"
+          className="text-sm text-primary hover:underline"
+        >
           View all
         </a>
       </div>
@@ -64,19 +67,23 @@ export default function RecentBookings() {
                 <td className="py-3 text-sm">{booking.id}</td>
                 <td className="py-3 text-sm">
                   <div>{booking.customer}</div>
-                  <div className="text-xs text-muted-foreground md:hidden">{booking.date}</div>
+                  <div className="text-xs text-muted-foreground md:hidden">
+                    {booking.date}
+                  </div>
                 </td>
-                <td className="py-3 text-sm hidden md:table-cell">{booking.date}</td>
+                <td className="py-3 text-sm hidden md:table-cell">
+                  {booking.date}
+                </td>
                 <td className="py-3 text-sm">
                   <div
                     className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium ${
                       booking.status === "Pending"
                         ? "bg-yellow-100 text-yellow-800"
                         : booking.status === "Confirmed"
-                          ? "bg-cyan-100 text-cyan-800"
-                          : booking.status === "Completed"
-                            ? "bg-green-100 text-green-800"
-                            : "bg-red-100 text-red-800"
+                        ? "bg-cyan-100 text-cyan-800"
+                        : booking.status === "Completed"
+                        ? "bg-green-100 text-green-800"
+                        : "bg-red-100 text-red-800"
                     }`}
                   >
                     {booking.status}
@@ -88,6 +95,5 @@ export default function RecentBookings() {
         </table>
       </div>
     </div>
-  )
+  );
 }
-

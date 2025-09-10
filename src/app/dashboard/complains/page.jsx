@@ -12,15 +12,12 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table";
+  DataTable,
+  commonActions,
+  badgeVariants,
+} from "@/components/common/data-table";
 import { Badge } from "@/components/ui/badge";
-import { MessageSquare, RefreshCw } from "lucide-react";
+import { MessageSquare, RefreshCw, Eye, Pencil, Trash2 } from "lucide-react";
 import {
   Dialog,
   DialogContent,
@@ -40,15 +37,23 @@ import {
 } from "@/components/ui/select";
 import { useSearch } from "@/hooks/useSearch";
 import { SearchInput } from "@/components/common/search-input";
-
-import { useComplaints, useUpdateComplaintRemarks, usePagination } from "@/hooks";
+import {
+  useComplaints,
+  useUpdateComplaintRemarks,
+  usePagination,
+} from "@/hooks";
 import { Pagination } from "@/components/common/pagination";
 
 export default function ComplaintsPage() {
   const { user } = useUser();
-  const { data: complaints = [], isLoading: loading, error, refetch } = useComplaints();
+  const {
+    data: complaints = [],
+    isLoading: loading,
+    error,
+    refetch,
+  } = useComplaints();
   const updateComplaintMutation = useUpdateComplaintRemarks();
-  
+
   const [statusFilter, setStatusFilter] = useState("All");
   const [isUpdateDialogOpen, setIsUpdateDialogOpen] = useState(false);
   const [selectedComplaint, setSelectedComplaint] = useState(null);
@@ -58,11 +63,20 @@ export default function ComplaintsPage() {
     searchQuery,
     filteredData: searchFilteredComplaints,
     handleSearch,
-    clearSearch
-  } = useSearch(complaints, ['complain_id', 'Customer.full_name', 'Customer.phone_number', 'complain_description'], {
-    resetPageOnSearch: true,
-    onPageReset: () => handlePageChange(1)
-  });
+    clearSearch,
+  } = useSearch(
+    complaints,
+    [
+      "complain_id",
+      "Customer.full_name",
+      "Customer.phone_number",
+      "complain_description",
+    ],
+    {
+      resetPageOnSearch: true,
+      onPageReset: () => handlePageChange(1),
+    }
+  );
 
   // Filter and sort complaints using useMemo
   const filteredComplaints = useMemo(() => {
@@ -70,11 +84,15 @@ export default function ComplaintsPage() {
 
     // Apply status filter
     if (statusFilter !== "All") {
-      filtered = filtered.filter(complaint => complaint.status === statusFilter);
+      filtered = filtered.filter(
+        (complaint) => complaint.status === statusFilter
+      );
     }
 
     // Sort by date (newest first)
-    return filtered.sort((a, b) => new Date(b.complain_date) - new Date(a.complain_date));
+    return filtered.sort(
+      (a, b) => new Date(b.complain_date) - new Date(a.complain_date)
+    );
   }, [searchFilteredComplaints, statusFilter]);
 
   // Use pagination hook
@@ -86,10 +104,8 @@ export default function ComplaintsPage() {
     handlePageChange,
     handleItemsPerPageChange,
     goToNextPage,
-    goToPreviousPage
+    goToPreviousPage,
   } = usePagination(filteredComplaints, 10);
-
-
 
   // Handle refresh
   const handleRefresh = async () => {
@@ -126,8 +142,6 @@ export default function ComplaintsPage() {
     setIsUpdateDialogOpen(true);
   }, []);
 
-
-
   // Get status badge variant
   const getStatusBadgeVariant = (status) => {
     return status?.toLowerCase() === "resolved" ? "success" : "destructive";
@@ -160,16 +174,14 @@ export default function ComplaintsPage() {
             </SelectContent>
           </Select>
           <Button
-              variant="outline"
-              size="icon"
-              onClick={handleRefresh}
-              disabled={loading}
-            >
-              <RefreshCw
-                className={`h-4 w-4 ${loading ? "animate-spin" : ""}`}
-              />
-              <span className="sr-only">Refresh</span>
-            </Button>
+            variant="outline"
+            size="icon"
+            onClick={handleRefresh}
+            disabled={loading}
+          >
+            <RefreshCw className={`h-4 w-4 ${loading ? "animate-spin" : ""}`} />
+            <span className="sr-only">Refresh</span>
+          </Button>
         </div>
       </DashboardHeader>
 
@@ -200,7 +212,8 @@ export default function ComplaintsPage() {
 
             {error && (
               <div className="bg-destructive/15 text-destructive p-3 rounded-md mb-4">
-                {error?.message || "Failed to load complaints. Please try again."}
+                {error?.message ||
+                  "Failed to load complaints. Please try again."}
               </div>
             )}
 
@@ -210,74 +223,70 @@ export default function ComplaintsPage() {
               </div>
             ) : (
               <>
-                <Table className="w-full">
-                  <TableHeader>
-                    <TableRow>
-                      <TableHead>Complaint ID</TableHead>
-                      <TableHead>Customer</TableHead>
-                      <TableHead>Date</TableHead>
-                      <TableHead>Description</TableHead>
-                      <TableHead>Status</TableHead>
-                      <TableHead>Actions</TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {paginatedComplaints.length === 0 ? (
-                      <TableRow>
-                        <TableCell
-                          colSpan={6}
-                          className="text-center py-8 text-muted-foreground"
+                <DataTable
+                  data={paginatedComplaints}
+                  columns={[
+                    {
+                      key: "complain_id",
+                      header: "Complaint ID",
+                      accessor: "complain_id",
+                      cellClassName: "font-medium",
+                      render: (value) => `#${value}`,
+                    },
+                    {
+                      key: "customer",
+                      header: "Customer",
+                      render: (_, complaint) => (
+                        <div className="flex flex-col">
+                          <span className="font-medium">
+                            {complaint.Customer.full_name}
+                          </span>
+                          <span className="text-sm text-muted-foreground">
+                            {complaint.Customer.phone_number}
+                          </span>
+                        </div>
+                      ),
+                    },
+                    {
+                      key: "complain_date",
+                      header: "Date",
+                      render: (_, complaint) =>
+                        formatDate(complaint.complain_date),
+                    },
+                    {
+                      key: "complain_description",
+                      header: "Description",
+                      accessor: "complain_description",
+                      cellClassName: "max-w-[200px] truncate",
+                    },
+                    {
+                      key: "status",
+                      header: "Status",
+                      render: (_, complaint) => (
+                        <Badge
+                          variant={getStatusBadgeVariant(complaint.status)}
                         >
-                          {searchQuery
-                            ? "No complaints found matching your search"
-                            : "No complaints found"}
-                        </TableCell>
-                      </TableRow>
-                    ) : (
-                      paginatedComplaints.map((complaint) => (
-                        <TableRow key={complaint.complain_id}>
-                          <TableCell className="font-medium">
-                            #{complaint.complain_id}
-                          </TableCell>
-                          <TableCell>
-                            <div className="flex flex-col">
-                              <span className="font-medium">
-                                {complaint.Customer.full_name}
-                              </span>
-                              <span className="text-sm text-muted-foreground">
-                                {complaint.Customer.phone_number}
-                              </span>
-                            </div>
-                          </TableCell>
-                          <TableCell>
-                            {formatDate(complaint.complain_date)}
-                          </TableCell>
-                          <TableCell className="max-w-[200px] truncate">
-                            {complaint.complain_description}
-                          </TableCell>
-                          <TableCell>
-                            <Badge
-                              variant={getStatusBadgeVariant(complaint.status)}
-                            >
-                              {complaint.status}
-                            </Badge>
-                          </TableCell>
-                          <TableCell>
-                            <Button
-                              variant="outline"
-                              size="sm"
-                              onClick={() => handleViewDetails(complaint)}
-                            >
-                              {complaint.status === "Resolved"
-                                ? "View Details"
-                                : "Resolve"}
-                            </Button>
-                          </TableCell>
-                        </TableRow>
-                      ))
-                    )}
-                  </TableBody>
-                </Table>
+                          {complaint.status}
+                        </Badge>
+                      ),
+                    },
+                  ]}
+                  actions={[
+                    {
+                      label: (complaint) =>
+                        complaint.status === "Resolved"
+                          ? "View Details"
+                          : "Resolve",
+                      variant: "outline",
+                      onClick: (complaint) => handleViewDetails(complaint),
+                    },
+                  ]}
+                  isLoading={loading}
+                  emptyMessage="No complaints found"
+                  searchQuery={searchQuery}
+                  searchEmptyMessage="No complaints found matching your search"
+                  className="w-full"
+                />
 
                 {/* Pagination Controls */}
                 <Pagination
@@ -286,7 +295,7 @@ export default function ComplaintsPage() {
                   itemsPerPage={itemsPerPage}
                   totalItems={filteredComplaints.length}
                   onPageChange={handlePageChange}
-                onItemsPerPageChange={handleItemsPerPageChange}
+                  onItemsPerPageChange={handleItemsPerPageChange}
                   className="mt-6"
                 />
               </>

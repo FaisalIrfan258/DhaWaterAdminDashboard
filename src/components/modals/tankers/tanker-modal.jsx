@@ -1,24 +1,29 @@
-"use client"
+"use client";
 
-import { useState, useEffect } from "react"
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog"
-import { Input } from "@/components/ui/input"
-import { Button } from "@/components/ui/button"
-import { Label } from "@/components/ui/label"
+import { useState, useEffect } from "react";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import { Input } from "@/components/ui/input";
+import { Button } from "@/components/ui/button";
+import { Label } from "@/components/ui/label";
 import {
   Select,
   SelectTrigger,
   SelectContent,
   SelectItem,
   SelectValue,
-} from "@/components/ui/select"
-import { Checkbox } from "@/components/ui/checkbox"
-import { useForm, Controller } from "react-hook-form"
-import { driverService } from "@/services"
+} from "@/components/ui/select";
+import { Checkbox } from "@/components/ui/checkbox";
+import { useForm, Controller } from "react-hook-form";
+import { driverService } from "@/services";
 
 export function TankerModal({ open, onClose, tanker, onSubmit }) {
-  const [drivers, setDrivers] = useState([])
-  const [selectedPhases, setSelectedPhases] = useState([])
+  const [drivers, setDrivers] = useState([]);
+  const [selectedPhases, setSelectedPhases] = useState([]);
 
   const {
     register,
@@ -39,40 +44,46 @@ export function TankerModal({ open, onClose, tanker, onSubmit }) {
       phase_id: [],
       assigned_driver_id: "",
     },
-  })
+  });
   // Watch price_per_gallon and capacity to calculate cost
-  const price_per_gallon = watch("price_per_gallon")
-  const capacity = watch("capacity")
+  const price_per_gallon = watch("price_per_gallon");
+  const capacity = watch("capacity");
 
   // Calculate cost when price or capacity changes
   useEffect(() => {
     if (price_per_gallon && capacity) {
-      const calculatedCost = parseFloat(price_per_gallon) * parseFloat(capacity)
-      setValue("cost", calculatedCost.toFixed(2))
+      const calculatedCost =
+        parseFloat(price_per_gallon) * parseFloat(capacity);
+      setValue("cost", calculatedCost.toFixed(2));
     }
-  }, [price_per_gallon, capacity, setValue])
+  }, [price_per_gallon, capacity, setValue]);
 
   // Reset form when tanker prop changes
   useEffect(() => {
     if (tanker) {
       // Convert phase_id to array if it exists
-      const phaseIds = tanker.phase_id ? (Array.isArray(tanker.phase_id) ? tanker.phase_id : [tanker.phase_id]) : []
-      setSelectedPhases(phaseIds)
-      
+      const phaseIds = tanker.phase_id
+        ? Array.isArray(tanker.phase_id)
+          ? tanker.phase_id
+          : [tanker.phase_id]
+        : [];
+      setSelectedPhases(phaseIds);
+
       reset({
         tanker_name: tanker.tanker_name,
         plate_number: tanker.plate_number,
         capacity: tanker.capacity,
         price_per_gallon: tanker.price_per_gallon,
         cost: tanker.cost,
-        availability_status: tanker.availability_status || tanker.availability || "Available",
+        availability_status:
+          tanker.availability_status || tanker.availability || "Available",
         phase_id: phaseIds,
         assigned_driver_id: tanker.assigned_driver_id
           ? String(tanker.assigned_driver_id)
           : "",
-      })
+      });
     } else {
-      setSelectedPhases([])
+      setSelectedPhases([]);
       reset({
         tanker_name: "",
         plate_number: "",
@@ -82,37 +93,37 @@ export function TankerModal({ open, onClose, tanker, onSubmit }) {
         availability_status: "Available",
         phase_id: [],
         assigned_driver_id: "",
-      })
+      });
     }
-  }, [tanker, reset])
+  }, [tanker, reset]);
 
   // Fetch available drivers when modal opens
   useEffect(() => {
-    if (!open) return
+    if (!open) return;
 
     const fetchDrivers = async () => {
       try {
-        const data = await driverService.getAllDrivers()
+        const data = await driverService.getAllDrivers();
         // only keep those with availability_status === "Available"
         const available = data.filter(
           (d) => d.availability_status === "Available"
-        )
-        setDrivers(available)
-        console.log("Available drivers:", available) // Debug log
+        );
+        setDrivers(available);
+        console.log("Available drivers:", available); // Debug log
       } catch (err) {
-        console.error("Failed to load drivers", err)
+        console.error("Failed to load drivers", err);
       }
-    }
+    };
 
-    fetchDrivers()
-  }, [open])
+    fetchDrivers();
+  }, [open]);
 
   // Handle phase selection
   const handlePhaseChange = (phaseId) => {
     const updatedPhases = selectedPhases.includes(phaseId)
-      ? selectedPhases.filter(id => id !== phaseId)
+      ? selectedPhases.filter((id) => id !== phaseId)
       : [...selectedPhases, phaseId];
-    
+
     setSelectedPhases(updatedPhases);
     setValue("phase_id", updatedPhases);
   };
@@ -122,7 +133,7 @@ export function TankerModal({ open, onClose, tanker, onSubmit }) {
     if (data.assigned_driver_id) {
       data.assigned_driver_id = Number(data.assigned_driver_id);
     }
-    
+
     // Use the selectedPhases array for phase_id
     data.phase_id = selectedPhases;
 
@@ -130,10 +141,10 @@ export function TankerModal({ open, onClose, tanker, onSubmit }) {
     if (tanker) {
       data.availability = data.availability_status;
     }
-    
+
     console.log("Submitting data:", data);
     onSubmit(data);
-  }
+  };
 
   return (
     <Dialog open={open} onOpenChange={onClose}>
@@ -141,10 +152,7 @@ export function TankerModal({ open, onClose, tanker, onSubmit }) {
         <DialogHeader>
           <DialogTitle>{tanker ? "Edit Tanker" : "Add New Tanker"}</DialogTitle>
         </DialogHeader>
-        <form
-          onSubmit={handleSubmit(onSubmitHandler)}
-          className="space-y-6"
-        >
+        <form onSubmit={handleSubmit(onSubmitHandler)} className="space-y-6">
           <div className="grid grid-cols-1 gap-4">
             {/* Tanker Name */}
             <div>
@@ -193,9 +201,7 @@ export function TankerModal({ open, onClose, tanker, onSubmit }) {
                 {...register("price_per_gallon", { required: true })}
               />
               {errors.price_per_gallon && (
-                <p className="text-red-500">
-                  Price per Gallon is required
-                </p>
+                <p className="text-red-500">Price per Gallon is required</p>
               )}
             </div>
 
@@ -209,9 +215,7 @@ export function TankerModal({ open, onClose, tanker, onSubmit }) {
                 {...register("cost", { required: true })}
                 readOnly
               />
-              {errors.cost && (
-                <p className="text-red-500">Cost is required</p>
-              )}
+              {errors.cost && <p className="text-red-500">Cost is required</p>}
             </div>
 
             {/* Availability */}
@@ -231,12 +235,8 @@ export function TankerModal({ open, onClose, tanker, onSubmit }) {
                       <SelectValue placeholder="Select Availability" />
                     </SelectTrigger>
                     <SelectContent modal={false}>
-                      <SelectItem value="Available">
-                        Available
-                      </SelectItem>
-                      <SelectItem value="Unavailable">
-                        Unavailable
-                      </SelectItem>
+                      <SelectItem value="Available">Available</SelectItem>
+                      <SelectItem value="Unavailable">Unavailable</SelectItem>
                     </SelectContent>
                   </Select>
                 )}
@@ -250,21 +250,26 @@ export function TankerModal({ open, onClose, tanker, onSubmit }) {
             <div>
               <Label>Phases</Label>
               <div className="mt-2 grid grid-cols-2 gap-2 border rounded-md p-3">
-                {[1, 2, 3, 4, 5, 6, 7, 8].map(phaseId => (
+                {[1, 2, 3, 4, 5, 6, 7, 8].map((phaseId) => (
                   <div key={phaseId} className="flex items-center space-x-2">
-                    <Checkbox 
+                    <Checkbox
                       id={`phase-${phaseId}`}
                       checked={selectedPhases.includes(phaseId)}
                       onCheckedChange={() => handlePhaseChange(phaseId)}
                     />
-                    <Label htmlFor={`phase-${phaseId}`} className="cursor-pointer">
+                    <Label
+                      htmlFor={`phase-${phaseId}`}
+                      className="cursor-pointer"
+                    >
                       Phase {phaseId}
                     </Label>
                   </div>
                 ))}
               </div>
               {errors.phase_id && (
-                <p className="text-red-500">At least one phase must be selected</p>
+                <p className="text-red-500">
+                  At least one phase must be selected
+                </p>
               )}
             </div>
 
@@ -274,7 +279,7 @@ export function TankerModal({ open, onClose, tanker, onSubmit }) {
               <Controller
                 name="assigned_driver_id"
                 control={control}
-                rules={{ required: true }}  
+                rules={{ required: true }}
                 render={({ field }) => (
                   <Select
                     onValueChange={field.onChange}
@@ -315,5 +320,5 @@ export function TankerModal({ open, onClose, tanker, onSubmit }) {
         </form>
       </DialogContent>
     </Dialog>
-  )
+  );
 }

@@ -11,28 +11,34 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
-import { Users, Plus, Search, RefreshCw } from "lucide-react";
+import {
+  Users,
+  Plus,
+  Search,
+  RefreshCw,
+  Eye,
+  Pencil,
+  Trash2,
+} from "lucide-react";
 import { SearchInput } from "@/components/common/search-input";
 import { UserModal } from "@/components/modals/users/user-modal";
 import { toast } from "sonner";
-import { useUsers, useCreateUser, useUpdateUser, useDeleteUser, useSensors, usePagination, useSearch } from "@/hooks";
+import {
+  useUsers,
+  useCreateUser,
+  useUpdateUser,
+  useDeleteUser,
+  useSensors,
+  usePagination,
+  useSearch,
+} from "@/hooks";
 import { Pagination } from "@/components/common/pagination";
 import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
-import { MoreHorizontal, Eye, Pencil, Trash2 } from "lucide-react";
+  DataTable,
+  commonActions,
+  badgeVariants,
+} from "@/components/common/data-table";
 import { ViewUserModal } from "@/components/modals/users/view-user-modal";
 import {
   AlertDialog,
@@ -47,7 +53,13 @@ import {
 import { useRouter } from "next/navigation";
 import { useUser } from "@/context/UserContext";
 
-import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from "@/components/ui/select";
+import {
+  Select,
+  SelectTrigger,
+  SelectValue,
+  SelectContent,
+  SelectItem,
+} from "@/components/ui/select";
 
 export default function UsersPage() {
   const { user } = useUser();
@@ -56,9 +68,9 @@ export default function UsersPage() {
   const createUserMutation = useCreateUser();
   const updateUserMutation = useUpdateUser();
   const deleteUserMutation = useDeleteUser();
-  
+
   const [filteredUsers, setFilteredUsers] = useState([]);
-  
+
   // Extract data from React Query responses with memoization
   const users = useMemo(() => usersData?.users || [], [usersData]);
   const sensors = useMemo(() => sensorsData?.sensors || [], [sensorsData]);
@@ -74,7 +86,7 @@ export default function UsersPage() {
   const [isRefreshing, setIsRefreshing] = useState(false);
   const router = useRouter();
   const [isSuper, setIsSuper] = useState(false);
-  
+
   // Pagination hook
   const {
     currentPage,
@@ -83,13 +95,13 @@ export default function UsersPage() {
     totalItems,
     paginatedData: paginatedUsers,
     handlePageChange,
-    handleItemsPerPageChange
+    handleItemsPerPageChange,
   } = usePagination(filteredUsers, 10);
 
   // Format users data from React Query
   const formattedUsers = useMemo(() => {
     if (!users || users.length === 0) return [];
-    
+
     // Sort users by created_at in descending order
     const sortedUsers = [...users].sort(
       (a, b) => new Date(b.created_at) - new Date(a.created_at)
@@ -98,13 +110,13 @@ export default function UsersPage() {
     // Update to include all relevant fields
     return sortedUsers.map((user) => {
       // Format the address by combining street_address and phase_number if available
-      let displayAddress = user.street_address || user.home_address || '';
+      let displayAddress = user.street_address || user.home_address || "";
       if (user.phase_number) {
         displayAddress += ` Phase ${user.phase_number}`;
       } else if (user.Phase && user.Phase.phase_name) {
         displayAddress += ` Phase ${user.Phase.phase_name}`;
       }
-      
+
       return {
         customer_id: user.customer_id,
         full_name: user.full_name,
@@ -117,28 +129,39 @@ export default function UsersPage() {
         balance: user.balance, // Include balance
         created_at: user.created_at,
         category: user.category, // Include category field
-        WaterTanks: user.WaterTanks?.map((tank) => ({
-          sensor_id: tank.sensor_id, // Map sensor_id from WaterTanks
-          sensor_name: tank.Sensor?.sensor_name || `Sensor ${tank.sensor_id}` // Include sensor name
-        })) || [],
+        WaterTanks:
+          user.WaterTanks?.map((tank) => ({
+            sensor_id: tank.sensor_id, // Map sensor_id from WaterTanks
+            sensor_name: tank.Sensor?.sensor_name || `Sensor ${tank.sensor_id}`, // Include sensor name
+          })) || [],
         userType: user.UserType?.type, // Include user type
         userTypeDescription: user.UserType?.description, // Include user type description
       };
     });
   }, [users]);
 
-
-
   // Search functionality
   const {
     searchQuery,
     filteredData: searchFilteredUsers,
     handleSearch,
-    clearSearch
-  } = useSearch(formattedUsers, ['full_name', 'email', 'phone_number', 'home_address', 'street_address', 'username', 'customer_id'], {
-    resetPageOnSearch: true,
-    onPageReset: () => handlePageChange(1)
-  });
+    clearSearch,
+  } = useSearch(
+    formattedUsers,
+    [
+      "full_name",
+      "email",
+      "phone_number",
+      "home_address",
+      "street_address",
+      "username",
+      "customer_id",
+    ],
+    {
+      resetPageOnSearch: true,
+      onPageReset: () => handlePageChange(1),
+    }
+  );
 
   // Add new user
   const handleAddUser = async (userData) => {
@@ -154,7 +177,10 @@ export default function UsersPage() {
   // Update existing user
   const handleUpdateUser = async (userData) => {
     try {
-      await updateUserMutation.mutateAsync({ userId: userData.customer_id, userData });
+      await updateUserMutation.mutateAsync({
+        userId: userData.customer_id,
+        userData,
+      });
       setIsEditModalOpen(false);
       setEditingUser(null);
     } catch (error) {
@@ -183,9 +209,13 @@ export default function UsersPage() {
         created_at: data.created_at,
         tank_capacity: data.WaterTanks?.[0]?.capacity || 0,
         device_id: data.WaterTanks?.[0]?.sensor_id?.toString() || "", // Ensure sensor ID is properly passed
-        category: data.UserType?.type === "C" ? "Corporate" : 
-                 data.UserType?.type === "E" ? "DHAEmployee" : "Civil",
-        WaterTanks: data.WaterTanks // Include the full WaterTanks data
+        category:
+          data.UserType?.type === "C"
+            ? "Corporate"
+            : data.UserType?.type === "E"
+            ? "DHAEmployee"
+            : "Civil",
+        WaterTanks: data.WaterTanks, // Include the full WaterTanks data
       };
 
       setEditingUser(formattedUser);
@@ -201,9 +231,12 @@ export default function UsersPage() {
   };
 
   // Handle view user details
-  const handleViewUser = useCallback((user) => {
-    router.push(`/dashboard/users/${user.customer_id}`);
-  }, [router]);
+  const handleViewUser = useCallback(
+    (user) => {
+      router.push(`/dashboard/users/${user.customer_id}`);
+    },
+    [router]
+  );
 
   // Open delete confirmation dialog
   const confirmDeleteUser = (user) => {
@@ -262,7 +295,10 @@ export default function UsersPage() {
   if (error) {
     return (
       <DashboardShell>
-        <DashboardHeader heading="Users" text="Manage system users and their information.">
+        <DashboardHeader
+          heading="Users"
+          text="Manage system users and their information."
+        >
           <Button onClick={handleRefresh} disabled={isRefreshing}>
             {isRefreshing ? "Refreshing..." : "Refresh"}
           </Button>
@@ -280,8 +316,6 @@ export default function UsersPage() {
       </DashboardShell>
     );
   }
-
-
 
   // Initialize filtered users when searchFilteredUsers changes
   useEffect(() => {
@@ -352,114 +386,97 @@ export default function UsersPage() {
                 </div>
               )}
             </div>
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>User ID</TableHead>
-                  <TableHead>Name</TableHead>
-                  <TableHead>Contact</TableHead>
-                  <TableHead>Address</TableHead>
-                  <TableHead>Category</TableHead>
-                  <TableHead>Sensor</TableHead>
-                  <TableHead>Joined</TableHead>
-                  <TableHead className="w-[50px]"></TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {paginatedUsers.length === 0 ? (
-                  <TableRow>
-                    <TableCell
-                      colSpan={8}
-                      className="text-center py-8 text-muted-foreground"
-                    >
-                      {searchQuery
-                        ? "No users found matching your search"
-                        : "No users found"}
-                    </TableCell>
-                  </TableRow>
-                ) : (
-                  paginatedUsers.map((user) => (
-                    <TableRow key={user.customer_id}>
-                      <TableCell className="font-medium">
-                        {user.customer_id}
-                      </TableCell>
-                      <TableCell>{user.full_name}</TableCell>
-                      <TableCell>
-                        <div className="space-y-1">
-                          <p className="text-sm">{user.email}</p>
-                          <p className="text-xs text-muted-foreground">
-                            {user.phone_number}
-                          </p>
-                        </div>
-                      </TableCell>
-                      <TableCell className="max-w-[200px] truncate">
-                        {user.home_address}
-                      </TableCell>
-                      <TableCell>
-                        {user.category ? (
-                          <Badge variant="outline" className="bg-green-50 text-green-700 border-green-200">
-                            {user.category}
+            <DataTable
+              data={paginatedUsers}
+              columns={[
+                {
+                  key: "customer_id",
+                  header: "User ID",
+                  accessor: "customer_id",
+                  cellClassName: "font-medium",
+                },
+                {
+                  key: "full_name",
+                  header: "Name",
+                  accessor: "full_name",
+                },
+                {
+                  key: "contact",
+                  header: "Contact",
+                  render: (_, user) => (
+                    <div className="space-y-1">
+                      <p className="text-sm">{user.email}</p>
+                      <p className="text-xs text-muted-foreground">
+                        {user.phone_number}
+                      </p>
+                    </div>
+                  ),
+                },
+                {
+                  key: "home_address",
+                  header: "Address",
+                  accessor: "home_address",
+                  cellClassName: "max-w-[200px] truncate",
+                },
+                {
+                  key: "category",
+                  header: "Category",
+                  render: (_, user) =>
+                    user.category ? (
+                      <Badge
+                        variant="outline"
+                        className="bg-green-50 text-green-700 border-green-200"
+                      >
+                        {user.category}
+                      </Badge>
+                    ) : (
+                      <span className="text-muted-foreground text-sm">N/A</span>
+                    ),
+                },
+                {
+                  key: "sensors",
+                  header: "Sensor",
+                  render: (_, user) =>
+                    user.WaterTanks && user.WaterTanks.length > 0 ? (
+                      <div className="flex gap-1 flex-wrap">
+                        {user.WaterTanks.map((tank, index) => (
+                          <Badge key={index} variant="secondary">
+                            {tank.sensor_name || tank.sensor_id}
                           </Badge>
-                        ) : (
-                          <span className="text-muted-foreground text-sm">N/A</span>
-                        )}
-                      </TableCell>
-                      <TableCell>
-                        {user.WaterTanks && user.WaterTanks.length > 0 ? (
-                          <div className="flex gap-1 flex-wrap">
-                            {user.WaterTanks.map((tank, index) => (
-                              <Badge key={index} variant="secondary">
-                                {tank.sensor_name || tank.sensor_id}
-                              </Badge>
-                            ))}
-                          </div>
-                        ) : (
-                          <span className="text-muted-foreground text-sm">
-                            No sensor
-                          </span>
-                        )}
-                      </TableCell>
-                      <TableCell>{formatDate(user.created_at)}</TableCell>
-                      <TableCell>
-                        <DropdownMenu modal={false}>
-                          <DropdownMenuTrigger asChild>
-                            <Button variant="ghost" size="sm">
-                              <MoreHorizontal className="h-4 w-4" />
-                              <span className="sr-only">Open menu</span>
-                            </Button>
-                          </DropdownMenuTrigger>
-                          <DropdownMenuContent align="end" modal={false}>
-                            <DropdownMenuItem
-                              onClick={() => handleViewUser(user)}
-                            >
-                              <Eye className="mr-2 h-4 w-4" />
-                              View details
-                            </DropdownMenuItem>
-                            {isSuper && (
-                              <DropdownMenuItem
-                                onClick={() => handleEditUser(user)}
-                              >
-                                <Pencil className="mr-2 h-4 w-4" />
-                                Edit user
-                              </DropdownMenuItem>
-                            )}
-                            {isSuper && (
-                              <DropdownMenuItem
-                                onClick={() => confirmDeleteUser(user)}
-                                className="text-destructive"
-                              >
-                                <Trash2 className="mr-2 h-4 w-4" />
-                                Delete user
-                              </DropdownMenuItem>
-                            )}
-                          </DropdownMenuContent>
-                        </DropdownMenu>
-                      </TableCell>
-                    </TableRow>
-                  ))
-                )}
-              </TableBody>
-            </Table>
+                        ))}
+                      </div>
+                    ) : (
+                      <span className="text-muted-foreground text-sm">
+                        No sensor
+                      </span>
+                    ),
+                },
+                {
+                  key: "created_at",
+                  header: "Joined",
+                  render: (_, user) => formatDate(user.created_at),
+                },
+              ]}
+              actions={[
+                commonActions.view((user) => handleViewUser(user)),
+                ...(isSuper
+                  ? [
+                      commonActions.edit((user) => handleEditUser(user)),
+                      {
+                        label: "Delete user",
+                        icon: Trash2,
+                        onClick: (user) => confirmDeleteUser(user),
+                        variant: "destructive",
+                      },
+                    ]
+                  : []),
+              ]}
+              isLoading={isLoading}
+              emptyMessage="No users found"
+              searchQuery={searchQuery}
+              searchEmptyMessage="No users found matching your search"
+              className="mt-4"
+            />
 
             <Pagination
               currentPage={currentPage}

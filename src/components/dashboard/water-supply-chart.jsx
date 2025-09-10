@@ -1,7 +1,15 @@
-"use client"
+"use client";
 
-import { useState } from "react"
-import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from "recharts"
+import { useState } from "react";
+import {
+  AreaChart,
+  Area,
+  XAxis,
+  YAxis,
+  CartesianGrid,
+  Tooltip,
+  ResponsiveContainer,
+} from "recharts";
 
 // Sample data - in a real app, you would fetch this from your API
 const data = [
@@ -12,10 +20,10 @@ const data = [
   { name: "May", value: 500 },
   { name: "Jun", value: 900 },
   { name: "Jul", value: 1100 },
-]
+];
 
 export default function WaterSupplyChart() {
-  const [period, setPeriod] = useState("7d")
+  const [period, setPeriod] = useState("7d");
 
   return (
     <div className="rounded-lg border bg-card p-6 shadow-sm">
@@ -48,11 +56,16 @@ export default function WaterSupplyChart() {
             <XAxis dataKey="name" />
             <YAxis />
             <Tooltip />
-            <Area type="monotone" dataKey="value" stroke="#3b82f6" fill="#3b82f6" fillOpacity={0.2} />
+            <Area
+              type="monotone"
+              dataKey="value"
+              stroke="#3b82f6"
+              fill="#3b82f6"
+              fillOpacity={0.2}
+            />
           </AreaChart>
         </ResponsiveContainer>
       </div>
     </div>
-  )
+  );
 }
-

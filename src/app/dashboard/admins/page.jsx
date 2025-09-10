@@ -1,42 +1,59 @@
-"use client"
+"use client";
 
-import { useState, useCallback } from "react"
-import { useRouter } from "next/navigation"
-import ProtectedRoute from "@/components/auth/ProtectedRoute"
-import AdminList from "@/components/dashboard/admin-list"
-import { toast } from 'sonner'
-import { Modal } from "@/components/ui/modal"
-import { Button } from "@/components/ui/button"
-import { Input } from "@/components/ui/input"
-import { Label } from "@/components/ui/label"
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import { Pagination } from "@/components/common/pagination"
-import { PlusCircle } from "lucide-react"
-import { useAdmins, useCreateAdmin, useUpdateAdmin, useDeleteAdmin, usePagination } from "@/hooks"
-import { useSearch } from "@/hooks/useSearch"
-import { SearchInput } from "@/components/common/search-input"
+import { useState, useCallback, useEffect } from "react";
+import { useRouter } from "next/navigation";
+import ProtectedRoute from "@/components/auth/ProtectedRoute";
+import { toast } from "sonner";
+import { Modal } from "@/components/ui/modal";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
+import { Pagination } from "@/components/common/pagination";
+import { PlusCircle, Eye, Pencil, Trash2 } from "lucide-react";
+import {
+  useAdmins,
+  useCreateAdmin,
+  useUpdateAdmin,
+  useDeleteAdmin,
+  usePagination,
+} from "@/hooks";
+import { useSearch } from "@/hooks/useSearch";
+import { SearchInput } from "@/components/common/search-input";
+import {
+  DataTable,
+  commonActions,
+  badgeVariants,
+} from "@/components/common/data-table";
 
 function AdminManagementPageContent() {
   const router = useRouter();
-  
+
   // React Query hooks
   const { data, isLoading, error, refetch } = useAdmins();
   const admins = Array.isArray(data?.admins) ? data.admins : [];
   const createAdminMutation = useCreateAdmin();
   const updateAdminMutation = useUpdateAdmin();
   const deleteAdminMutation = useDeleteAdmin();
-  
+
   // Search functionality
   const {
     searchQuery,
     filteredData: filteredAdmins,
     handleSearch,
-    clearSearch
-  } = useSearch(admins, ['full_name', 'email', 'UserType.description'], {
-    resetPageOnSearch: true
+    clearSearch,
+  } = useSearch(admins, ["full_name", "email", "UserType.description"], {
+    resetPageOnSearch: true,
   });
-  
+
   // Pagination hook
   const {
     currentPage,
@@ -45,17 +62,27 @@ function AdminManagementPageContent() {
     totalItems,
     paginatedData: paginatedAdmins,
     handlePageChange,
-    handleItemsPerPageChange
+    handleItemsPerPageChange,
   } = usePagination(filteredAdmins, 10);
-  
-  const [fullName, setFullName] = useState("")
-  const [email, setEmail] = useState("")
-  const [password, setPassword] = useState("")
-  const [userType, setUserType] = useState("")
-  const [selectedAdmin, setSelectedAdmin] = useState(null)
-  const [isModalOpen, setIsModalOpen] = useState(false)
 
+  const [fullName, setFullName] = useState("");
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [userType, setUserType] = useState("");
+  const [selectedAdmin, setSelectedAdmin] = useState(null);
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [user, setUser] = useState({ isSuper: false });
+  const [isSuper, setIsSuper] = useState(false);
 
+  // Check user permissions
+  useEffect(() => {
+    const userData = localStorage.getItem("user");
+    if (userData) {
+      const parsedUser = JSON.parse(userData);
+      setUser(parsedUser);
+      setIsSuper(parsedUser.isSuper || parsedUser.user_type === "superAdmin");
+    }
+  }, []);
 
   const handleRefresh = async () => {
     await refetch();
@@ -65,7 +92,7 @@ function AdminManagementPageContent() {
     e.preventDefault();
 
     if (!fullName || !email || !password || !userType) {
-      toast.error('Please fill all required fields');
+      toast.error("Please fill all required fields");
       return;
     }
 
@@ -73,14 +100,14 @@ function AdminManagementPageContent() {
       full_name: fullName,
       email: email,
       password: password,
-      user_type: userType
+      user_type: userType,
     };
 
     try {
       await createAdminMutation.mutateAsync(payload);
       resetForm();
     } catch (error) {
-      console.error('Error:', error);
+      console.error("Error:", error);
     }
   };
 
@@ -89,14 +116,14 @@ function AdminManagementPageContent() {
     if (!selectedAdmin) return;
 
     if (!fullName || !email || !userType) {
-      toast.error('Please fill all required fields');
+      toast.error("Please fill all required fields");
       return;
     }
 
     const payload = {
       full_name: fullName,
       email: email,
-      user_type: userType
+      user_type: userType,
     };
 
     // Only include password if it was changed
@@ -105,10 +132,13 @@ function AdminManagementPageContent() {
     }
 
     try {
-      await updateAdminMutation.mutateAsync({ adminId: selectedAdmin, adminData: payload });
+      await updateAdminMutation.mutateAsync({
+        adminId: selectedAdmin,
+        adminData: payload,
+      });
       resetForm();
     } catch (error) {
-      console.error('Error:', error);
+      console.error("Error:", error);
     }
   };
 
@@ -125,7 +155,7 @@ function AdminManagementPageContent() {
     try {
       await deleteAdminMutation.mutateAsync(adminId);
     } catch (error) {
-      console.error('Error:', error);
+      console.error("Error:", error);
     }
   };
 
@@ -138,7 +168,7 @@ function AdminManagementPageContent() {
     setFullName(admin.full_name);
     setEmail(admin.email);
     setPassword(""); // Clear password for security
-    setUserType(admin.UserType?.description || "Admin"); 
+    setUserType(admin.UserType?.description || "Admin");
     setSelectedAdmin(admin.admin_id);
     setIsModalOpen(true);
   }, []);
@@ -154,7 +184,7 @@ function AdminManagementPageContent() {
               value={searchQuery}
               onChange={handleSearch}
             />
-            <Button 
+            <Button
               onClick={handleOpenAddModal}
               className="flex items-center gap-2"
             >
@@ -164,7 +194,11 @@ function AdminManagementPageContent() {
           </div>
         </CardHeader>
         <CardContent>
-          {isLoading && <div className="flex justify-center py-6">Loading administrators...</div>}
+          {isLoading && (
+            <div className="flex justify-center py-6">
+              Loading administrators...
+            </div>
+          )}
           {error && (
             <div className="flex flex-col items-center py-6 space-y-4">
               <p className="text-red-600">Failed to load administrators</p>
@@ -175,12 +209,68 @@ function AdminManagementPageContent() {
           )}
           {!isLoading && !error && (
             <>
-              <AdminList 
-                admins={paginatedAdmins} 
-                onEdit={handleOpenEditModal} 
-                onDelete={handleDeleteAdmin} 
+              <DataTable
+                data={paginatedAdmins}
+                columns={[
+                  {
+                    key: "admin_id",
+                    header: "ID",
+                    accessor: "admin_id",
+                    cellClassName: "font-medium",
+                  },
+                  {
+                    key: "full_name",
+                    header: "Full Name",
+                    accessor: "full_name",
+                  },
+                  {
+                    key: "email",
+                    header: "Email",
+                    accessor: "email",
+                  },
+                  {
+                    key: "user_type",
+                    header: "User Type",
+                    render: (_, admin) => (
+                      <Badge
+                        variant={
+                          admin.UserType?.description === "superAdmin"
+                            ? "default"
+                            : "secondary"
+                        }
+                        className={
+                          admin.UserType?.description === "superAdmin"
+                            ? "bg-red-100 text-red-800 border-red-200"
+                            : "bg-blue-100 text-blue-800 border-blue-200"
+                        }
+                      >
+                        {admin.UserType?.description || "Admin"}
+                      </Badge>
+                    ),
+                  },
+                ]}
+                actions={
+                  isSuper
+                    ? [
+                        commonActions.edit((admin) =>
+                          handleOpenEditModal(admin)
+                        ),
+                        {
+                          label: "Delete Admin",
+                          icon: Trash2,
+                          onClick: (admin) => handleDeleteAdmin(admin.admin_id),
+                          variant: "destructive",
+                        },
+                      ]
+                    : []
+                }
+                isLoading={isLoading}
+                emptyMessage="No administrators found"
+                searchQuery={searchQuery}
+                searchEmptyMessage="No administrators found matching your search"
+                className="mt-4"
               />
-              
+
               {/* Pagination Controls */}
               <Pagination
                 currentPage={currentPage}
@@ -195,57 +285,58 @@ function AdminManagementPageContent() {
         </CardContent>
       </Card>
 
-      <Modal 
-        isOpen={isModalOpen} 
-        onClose={resetForm} 
+      <Modal
+        isOpen={isModalOpen}
+        onClose={resetForm}
         title={selectedAdmin ? "Edit Administrator" : "Add New Administrator"}
       >
-        <form onSubmit={selectedAdmin ? handleUpdateAdmin : handleAddAdmin} className="space-y-4 p-1">
+        <form
+          onSubmit={selectedAdmin ? handleUpdateAdmin : handleAddAdmin}
+          className="space-y-4 p-1"
+        >
           <div className="space-y-2">
             <Label htmlFor="fullName">Full Name</Label>
-            <Input 
+            <Input
               id="fullName"
-              type="text" 
-              value={fullName} 
-              onChange={(e) => setFullName(e.target.value)} 
+              type="text"
+              value={fullName}
+              onChange={(e) => setFullName(e.target.value)}
               placeholder="Enter full name"
-              required 
+              required
             />
           </div>
-          
+
           <div className="space-y-2">
             <Label htmlFor="email">Email Address</Label>
-            <Input 
+            <Input
               id="email"
-              type="email" 
-              value={email} 
-              onChange={(e) => setEmail(e.target.value)} 
+              type="email"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
               placeholder="Enter email address"
-              required 
+              required
             />
           </div>
-          
+
           <div className="space-y-2">
             <Label htmlFor="password">
-              {selectedAdmin ? "Password (leave blank to keep current)" : "Password"}
+              {selectedAdmin
+                ? "Password (leave blank to keep current)"
+                : "Password"}
             </Label>
-            <Input 
+            <Input
               id="password"
-              type="password" 
-              value={password} 
-              onChange={(e) => setPassword(e.target.value)} 
+              type="password"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
               placeholder={selectedAdmin ? "••••••••" : "Enter password"}
-              required={!selectedAdmin} 
+              required={!selectedAdmin}
             />
           </div>
-          
+
           <div className="space-y-2">
             <Label htmlFor="userType">User Type</Label>
-            <Select
-              value={userType}
-              onValueChange={setUserType}
-              required
-            >
+            <Select value={userType} onValueChange={setUserType} required>
               <SelectTrigger id="userType">
                 <SelectValue placeholder="Select user type" />
               </SelectTrigger>
@@ -255,27 +346,29 @@ function AdminManagementPageContent() {
               </SelectContent>
             </Select>
           </div>
-          
+
           <div className="flex justify-end gap-2 pt-2">
-            <Button 
-              type="button" 
-              onClick={resetForm}
-              variant="outline"
-            >
+            <Button type="button" onClick={resetForm} variant="outline">
               Cancel
             </Button>
-            <Button 
-              type="submit" 
+            <Button
+              type="submit"
               variant="primary"
-              disabled={createAdminMutation.isPending || updateAdminMutation.isPending}
+              disabled={
+                createAdminMutation.isPending || updateAdminMutation.isPending
+              }
             >
-              {(createAdminMutation.isPending || updateAdminMutation.isPending) ? "Processing..." : (selectedAdmin ? "Update Administrator" : "Add Administrator")}
+              {createAdminMutation.isPending || updateAdminMutation.isPending
+                ? "Processing..."
+                : selectedAdmin
+                ? "Update Administrator"
+                : "Add Administrator"}
             </Button>
           </div>
         </form>
       </Modal>
     </div>
-  )
+  );
 }
 
 export default function AdminManagementPage() {
@@ -285,4 +378,3 @@ export default function AdminManagementPage() {
     </ProtectedRoute>
   );
 }
-

@@ -1,153 +1,207 @@
-"use client"
+"use client";
 
-import { useState, useMemo } from "react"
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import { Button } from "@/components/ui/button"
-import { Input } from "@/components/ui/input"
-import { Label } from "@/components/ui/label"
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
-import { Badge } from "@/components/ui/badge"
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { Calendar, Truck, MapPin, FileText } from "lucide-react"
-import { useBookings } from "@/hooks"
-import { toast } from "sonner"
-import { PDFTemplates } from "../../lib/pdfGenerator"
+import { useState, useMemo } from "react";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
+import { Badge } from "@/components/ui/badge";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { Calendar, Truck, MapPin, FileText } from "lucide-react";
+import { useBookings } from "@/hooks";
+import { toast } from "sonner";
+import { PDFTemplates } from "../../lib/pdfGenerator";
 
 export default function DailyDeliveryTracking() {
-  const [selectedDate, setSelectedDate] = useState(new Date().toISOString().split('T')[0])
-  const [selectedArea, setSelectedArea] = useState("All")
-  const [statusFilter, setStatusFilter] = useState("All")
-  
+  const [selectedDate, setSelectedDate] = useState(
+    new Date().toISOString().split("T")[0]
+  );
+  const [selectedArea, setSelectedArea] = useState("All");
+  const [statusFilter, setStatusFilter] = useState("All");
+
   // Fetch all bookings
-  const { data: bookingsData = [], isLoading } = useBookings()
-  
+  const { data: bookingsData = [], isLoading } = useBookings();
+
   // Filter deliveries for selected date, area, and status
   const filteredDeliveries = useMemo(() => {
-    if (!bookingsData.length) return []
-    
-    return bookingsData.filter(booking => {
+    if (!bookingsData.length) return [];
+
+    return bookingsData.filter((booking) => {
       // Filter by date
-      const bookingDate = new Date(booking.scheduled_date).toISOString().split('T')[0]
-      const dateMatch = bookingDate === selectedDate
-      
+      const bookingDate = new Date(booking.scheduled_date)
+        .toISOString()
+        .split("T")[0];
+      const dateMatch = bookingDate === selectedDate;
+
       // Filter by area (phase)
-      const areaMatch = selectedArea === "All" || 
-        booking.Customer?.Phase?.phase_name === selectedArea
-      
+      const areaMatch =
+        selectedArea === "All" ||
+        booking.Customer?.Phase?.phase_name === selectedArea;
+
       // Filter by status
-      const statusMatch = statusFilter === "All" || booking.status === statusFilter
-      
-      return dateMatch && areaMatch && statusMatch
-    })
-  }, [bookingsData, selectedDate, selectedArea, statusFilter])
-  
+      const statusMatch =
+        statusFilter === "All" || booking.status === statusFilter;
+
+      return dateMatch && areaMatch && statusMatch;
+    });
+  }, [bookingsData, selectedDate, selectedArea, statusFilter]);
+
   // Get unique areas/phases from bookings
   const availableAreas = useMemo(() => {
-    const areas = new Set()
-    bookingsData.forEach(booking => {
+    const areas = new Set();
+    bookingsData.forEach((booking) => {
       if (booking.Customer?.Phase?.phase_name) {
-        areas.add(booking.Customer.Phase.phase_name)
+        areas.add(booking.Customer.Phase.phase_name);
       }
-    })
-    return Array.from(areas).sort()
-  }, [bookingsData])
-  
+    });
+    return Array.from(areas).sort();
+  }, [bookingsData]);
+
   // Get unique statuses from bookings
   const availableStatuses = useMemo(() => {
-    const statuses = new Set()
-    bookingsData.forEach(booking => {
+    const statuses = new Set();
+    bookingsData.forEach((booking) => {
       if (booking.status) {
-        statuses.add(booking.status)
+        statuses.add(booking.status);
       }
-    })
-    return Array.from(statuses).sort()
-  }, [bookingsData])
-  
+    });
+    return Array.from(statuses).sort();
+  }, [bookingsData]);
+
   // Group deliveries by area for summary
   const deliverySummary = useMemo(() => {
-    const summary = {}
-    filteredDeliveries.forEach(delivery => {
-      const area = delivery.Customer?.Phase?.phase_name || "Unknown"
+    const summary = {};
+    filteredDeliveries.forEach((delivery) => {
+      const area = delivery.Customer?.Phase?.phase_name || "Unknown";
       if (!summary[area]) {
         summary[area] = {
           count: 0,
           tankers: new Set(),
-          waterDelivered: 0
-        }
+          waterDelivered: 0,
+        };
       }
-      summary[area].count++
-      summary[area].tankers.add(delivery.Tanker?.tanker_name || "Unknown")
-      summary[area].waterDelivered += delivery.Tanker?.capacity || 0
-    })
-    
+      summary[area].count++;
+      summary[area].tankers.add(delivery.Tanker?.tanker_name || "Unknown");
+      summary[area].waterDelivered += delivery.Tanker?.capacity || 0;
+    });
+
     // Convert tankers Set to Array for display
-    Object.keys(summary).forEach(area => {
-      summary[area].tankers = Array.from(summary[area].tankers)
-    })
-    
-    return summary
-  }, [filteredDeliveries])
-  
+    Object.keys(summary).forEach((area) => {
+      summary[area].tankers = Array.from(summary[area].tankers);
+    });
+
+    return summary;
+  }, [filteredDeliveries]);
+
   // Calculate total water delivered
   const totalWaterDelivered = useMemo(() => {
-    return filteredDeliveries.reduce((sum, delivery) => sum + (delivery.Tanker?.capacity || 0), 0)
-  }, [filteredDeliveries])
-  
+    return filteredDeliveries.reduce(
+      (sum, delivery) => sum + (delivery.Tanker?.capacity || 0),
+      0
+    );
+  }, [filteredDeliveries]);
+
   const generatePDF = () => {
     const summaryStats = [
-      { label: 'Total Deliveries', value: filteredDeliveries.length, color: [66, 139, 202] },
-      { label: 'Areas Served', value: Object.keys(deliverySummary).length, color: [40, 167, 69] },
-      { label: 'Water Delivered', value: `${totalWaterDelivered.toLocaleString()}G`, color: [23, 162, 184] },
-    ]
+      {
+        label: "Total Deliveries",
+        value: filteredDeliveries.length,
+        color: [66, 139, 202],
+      },
+      {
+        label: "Areas Served",
+        value: Object.keys(deliverySummary).length,
+        color: [40, 167, 69],
+      },
+      {
+        label: "Water Delivered",
+        value: `${totalWaterDelivered.toLocaleString()}G`,
+        color: [23, 162, 184],
+      },
+    ];
 
     const keyInfo = [
-      { key: 'Report Date', value: new Date(selectedDate).toLocaleDateString() },
-      { key: 'Selected Area', value: selectedArea || 'All Areas' },
-      { key: 'Status Filter', value: statusFilter || 'All Statuses' },
-      { key: 'Generated By', value: 'Admin Dashboard' },
-      { key: 'Report Type', value: 'Daily Delivery Tracking' }
-    ]
+      {
+        key: "Report Date",
+        value: new Date(selectedDate).toLocaleDateString(),
+      },
+      { key: "Selected Area", value: selectedArea || "All Areas" },
+      { key: "Status Filter", value: statusFilter || "All Statuses" },
+      { key: "Generated By", value: "Admin Dashboard" },
+      { key: "Report Type", value: "Daily Delivery Tracking" },
+    ];
 
-    const tableData = filteredDeliveries.map(delivery => {
-      const customer = delivery.Customer || {}
-      const address = customer.street_address ? 
-        `${customer.street_address}, ${customer.Phase?.phase_name || 'N/A'}` : 
-        `${customer.Phase?.phase_name || 'N/A'}`
-        
+    const tableData = filteredDeliveries.map((delivery) => {
+      const customer = delivery.Customer || {};
+      const address = customer.street_address
+        ? `${customer.street_address}, ${customer.Phase?.phase_name || "N/A"}`
+        : `${customer.Phase?.phase_name || "N/A"}`;
+
       return [
         delivery.booking_id,
         customer.full_name || "N/A",
         delivery.Tanker?.tanker_name || "N/A",
         delivery.Tanker?.capacity?.toLocaleString() || "N/A",
         address,
-        delivery.Admin?.full_name || "N/A"
-      ]
-    })
+        delivery.Admin?.full_name || "N/A",
+      ];
+    });
 
-    const areaWiseTableData = Object.entries(deliverySummary).map(([area, data]) => [
-      area,
-      data.count,
-      data.tankers.join(', '),
-      data.waterDelivered.toLocaleString()
-    ])
+    const areaWiseTableData = Object.entries(deliverySummary).map(
+      ([area, data]) => [
+        area,
+        data.count,
+        data.tankers.join(", "),
+        data.waterDelivered.toLocaleString(),
+      ]
+    );
 
     const reportData = {
-      title: 'Daily Tanker Delivery Report',
+      title: "Daily Tanker Delivery Report",
       summary: summaryStats,
       keyInfo: keyInfo,
-      headers: ['Booking ID', 'Customer', 'Tanker', 'Capacity (G)', 'Address', 'Admin'],
+      headers: [
+        "Booking ID",
+        "Customer",
+        "Tanker",
+        "Capacity (G)",
+        "Address",
+        "Admin",
+      ],
       tableData: tableData,
-      tableTitle: 'Delivery Details',
+      tableTitle: "Delivery Details",
       additionalTables: [
         {
-          title: 'Area-wise Summary',
-          headers: ['Area', 'Deliveries', 'Tankers Used', 'Water Delivered (G)'],
+          title: "Area-wise Summary",
+          headers: [
+            "Area",
+            "Deliveries",
+            "Tankers Used",
+            "Water Delivered (G)",
+          ],
           data: areaWiseTableData,
-          theme: 'grid',
-          headerStyles: { fillColor: [40, 167, 69], textColor: [255, 255, 255] }
-        }
-      ]
-    }
+          theme: "grid",
+          headerStyles: {
+            fillColor: [40, 167, 69],
+            textColor: [255, 255, 255],
+          },
+        },
+      ],
+    };
 
     const options = {
       table: {
@@ -157,15 +211,20 @@ export default function DailyDeliveryTracking() {
           2: { cellWidth: 25 },
           3: { cellWidth: 25 },
           4: { cellWidth: 25 },
-          5: { cellWidth: 20 }
-        }
-      }
-    }
+          5: { cellWidth: 20 },
+        },
+      },
+    };
 
-    PDFTemplates.deliveryReport(reportData, options).save(`daily-deliveries-${selectedDate}-${selectedArea.replace(/\s+/g, '_')}.pdf`)
-    toast.success("PDF report generated successfully")
-  }
-  
+    PDFTemplates.deliveryReport(reportData, options).save(
+      `daily-deliveries-${selectedDate}-${selectedArea.replace(
+        /\s+/g,
+        "_"
+      )}.pdf`
+    );
+    toast.success("PDF report generated successfully");
+  };
+
   return (
     <div className="space-y-6">
       <Card>
@@ -187,7 +246,7 @@ export default function DailyDeliveryTracking() {
                 className="mt-1 w-full max-w-[200px]"
               />
             </div>
-            
+
             <div>
               <Label htmlFor="area-filter">Filter by Area</Label>
               <Select value={selectedArea} onValueChange={setSelectedArea}>
@@ -196,13 +255,15 @@ export default function DailyDeliveryTracking() {
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="All">All Areas</SelectItem>
-                  {availableAreas.map(area => (
-                    <SelectItem key={area} value={area}>{area}</SelectItem>
+                  {availableAreas.map((area) => (
+                    <SelectItem key={area} value={area}>
+                      {area}
+                    </SelectItem>
                   ))}
                 </SelectContent>
               </Select>
             </div>
-            
+
             <div>
               <Label htmlFor="status-filter">Filter by Status</Label>
               <Select value={statusFilter} onValueChange={setStatusFilter}>
@@ -211,15 +272,17 @@ export default function DailyDeliveryTracking() {
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="All">All Statuses</SelectItem>
-                  {availableStatuses.map(status => (
-                    <SelectItem key={status} value={status}>{status}</SelectItem>
+                  {availableStatuses.map((status) => (
+                    <SelectItem key={status} value={status}>
+                      {status}
+                    </SelectItem>
                   ))}
                 </SelectContent>
               </Select>
             </div>
-            
+
             <div className="flex items-end">
-              <Button 
+              <Button
                 onClick={generatePDF}
                 disabled={filteredDeliveries.length === 0}
                 className="w-full max-w-[200px]"
@@ -229,36 +292,48 @@ export default function DailyDeliveryTracking() {
               </Button>
             </div>
           </div>
-          
+
           {/* Summary Cards */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
             <Card>
               <CardContent className="p-6">
                 <div className="flex items-center justify-between">
                   <div>
-                    <p className="text-sm font-medium text-muted-foreground">Total Deliveries</p>
-                    <p className="text-3xl font-bold">{filteredDeliveries.length}</p>
-                    <p className="text-xs text-muted-foreground mt-1">Water Delivered: {totalWaterDelivered.toLocaleString()}G</p>
+                    <p className="text-sm font-medium text-muted-foreground">
+                      Total Deliveries
+                    </p>
+                    <p className="text-3xl font-bold">
+                      {filteredDeliveries.length}
+                    </p>
+                    <p className="text-xs text-muted-foreground mt-1">
+                      Water Delivered: {totalWaterDelivered.toLocaleString()}G
+                    </p>
                   </div>
                   <Truck className="h-10 w-10 text-blue-500" />
                 </div>
               </CardContent>
             </Card>
-            
+
             <Card>
               <CardContent className="p-6">
                 <div className="flex items-center justify-between">
                   <div>
-                    <p className="text-sm font-medium text-muted-foreground">Areas Served</p>
-                    <p className="text-3xl font-bold">{Object.keys(deliverySummary).length}</p>
-                    <p className="text-xs text-muted-foreground mt-1">Unique locations covered</p>
+                    <p className="text-sm font-medium text-muted-foreground">
+                      Areas Served
+                    </p>
+                    <p className="text-3xl font-bold">
+                      {Object.keys(deliverySummary).length}
+                    </p>
+                    <p className="text-xs text-muted-foreground mt-1">
+                      Unique locations covered
+                    </p>
                   </div>
                   <MapPin className="h-10 w-10 text-green-500" />
                 </div>
               </CardContent>
             </Card>
           </div>
-          
+
           {/* Deliveries Table */}
           <div className="rounded-md border">
             <Table>
@@ -283,44 +358,55 @@ export default function DailyDeliveryTracking() {
                   </TableRow>
                 ) : filteredDeliveries.length === 0 ? (
                   <TableRow>
-                    <TableCell colSpan={8} className="text-center py-8 text-muted-foreground">
-                      No deliveries found for {new Date(selectedDate).toLocaleDateString()}
+                    <TableCell
+                      colSpan={8}
+                      className="text-center py-8 text-muted-foreground"
+                    >
+                      No deliveries found for{" "}
+                      {new Date(selectedDate).toLocaleDateString()}
                       {selectedArea !== "All" && ` in ${selectedArea}`}
                     </TableCell>
                   </TableRow>
                 ) : (
                   filteredDeliveries.map((delivery) => {
-                    const customer = delivery.Customer || {}
-                    const address = customer.street_address ? 
-                      `${customer.street_address}` : 
-                      "N/A"
-                      
+                    const customer = delivery.Customer || {};
+                    const address = customer.street_address
+                      ? `${customer.street_address}`
+                      : "N/A";
+
                     return (
                       <TableRow key={delivery.booking_id}>
-                        <TableCell className="font-medium">{delivery.booking_id}</TableCell>
+                        <TableCell className="font-medium">
+                          {delivery.booking_id}
+                        </TableCell>
                         <TableCell>{customer.full_name || "N/A"}</TableCell>
-                        <TableCell>{delivery.Tanker?.tanker_name || "N/A"}</TableCell>
-                        <TableCell>{delivery.Tanker?.capacity?.toLocaleString() || "N/A"}G</TableCell>
+                        <TableCell>
+                          {delivery.Tanker?.tanker_name || "N/A"}
+                        </TableCell>
+                        <TableCell>
+                          {delivery.Tanker?.capacity?.toLocaleString() || "N/A"}
+                          G
+                        </TableCell>
                         <TableCell>
                           <Badge variant="outline">
                             {customer.Phase?.phase_name || "Unknown"}
                           </Badge>
                         </TableCell>
                         <TableCell>{address}</TableCell>
-                        <TableCell>{delivery.Admin?.full_name || "N/A"}</TableCell>
                         <TableCell>
-                          <Badge variant="success">
-                            {delivery.status}
-                          </Badge>
+                          {delivery.Admin?.full_name || "N/A"}
+                        </TableCell>
+                        <TableCell>
+                          <Badge variant="success">{delivery.status}</Badge>
                         </TableCell>
                       </TableRow>
-                    )
+                    );
                   })
                 )}
               </TableBody>
             </Table>
           </div>
-          
+
           {/* Area-wise Summary */}
           {Object.keys(deliverySummary).length > 0 && (
             <div className="mt-6">
@@ -332,18 +418,30 @@ export default function DailyDeliveryTracking() {
                       <h4 className="font-semibold text-lg mb-2">{area}</h4>
                       <div className="space-y-2">
                         <div className="flex justify-between">
-                          <span className="text-sm text-muted-foreground">Deliveries:</span>
+                          <span className="text-sm text-muted-foreground">
+                            Deliveries:
+                          </span>
                           <span className="font-medium">{data.count}</span>
                         </div>
                         <div className="flex justify-between">
-                          <span className="text-sm text-muted-foreground">Water Delivered:</span>
-                          <span className="font-medium">{data.waterDelivered.toLocaleString()}G</span>
+                          <span className="text-sm text-muted-foreground">
+                            Water Delivered:
+                          </span>
+                          <span className="font-medium">
+                            {data.waterDelivered.toLocaleString()}G
+                          </span>
                         </div>
                         <div>
-                          <span className="text-sm text-muted-foreground">Tankers Used:</span>
+                          <span className="text-sm text-muted-foreground">
+                            Tankers Used:
+                          </span>
                           <div className="flex flex-wrap gap-1 mt-1">
-                            {data.tankers.map(tanker => (
-                              <Badge key={tanker} variant="secondary" className="text-xs">
+                            {data.tankers.map((tanker) => (
+                              <Badge
+                                key={tanker}
+                                variant="secondary"
+                                className="text-xs"
+                              >
                                 {tanker}
                               </Badge>
                             ))}
@@ -359,5 +457,5 @@ export default function DailyDeliveryTracking() {
         </CardContent>
       </Card>
     </div>
-  )
+  );
 }

@@ -11,25 +11,15 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
-import { FileText, RefreshCw, Search } from "lucide-react";
+import { FileText, RefreshCw, Search, Eye } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
 import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
-import { MoreHorizontal, Eye } from "lucide-react";
+  DataTable,
+  commonActions,
+  badgeVariants,
+} from "@/components/common/data-table";
 import {
   Dialog,
   DialogContent,
@@ -38,7 +28,13 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from "@/components/ui/select";
+import {
+  Select,
+  SelectTrigger,
+  SelectValue,
+  SelectContent,
+  SelectItem,
+} from "@/components/ui/select";
 import { usePagination } from "@/hooks";
 import { useSearch } from "@/hooks/useSearch";
 import { SearchInput } from "@/components/common/search-input";
@@ -48,7 +44,7 @@ export default function SystemLogsPage() {
   // React Query hooks
   const { data: logs = [], isLoading, error } = useAuditLogs();
   const refreshAuditLogs = useRefreshAuditLogs();
-  
+
   // Local state
   const [viewingLog, setViewingLog] = useState(null);
   const [isViewModalOpen, setIsViewModalOpen] = useState(false);
@@ -57,12 +53,22 @@ export default function SystemLogsPage() {
     searchQuery,
     filteredData: filteredLogs,
     handleSearch,
-    clearSearch
-  } = useSearch(logs, ['table_name', 'operation_type', 'primary_key_value', 'changed_by', 'changed_data'], {
-    resetPageOnSearch: true,
-    onPageReset: () => handlePageChange(1)
-  });
-  
+    clearSearch,
+  } = useSearch(
+    logs,
+    [
+      "table_name",
+      "operation_type",
+      "primary_key_value",
+      "changed_by",
+      "changed_data",
+    ],
+    {
+      resetPageOnSearch: true,
+      onPageReset: () => handlePageChange(1),
+    }
+  );
+
   // Use pagination hook
   const {
     currentPage,
@@ -72,10 +78,8 @@ export default function SystemLogsPage() {
     handlePageChange,
     handleItemsPerPageChange,
     goToNextPage,
-    goToPreviousPage
+    goToPreviousPage,
   } = usePagination(filteredLogs, 10);
-
-
 
   // Handle refresh
   const handleRefresh = () => {
@@ -91,9 +95,9 @@ export default function SystemLogsPage() {
   // Format the log as a human-readable summary
   const formatLogSummary = (log) => {
     if (!log) return "";
-    
+
     let summary = `${log.changed_by} ${log.operation_type.toLowerCase()}d `;
-    
+
     switch (log.operation_type) {
       case "INSERT":
         summary += `a new record in ${log.table_name}`;
@@ -102,12 +106,14 @@ export default function SystemLogsPage() {
         summary += `record #${log.primary_key_value} in ${log.table_name}`;
         break;
       case "DELETE":
-        summary += `record ${log.primary_key_value ? `#${log.primary_key_value}` : ""} from ${log.table_name}`;
+        summary += `record ${
+          log.primary_key_value ? `#${log.primary_key_value}` : ""
+        } from ${log.table_name}`;
         break;
       default:
         summary += `${log.table_name}`;
     }
-    
+
     try {
       if (log.changed_data) {
         const changedData = JSON.parse(log.changed_data);
@@ -119,7 +125,7 @@ export default function SystemLogsPage() {
     } catch (error) {
       console.error("Error parsing changed data:", error);
     }
-    
+
     return summary;
   };
 
@@ -139,7 +145,11 @@ export default function SystemLogsPage() {
             onClick={handleRefresh}
             disabled={refreshAuditLogs.isPending}
           >
-            <RefreshCw className={`h-4 w-4 mr-2 ${refreshAuditLogs.isPending ? "animate-spin" : ""}`} />
+            <RefreshCw
+              className={`h-4 w-4 mr-2 ${
+                refreshAuditLogs.isPending ? "animate-spin" : ""
+              }`}
+            />
             Refresh
           </Button>
         </div>
@@ -172,87 +182,66 @@ export default function SystemLogsPage() {
             ) : error ? (
               <div className="py-6 text-center text-muted-foreground">
                 <p>Failed to load audit logs.</p>
-                <Button 
-                  variant="outline" 
-                  size="sm" 
+                <Button
+                  variant="outline"
+                  size="sm"
                   onClick={handleRefresh}
                   className="mt-2"
                 >
                   Try Again
                 </Button>
               </div>
-            ) : filteredLogs.length === 0 ? (
-              <div className="py-6 text-center text-muted-foreground">
-                No logs found.
-              </div>
             ) : (
-              <>
-                <div className="rounded-md border">
-                  <Table>
-                    <TableHeader>
-                      <TableRow>
-                        <TableHead>ID</TableHead>
-                        <TableHead>Summary</TableHead>
-                        <TableHead>Table</TableHead>
-                        <TableHead>Operation</TableHead>
-                        <TableHead>Changed By</TableHead>
-                        <TableHead>Time</TableHead>
-                        <TableHead className="w-[80px]"></TableHead>
-                      </TableRow>
-                    </TableHeader>
-                    <TableBody>
-                      {paginatedLogs.map((log) => (
-                        <TableRow key={log.id}>
-                          <TableCell className="font-medium">
-                            {log.id}
-                          </TableCell>
-                          <TableCell className="max-w-xs truncate">
-                            {formatLogSummary(log)}
-                          </TableCell>
-                          <TableCell>
-                            <Badge variant="outline">{log.table_name}</Badge>
-                          </TableCell>
-                          <TableCell>
-                            <Badge
-                              variant={
-                                log.operation_type === "INSERT"
-                                  ? "success"
-                                  : log.operation_type === "UPDATE"
-                                  ? "warning"
-                                  : "destructive"
-                              }
-                            >
-                              {log.operation_type}
-                            </Badge>
-                          </TableCell>
-                          <TableCell>{log.changed_by}</TableCell>
-                          <TableCell>{formatDate(log.changed_at)}</TableCell>
-                          <TableCell>
-                            <DropdownMenu>
-                              <DropdownMenuTrigger asChild>
-                                <Button
-                                  variant="ghost"
-                                  className="h-8 w-8 p-0"
-                                >
-                                  <span className="sr-only">Open menu</span>
-                                  <MoreHorizontal className="h-4 w-4" />
-                                </Button>
-                              </DropdownMenuTrigger>
-                              <DropdownMenuContent align="end">
-                                <DropdownMenuItem
-                                  onClick={() => handleViewLog(log)}
-                                >
-                                  <Eye className="mr-2 h-4 w-4" />
-                                  View Details
-                                </DropdownMenuItem>
-                              </DropdownMenuContent>
-                            </DropdownMenu>
-                          </TableCell>
-                        </TableRow>
-                      ))}
-                    </TableBody>
-                  </Table>
-                </div>
+              <div className="space-y-4">
+                <DataTable
+                  data={paginatedLogs}
+                  columns={[
+                    {
+                      key: "id",
+                      header: "ID",
+                      accessor: "id",
+                      cellClassName: "font-medium",
+                    },
+                    {
+                      key: "summary",
+                      header: "Summary",
+                      render: (_, log) => formatLogSummary(log),
+                      type: "truncate",
+                      maxWidth: "max-w-xs",
+                    },
+                    {
+                      key: "table_name",
+                      header: "Table",
+                      accessor: "table_name",
+                      type: "badge",
+                      badgeVariant: () => "outline",
+                    },
+                    {
+                      key: "operation_type",
+                      header: "Operation",
+                      accessor: "operation_type",
+                      type: "badge",
+                      badgeVariant: badgeVariants.operation,
+                    },
+                    {
+                      key: "changed_by",
+                      header: "Changed By",
+                      accessor: "changed_by",
+                    },
+                    {
+                      key: "changed_at",
+                      header: "Time",
+                      accessor: "changed_at",
+                      type: "date",
+                    },
+                  ]}
+                  actions={[commonActions.view((log) => handleViewLog(log))]}
+                  isLoading={isLoading}
+                  emptyMessage="No logs found"
+                  searchQuery={searchQuery}
+                  searchEmptyMessage="No logs found matching your search"
+                  className="mt-4"
+                />
 
                 {/* Pagination Controls */}
                 <Pagination
@@ -264,7 +253,7 @@ export default function SystemLogsPage() {
                   onItemsPerPageChange={handleItemsPerPageChange}
                   className="mt-6"
                 />
-              </>
+              </div>
             )}
           </CardContent>
         </Card>
@@ -283,42 +272,62 @@ export default function SystemLogsPage() {
             <div className="space-y-4">
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <p className="text-sm font-medium text-muted-foreground">Log ID</p>
+                  <p className="text-sm font-medium text-muted-foreground">
+                    Log ID
+                  </p>
                   <p>{viewingLog.id}</p>
                 </div>
                 <div>
-                  <p className="text-sm font-medium text-muted-foreground">Table</p>
+                  <p className="text-sm font-medium text-muted-foreground">
+                    Table
+                  </p>
                   <p>{viewingLog.table_name}</p>
                 </div>
                 <div>
-                  <p className="text-sm font-medium text-muted-foreground">Operation</p>
+                  <p className="text-sm font-medium text-muted-foreground">
+                    Operation
+                  </p>
                   <p>{viewingLog.operation_type}</p>
                 </div>
                 <div>
-                  <p className="text-sm font-medium text-muted-foreground">Record ID</p>
+                  <p className="text-sm font-medium text-muted-foreground">
+                    Record ID
+                  </p>
                   <p>{viewingLog.primary_key_value || "N/A"}</p>
                 </div>
                 <div>
-                  <p className="text-sm font-medium text-muted-foreground">Changed By</p>
+                  <p className="text-sm font-medium text-muted-foreground">
+                    Changed By
+                  </p>
                   <p>{viewingLog.changed_by}</p>
                 </div>
                 <div>
-                  <p className="text-sm font-medium text-muted-foreground">Changed At</p>
+                  <p className="text-sm font-medium text-muted-foreground">
+                    Changed At
+                  </p>
                   <p>{formatDate(viewingLog.changed_at)}</p>
                 </div>
               </div>
-              
+
               <div>
-                <p className="text-sm font-medium text-muted-foreground">Summary</p>
+                <p className="text-sm font-medium text-muted-foreground">
+                  Summary
+                </p>
                 <p className="mb-2">{formatLogSummary(viewingLog)}</p>
               </div>
-              
+
               {viewingLog.changed_data && (
                 <div>
-                  <p className="text-sm font-medium text-muted-foreground">Changed Data</p>
+                  <p className="text-sm font-medium text-muted-foreground">
+                    Changed Data
+                  </p>
                   <ScrollArea className="h-[200px] rounded-md border p-4">
                     <pre className="text-xs">
-                      {JSON.stringify(JSON.parse(viewingLog.changed_data), null, 2)}
+                      {JSON.stringify(
+                        JSON.parse(viewingLog.changed_data),
+                        null,
+                        2
+                      )}
                     </pre>
                   </ScrollArea>
                 </div>

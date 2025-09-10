@@ -1,12 +1,12 @@
-import React from 'react';
-import { motion } from 'framer-motion';
+import React from "react";
+import { motion } from "framer-motion";
 
 export const WaterTank = ({ waterLevel }) => {
   return (
     <div className="w-48 h-64 bg-gradient-to-b from-cyan-100 to-blue-200 border-2 border-cyan-400 rounded-lg relative overflow-hidden">
       <motion.div
         className="absolute bottom-0 left-0 right-0 bg-gradient-to-b from-cyan-400 to-blue-600"
-        initial={{ height: '0%' }}
+        initial={{ height: "0%" }}
         animate={{ height: `${waterLevel}%` }}
         transition={{ duration: 1, ease: "easeInOut" }}
       >

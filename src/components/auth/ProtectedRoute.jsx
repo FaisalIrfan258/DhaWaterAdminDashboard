@@ -1,8 +1,8 @@
-'use client';
-import { useEffect } from 'react';
-import { useRouter } from 'next/navigation';
-import { useUser } from '../../context/UserContext';
-import { Button } from '@/components/ui/button';
+"use client";
+import { useEffect } from "react";
+import { useRouter } from "next/navigation";
+import { useUser } from "../../context/UserContext";
+import { Button } from "@/components/ui/button";
 
 const ProtectedRoute = ({ children, requireSuperAdmin = false }) => {
   const { user, isLoading } = useUser();
@@ -12,13 +12,16 @@ const ProtectedRoute = ({ children, requireSuperAdmin = false }) => {
     if (!isLoading) {
       // If user is not authenticated, redirect to login
       if (!user) {
-        router.push('/login');
+        router.push("/login");
         return;
       }
 
       // If super admin access is required but user is not super admin
-      if (requireSuperAdmin && (!user.isSuperAdmin || user.user_type !== 'superAdmin')) {
-        router.push('/dashboard?error=access_denied');
+      if (
+        requireSuperAdmin &&
+        (!user.isSuperAdmin || user.user_type !== "superAdmin")
+      ) {
+        router.push("/dashboard?error=access_denied");
         return;
       }
     }
@@ -39,16 +42,20 @@ const ProtectedRoute = ({ children, requireSuperAdmin = false }) => {
   }
 
   // Don't render if super admin access required but user is not super admin
-  if (requireSuperAdmin && (!user.isSuperAdmin || user.user_type !== 'superAdmin')) {
+  if (
+    requireSuperAdmin &&
+    (!user.isSuperAdmin || user.user_type !== "superAdmin")
+  ) {
     return (
       <div className="flex min-h-screen items-center justify-center">
         <div className="text-center">
-          <h2 className="text-2xl font-bold text-red-600 mb-4">Access Denied</h2>
-          <p className="text-gray-600 mb-4">You don't have permission to access this page.</p>
-          <Button 
-            onClick={() => router.push('/dashboard')}
-            variant="primary"
-          >
+          <h2 className="text-2xl font-bold text-red-600 mb-4">
+            Access Denied
+          </h2>
+          <p className="text-gray-600 mb-4">
+            You don't have permission to access this page.
+          </p>
+          <Button onClick={() => router.push("/dashboard")} variant="primary">
             Go to Dashboard
           </Button>
         </div>
