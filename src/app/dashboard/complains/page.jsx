@@ -20,8 +20,7 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
-import { MessageSquare, Search, RefreshCw } from "lucide-react";
-import { Input } from "@/components/ui/input";
+import { MessageSquare, RefreshCw } from "lucide-react";
 import {
   Dialog,
   DialogContent,
@@ -39,43 +38,44 @@ import {
   SelectContent,
   SelectItem,
 } from "@/components/ui/select";
+import { useSearch } from "@/hooks/useSearch";
+import { SearchInput } from "@/components/common/search-input";
 
 import { useComplaints, useUpdateComplaintRemarks, usePagination } from "@/hooks";
-import { Pagination } from "@/components/ui/pagination";
+import { Pagination } from "@/components/common/pagination";
 
 export default function ComplaintsPage() {
   const { user } = useUser();
   const { data: complaints = [], isLoading: loading, error, refetch } = useComplaints();
   const updateComplaintMutation = useUpdateComplaintRemarks();
   
-  const [searchQuery, setSearchQuery] = useState("");
   const [statusFilter, setStatusFilter] = useState("All");
   const [isUpdateDialogOpen, setIsUpdateDialogOpen] = useState(false);
   const [selectedComplaint, setSelectedComplaint] = useState(null);
   const [remarks, setRemarks] = useState("");
+  // Search functionality
+  const {
+    searchQuery,
+    filteredData: searchFilteredComplaints,
+    handleSearch,
+    clearSearch
+  } = useSearch(complaints, ['complain_id', 'Customer.full_name', 'Customer.phone_number', 'complain_description'], {
+    resetPageOnSearch: true,
+    onPageReset: () => handlePageChange(1)
+  });
+
   // Filter and sort complaints using useMemo
   const filteredComplaints = useMemo(() => {
-    let filtered = complaints;
+    let filtered = searchFilteredComplaints;
 
     // Apply status filter
     if (statusFilter !== "All") {
       filtered = filtered.filter(complaint => complaint.status === statusFilter);
     }
 
-    // Apply search filter
-    if (searchQuery.trim()) {
-      const query = searchQuery.toLowerCase();
-      filtered = filtered.filter(complaint => 
-        complaint.complain_id?.toString().includes(query) ||
-        complaint.Customer?.full_name?.toLowerCase().includes(query) ||
-        complaint.Customer?.phone_number?.includes(query) ||
-        complaint.complain_description?.toLowerCase().includes(query)
-      );
-    }
-
     // Sort by date (newest first)
     return filtered.sort((a, b) => new Date(b.complain_date) - new Date(a.complain_date));
-  }, [complaints, statusFilter, searchQuery]);
+  }, [searchFilteredComplaints, statusFilter]);
 
   // Use pagination hook
   const {
@@ -89,11 +89,7 @@ export default function ComplaintsPage() {
     goToPreviousPage
   } = usePagination(filteredComplaints, 10);
 
-  // Handle search
-  const handleSearch = useCallback((e) => {
-    setSearchQuery(e.target.value);
-    handlePageChange(1); // Reset to first page when searching
-  }, [handlePageChange]);
+
 
   // Handle refresh
   const handleRefresh = async () => {
@@ -187,16 +183,12 @@ export default function ComplaintsPage() {
           </CardHeader>
           <CardContent>
             <div className="flex justify-between items-center mb-4">
-              <div className="relative w-64">
-                <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
-                <Input
-                  type="search"
-                  placeholder="Search complaints..."
-                  className="pl-8"
-                  value={searchQuery}
-                  onChange={handleSearch}
-                />
-              </div>
+              <SearchInput
+                placeholder="Search complaints..."
+                value={searchQuery}
+                onChange={handleSearch}
+                className="w-64"
+              />
 
               {searchQuery && (
                 <div className="text-sm text-muted-foreground">

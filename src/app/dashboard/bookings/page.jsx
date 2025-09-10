@@ -21,10 +21,11 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
-import { Calendar, Search, RefreshCw, MoreHorizontal } from "lucide-react";
-import { Pagination } from "@/components/ui/pagination";
+import { Calendar, RefreshCw, MoreHorizontal } from "lucide-react";
+import { Pagination } from "@/components/common/pagination";
 import { usePagination } from "@/hooks";
-import { Input } from "@/components/ui/input";
+import { useSearch } from "@/hooks/useSearch";
+import { SearchInput } from "@/components/common/search-input";
 import { toast } from "sonner";
 import {
   DropdownMenu,
@@ -61,7 +62,6 @@ export default function BookingsPage() {
   const updateBookingMutation = useUpdateBooking();
   const deleteBookingMutation = useDeleteBooking();
   
-  const [searchQuery, setSearchQuery] = useState("");
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [isViewModalOpen, setIsViewModalOpen] = useState(false);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
@@ -83,27 +83,21 @@ export default function BookingsPage() {
     );
   }, [bookingsData]);
 
-  // Filter bookings based on search query and status
-  const filteredBookings = useMemo(() => {
-    let filtered = sortedBookings;
-
-    // Filter by status
-    if (statusFilter !== "All") {
-      filtered = filtered.filter((booking) => booking.status === statusFilter);
+  // Filter bookings by status first
+  const statusFilteredBookings = useMemo(() => {
+    if (statusFilter === "All") {
+      return sortedBookings;
     }
+    return sortedBookings.filter((booking) => booking.status === statusFilter);
+  }, [sortedBookings, statusFilter]);
 
-    // Filter by search query
-    if (searchQuery && searchQuery.trim()) {
-      const query = searchQuery.toLowerCase();
-      filtered = filtered.filter(
-        (booking) =>
-          booking.status.toLowerCase().includes(query) ||
-          booking.scheduled_date.toLowerCase().includes(query)
-      );
-    }
-
-    return filtered;
-  }, [sortedBookings, searchQuery, statusFilter]);
+  // Search functionality
+  const {
+    searchQuery,
+    filteredData: filteredBookings,
+    handleSearch,
+    clearSearch
+  } = useSearch(statusFilteredBookings, ['status', 'scheduled_date', 'Customer.full_name', 'Tanker.tanker_name', 'Admin.full_name']);
 
   // Pagination hook
   const {
@@ -119,9 +113,7 @@ export default function BookingsPage() {
 
 
 
-  const handleSearch = useCallback((e) => {
-    setSearchQuery(e.target.value);
-  }, []);
+
 
   const handleRefresh = async () => {
     setIsRefreshing(true);
@@ -219,16 +211,12 @@ export default function BookingsPage() {
         </CardHeader>
         <CardContent>
           <div className="flex justify-between items-center mb-4">
-            <div className="relative w-64">
-              <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
-              <Input
-                type="search"
-                placeholder="Search bookings..."
-                className="pl-8"
-                value={searchQuery}
-                onChange={handleSearch}
-              />
-            </div>
+            <SearchInput
+              placeholder="Search bookings..."
+              value={searchQuery}
+              onChange={handleSearch}
+              className="w-64"
+            />
             <div className="flex items-center gap-2"></div>
           </div>
 

@@ -14,3 +14,4 @@ export * from './useTanks';
 export * from './useAudit';
 export * from './useSecureAuth';
 export * from './usePagination';
+export * from './useSearch';

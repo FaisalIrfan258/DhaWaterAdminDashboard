@@ -8,8 +8,10 @@ import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { Badge } from "@/components/ui/badge"
-import { Car, Search, RefreshCw, X, Plus, Pencil, Eye, MoreHorizontal, Trash2 } from "lucide-react"
+import { Car, RefreshCw, X, Plus, Pencil, Eye, MoreHorizontal, Trash2 } from "lucide-react"
 import { Input } from "@/components/ui/input"
+import { SearchInput } from "@/components/common/search-input"
+import { useSearch } from "@/hooks/useSearch"
 import { toast } from "sonner"
 import {
   Dialog,
@@ -40,7 +42,7 @@ import {
 } from "@/components/ui/dropdown-menu"
 
 import { useDrivers, useCreateDriver, useUpdateDriver, useDeleteDriver, useDriverDeliveryReport, usePagination } from "@/hooks"
-import { Pagination } from "@/components/ui/pagination"
+import { Pagination } from "@/components/common/pagination"
 import { PDFTemplates } from "../../../lib/pdfGenerator"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 
@@ -53,7 +55,6 @@ export default function DriversPage() {
   const updateDriverMutation = useUpdateDriver()
   const deleteDriverMutation = useDeleteDriver()
   
-  const [searchQuery, setSearchQuery] = useState("")
   const [isRefreshing, setIsRefreshing] = useState(false)
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false)
   const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false)
@@ -110,30 +111,25 @@ export default function DriversPage() {
     return [...driversData].sort((a, b) => new Date(b.created_at) - new Date(a.created_at))
   }, [driversData])
 
+  // Search functionality
+  const {
+    searchQuery,
+    filteredData: searchFilteredDrivers,
+    handleSearch,
+    clearSearch
+  } = useSearch(sortedDrivers, ['full_name', 'email', 'phone_number', 'license_number', 'username'])
+
   // Filter drivers based on search query and status filter
   const filteredDrivers = useMemo(() => {
-    let filtered = [...sortedDrivers]
+    let filtered = [...searchFilteredDrivers]
     
     // Apply status filter
     if (statusFilter !== "All") {
       filtered = filtered.filter((driver) => driver.status === statusFilter)
     }
     
-    // Apply search filter
-    if (searchQuery.trim()) {
-      const query = searchQuery.toLowerCase()
-      filtered = filtered.filter(
-        (driver) =>
-          driver.full_name?.toLowerCase().includes(query) ||
-          driver.email?.toLowerCase().includes(query) ||
-          driver.phone_number?.toLowerCase().includes(query) ||
-          driver.license_number?.toLowerCase().includes(query) ||
-          driver.username?.toLowerCase().includes(query)
-      )
-    }
-    
     return filtered
-  }, [sortedDrivers, searchQuery, statusFilter])
+  }, [searchFilteredDrivers, statusFilter])
 
   // Pagination hook
   const {
@@ -164,10 +160,7 @@ export default function DriversPage() {
     setIsViewDialogOpen(true)
   }, [])
 
-  const handleSearch = useCallback((e) => {
-    const query = e.target.value.toLowerCase()
-    setSearchQuery(query)
-  }, [])
+
 
   const handleStatusFilterChange = useCallback((value) => {
     setStatusFilter(value)
@@ -530,16 +523,12 @@ export default function DriversPage() {
           </CardHeader>
           <CardContent>
             <div className="flex justify-between items-center mb-4">
-              <div className="relative w-64">
-                <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
-                <Input
-                  type="search"
-                  placeholder="Search drivers..."
-                  className="pl-8"
-                  value={searchQuery}
-                  onChange={handleSearch}
-                />
-              </div>
+              <SearchInput
+                placeholder="Search drivers..."
+                value={searchQuery}
+                onChange={handleSearch}
+                className="w-64"
+              />
 
               {searchQuery && (
                 <div className="text-sm text-muted-foreground">
@@ -800,16 +789,12 @@ export default function DriversPage() {
           </CardHeader>
           <CardContent>
             <div className="flex justify-between items-center mb-4">
-              <div className="relative w-64">
-                <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
-                <Input
-                  type="search"
-                  placeholder="Search drivers..."
-                  className="pl-8"
-                  value={searchQuery}
-                  onChange={handleSearch}
-                />
-              </div>
+              <SearchInput
+                placeholder="Search drivers..."
+                value={searchQuery}
+                onChange={handleSearch}
+                className="w-64"
+              />
             </div>
             {isLoading ? (
               <div className="flex justify-center items-center py-8">

@@ -11,9 +11,11 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import { Pagination } from "@/components/ui/pagination"
+import { Pagination } from "@/components/common/pagination"
 import { PlusCircle } from "lucide-react"
 import { useAdmins, useCreateAdmin, useUpdateAdmin, useDeleteAdmin, usePagination } from "@/hooks"
+import { useSearch } from "@/hooks/useSearch"
+import { SearchInput } from "@/components/common/search-input"
 
 function AdminManagementPageContent() {
   const router = useRouter();
@@ -25,6 +27,16 @@ function AdminManagementPageContent() {
   const updateAdminMutation = useUpdateAdmin();
   const deleteAdminMutation = useDeleteAdmin();
   
+  // Search functionality
+  const {
+    searchQuery,
+    filteredData: filteredAdmins,
+    handleSearch,
+    clearSearch
+  } = useSearch(admins, ['full_name', 'email', 'UserType.description'], {
+    resetPageOnSearch: true
+  });
+  
   // Pagination hook
   const {
     currentPage,
@@ -34,7 +46,7 @@ function AdminManagementPageContent() {
     paginatedData: paginatedAdmins,
     handlePageChange,
     handleItemsPerPageChange
-  } = usePagination(admins, 10);
+  } = usePagination(filteredAdmins, 10);
   
   const [fullName, setFullName] = useState("")
   const [email, setEmail] = useState("")
@@ -136,13 +148,20 @@ function AdminManagementPageContent() {
       <Card>
         <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-4">
           <CardTitle className="text-2xl font-bold">Admin Management</CardTitle>
-          <Button 
-            onClick={handleOpenAddModal}
-            className="flex items-center gap-2"
-          >
-            <PlusCircle className="h-4 w-4" />
-            Add New Admin
-          </Button>
+          <div className="flex items-center gap-4">
+            <SearchInput
+              placeholder="Search admins..."
+              value={searchQuery}
+              onChange={handleSearch}
+            />
+            <Button 
+              onClick={handleOpenAddModal}
+              className="flex items-center gap-2"
+            >
+              <PlusCircle className="h-4 w-4" />
+              Add New Admin
+            </Button>
+          </div>
         </CardHeader>
         <CardContent>
           {isLoading && <div className="flex justify-center py-6">Loading administrators...</div>}

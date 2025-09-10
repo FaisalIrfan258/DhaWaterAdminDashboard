@@ -21,11 +21,11 @@ import {
 } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
 import { Users, Plus, Search, RefreshCw } from "lucide-react";
-import { Input } from "@/components/ui/input";
+import { SearchInput } from "@/components/common/search-input";
 import { UserModal } from "@/components/modals/users/user-modal";
 import { toast } from "sonner";
-import { useUsers, useCreateUser, useUpdateUser, useDeleteUser, useSensors, usePagination } from "@/hooks";
-import { Pagination } from "@/components/ui/pagination";
+import { useUsers, useCreateUser, useUpdateUser, useDeleteUser, useSensors, usePagination, useSearch } from "@/hooks";
+import { Pagination } from "@/components/common/pagination";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -58,7 +58,6 @@ export default function UsersPage() {
   const deleteUserMutation = useDeleteUser();
   
   const [filteredUsers, setFilteredUsers] = useState([]);
-  const [searchQuery, setSearchQuery] = useState("");
   
   // Extract data from React Query responses with memoization
   const users = useMemo(() => usersData?.users || [], [usersData]);
@@ -130,11 +129,16 @@ export default function UsersPage() {
 
 
 
-  // Handle search
-  const handleSearch = useCallback((e) => {
-    const query = e.target.value.toLowerCase();
-    setSearchQuery(query);
-  }, []);
+  // Search functionality
+  const {
+    searchQuery,
+    filteredData: searchFilteredUsers,
+    handleSearch,
+    clearSearch
+  } = useSearch(formattedUsers, ['full_name', 'email', 'phone_number', 'home_address', 'street_address', 'username', 'customer_id'], {
+    resetPageOnSearch: true,
+    onPageReset: () => handlePageChange(1)
+  });
 
   // Add new user
   const handleAddUser = async (userData) => {
@@ -279,28 +283,10 @@ export default function UsersPage() {
 
 
 
-  // Initialize filtered users when formattedUsers changes
+  // Initialize filtered users when searchFilteredUsers changes
   useEffect(() => {
-    if (!searchQuery.trim()) {
-      setFilteredUsers(formattedUsers);
-      return;
-    }
-
-    const query = searchQuery.toLowerCase();
-    const filtered = formattedUsers.filter(
-      (user) =>
-        user.full_name?.toLowerCase().includes(query) ||
-        user.email?.toLowerCase().includes(query) ||
-        user.phone_number?.includes(query) ||
-        user.home_address?.toLowerCase().includes(query) ||
-        user.street_address?.toLowerCase().includes(query) ||
-        (user.phase_number && user.phase_number.toString().includes(query)) ||
-        user.username?.toLowerCase().includes(query) ||
-        user.customer_id?.toString().includes(query)
-    );
-
-    setFilteredUsers(filtered);
-  }, [formattedUsers, searchQuery]);
+    setFilteredUsers(searchFilteredUsers);
+  }, [searchFilteredUsers]);
 
   // Format date to local string
   const formatDate = (dateString) => {
@@ -352,16 +338,12 @@ export default function UsersPage() {
           </CardHeader>
           <CardContent>
             <div className="flex justify-between items-center mb-4">
-              <div className="relative w-64">
-                <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
-                <Input
-                  type="search"
-                  placeholder="Search users..."
-                  className="pl-8"
-                  value={searchQuery}
-                  onChange={handleSearch}
-                />
-              </div>
+              <SearchInput
+                placeholder="Search users..."
+                value={searchQuery}
+                onChange={handleSearch}
+                className="w-64"
+              />
 
               {searchQuery && (
                 <div className="text-sm text-muted-foreground">

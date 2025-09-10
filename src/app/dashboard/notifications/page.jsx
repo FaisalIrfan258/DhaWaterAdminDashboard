@@ -7,11 +7,12 @@ import { useNotifications, useCreateNotification, useUpdateNotification, useDele
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
-import { Bell, Search, RefreshCw, X, Plus, Pencil, Eye } from "lucide-react"
-import { Input } from "@/components/ui/input"
+import { Bell, RefreshCw, X, Plus, Pencil, Eye } from "lucide-react"
 import { toast } from "sonner"
 import { usePagination } from "@/hooks"
-import { Pagination } from "@/components/ui/pagination"
+import { Pagination } from "@/components/common/pagination"
+import { useSearch } from "@/hooks/useSearch"
+import { SearchInput } from "@/components/common/search-input"
 import {
   Dialog,
   DialogContent,
@@ -22,6 +23,7 @@ import {
   DialogTrigger,
 } from "@/components/ui/dialog"
 import { Label } from "@/components/ui/label"
+import { Input } from "@/components/ui/input"
 import { Textarea } from "@/components/ui/textarea"
 import {
   AlertDialog,
@@ -41,7 +43,7 @@ export default function NotificationsPage() {
   const { user } = useUser()
   const [adminId, setAdminId] = useState(null)
 
-  const [searchQuery, setSearchQuery] = useState("")
+
   
   // React Query hooks
   const { data: notifications = [], isLoading: loading, error, refetch } = useNotifications()
@@ -70,16 +72,16 @@ export default function NotificationsPage() {
     return [...notifications].sort((a, b) => new Date(b.created_at) - new Date(a.created_at))
   }, [notifications])
 
-  // Filter notifications based on search query
-  const filteredNotificationsList = useMemo(() => {
-    if (!searchQuery.trim()) {
-      return sortedNotifications
-    }
-    return sortedNotifications.filter(notification => 
-      notification.title?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      notification.message?.toLowerCase().includes(searchQuery.toLowerCase())
-    )
-  }, [sortedNotifications, searchQuery])
+  // Search functionality
+  const {
+    searchQuery,
+    filteredData: filteredNotificationsList,
+    handleSearch,
+    clearSearch
+  } = useSearch(sortedNotifications, ['title', 'message'], {
+    resetPageOnSearch: true,
+    onPageReset: () => handlePageChange(1)
+  })
 
   // Pagination hook
   const {
@@ -104,10 +106,7 @@ export default function NotificationsPage() {
     setIsViewDialogOpen(true)
   }, [])
 
-  // Handle search
-  const handleSearch = useCallback((query) => {
-    setSearchQuery(query)
-  }, [])
+
 
   // Handle refresh
   const handleRefreshData = async () => {
@@ -302,21 +301,17 @@ export default function NotificationsPage() {
           </CardHeader>
           <CardContent>
             <div className="flex justify-between items-center mb-4">
-              <div className="relative w-64">
-                <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
-                <Input
-                  type="search"
-                  placeholder="Search notifications..."
-                  className="pl-8"
-                  value={searchQuery}
-                  onChange={handleSearch}
-                />
-              </div>
+              <SearchInput
+                placeholder="Search notifications..."
+                value={searchQuery}
+                onChange={handleSearch}
+                className="w-64"
+              />
 
               {searchQuery && (
                 <div className="text-sm text-muted-foreground">
-                  Found {filteredNotifications.length}{" "}
-                  {filteredNotifications.length === 1 ? "notification" : "notifications"}
+                  Found {filteredNotificationsList.length}{" "}
+                  {filteredNotificationsList.length === 1 ? "notification" : "notifications"}
                 </div>
               )}
             </div>

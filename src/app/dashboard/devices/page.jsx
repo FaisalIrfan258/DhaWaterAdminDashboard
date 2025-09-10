@@ -26,17 +26,15 @@ import {
   Cpu,
   Plus,
   RefreshCw,
-  Search,
   MoreHorizontal,
   Eye,
   Pencil,
   Trash2,
 } from "lucide-react";
 import { SensorModal } from "@/components/modals/sensors/sensor-modal";
-import { Input } from "@/components/ui/input";
 import { toast } from "sonner";
 import { usePagination } from "@/hooks";
-import { Pagination } from "@/components/ui/pagination";
+import { Pagination } from "@/components/common/pagination";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -50,6 +48,8 @@ import {
   SelectContent,
   SelectItem,
 } from "@/components/ui/select";
+import { useSearch } from "@/hooks/useSearch";
+import { SearchInput } from "@/components/common/search-input";
 
 export default function DevicesPage() {
   const { user } = useUser();
@@ -59,7 +59,6 @@ export default function DevicesPage() {
   const deleteSensorMutation = useDeleteSensor();
   
   // Filtered devices using useMemo for better performance
-  const [searchQuery, setSearchQuery] = useState("");
   
   // Extract devices from React Query response
   const devices = sensorsData?.sensors || [];
@@ -76,28 +75,24 @@ export default function DevicesPage() {
     (a, b) => new Date(b.created_at) - new Date(a.created_at)
   ), [devices]);
 
+  // Search functionality
+  const {
+    searchQuery,
+    filteredData: searchFilteredDevices,
+    handleSearch,
+    clearSearch
+  } = useSearch(sortedDevices, ['sensor_name', 'sensor_id', 'sensor_type', 'location']);
+
   const filteredDevices = useMemo(() => {
-    let filtered = [...sortedDevices];
+    let filtered = [...searchFilteredDevices];
     
-    // Apply status filter first
+    // Apply status filter
     if (statusFilter !== "All") {
       filtered = filtered.filter((device) => device.status === statusFilter);
     }
     
-    // Apply search filter
-    if (searchQuery && searchQuery.trim()) {
-      const query = searchQuery.toLowerCase();
-      filtered = filtered.filter(
-        (device) =>
-          device.sensor_name?.toLowerCase().includes(query) ||
-          device.sensor_id?.toString().includes(query) ||
-          device.sensor_type?.toLowerCase().includes(query) ||
-          device.location?.toLowerCase().includes(query)
-      );
-    }
-    
     return filtered;
-  }, [sortedDevices, searchQuery, statusFilter]);
+  }, [searchFilteredDevices, statusFilter]);
 
   // Initialize pagination hook
   const {
@@ -122,11 +117,7 @@ export default function DevicesPage() {
 
 
 
-  // Handle search - only update search query, let useEffect handle filtering
-  const handleSearch = useCallback((e) => {
-    const query = e.target.value;
-    setSearchQuery(query);
-  }, []);
+
 
   // Add new sensor
   const addSensor = async (sensorData) => {
@@ -253,16 +244,12 @@ export default function DevicesPage() {
           </CardHeader>
           <CardContent>
             <div className="flex justify-between items-center mb-4">
-              <div className="relative w-64">
-                <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
-                <Input
-                  type="search"
-                  placeholder="Search devices..."
-                  className="pl-8"
-                  value={searchQuery}
-                  onChange={handleSearch}
-                />
-              </div>
+              <SearchInput
+                placeholder="Search devices..."
+                value={searchQuery}
+                onChange={handleSearch}
+                className="w-64"
+              />
 
               {searchQuery && (
                 <div className="text-sm text-muted-foreground">

@@ -7,11 +7,12 @@ import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { Badge } from "@/components/ui/badge"
-import { Truck, Search, RefreshCw, Plus, MoreHorizontal, Trash2 } from "lucide-react"
-import { Input } from "@/components/ui/input"
+import { Truck, RefreshCw, Plus, MoreHorizontal, Trash2 } from "lucide-react"
 import { toast } from "sonner"
 import { usePagination } from "@/hooks"
-import { Pagination } from "@/components/ui/pagination"
+import { useSearch } from "@/hooks/useSearch"
+import { SearchInput } from "@/components/common/search-input"
+import { Pagination } from "@/components/common/pagination"
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"
 import { TankerModal } from "@/components/modals/tankers/tanker-modal"
 import { TankerDetailsModal } from "@/components/modals/tankers/tanker-details-modal"
@@ -25,11 +26,12 @@ export default function TankersPage() {
   
   // React Query hooks
   const { data: tankersData = [], isLoading, error, refetch } = useTankers()
+  
+
   const createTankerMutation = useCreateTanker()
   const updateTankerMutation = useUpdateTanker()
   const deleteTankerMutation = useDeleteTanker()
   
-  const [searchQuery, setSearchQuery] = useState("")
   const [isRefreshing, setIsRefreshing] = useState(false)
   const [modalOpen, setModalOpen] = useState(false)
   const [detailsModalOpen, setDetailsModalOpen] = useState(false)
@@ -52,28 +54,25 @@ export default function TankersPage() {
     return [...tankersData].sort((a, b) => new Date(b.created_at) - new Date(a.created_at))
   }, [tankersData])
 
+  // Search functionality
+  const {
+    searchQuery,
+    filteredData: searchFilteredTankers,
+    handleSearch,
+    clearSearch
+  } = useSearch(sortedTankers, ['tanker_name', 'plate_number', 'availability_status'])
+
   // Filter tankers based on search query and status
   const filteredTankers = useMemo(() => {
-    let filtered = sortedTankers
+    let filtered = searchFilteredTankers
 
     // Filter by status
     if (statusFilter !== "All") {
       filtered = filtered.filter((tanker) => tanker.availability_status === statusFilter)
     }
 
-    // Filter by search query
-    if (searchQuery && searchQuery.trim()) {
-      const query = searchQuery.toLowerCase()
-      filtered = filtered.filter(
-        (tanker) =>
-          tanker.tanker_name?.toLowerCase().includes(query) ||
-          tanker.plate_number?.toLowerCase().includes(query) ||
-          tanker.availability_status?.toLowerCase().includes(query)
-      )
-    }
-
     return filtered
-  }, [sortedTankers, searchQuery, statusFilter])
+  }, [searchFilteredTankers, statusFilter])
 
   // Initialize pagination hook
   const {
@@ -81,14 +80,11 @@ export default function TankersPage() {
     totalPages,
     itemsPerPage,
     paginatedData: paginatedTankers,
-    onPageChange,
-    onItemsPerPageChange,
-    onNextPage,
-    onPreviousPage,
-  } = usePagination({
-    data: filteredTankers,
-    initialItemsPerPage: 10,
-  })
+    handlePageChange,
+    handleItemsPerPageChange,
+    goToNextPage,
+    goToPreviousPage,
+  } = usePagination(filteredTankers, 10)
 
   const getStatusBadgeVariant = (status) => {
     switch (status) {
@@ -180,11 +176,7 @@ export default function TankersPage() {
     }
   }
 
-  // Handle search
-  const handleSearch = useCallback((e) => {
-    const query = e.target.value.toLowerCase()
-    setSearchQuery(query)
-  }, [])
+
 
   // Handle refresh
   const handleRefresh = async () => {
@@ -247,16 +239,12 @@ export default function TankersPage() {
           </CardHeader>
           <CardContent>
             <div className="flex justify-between items-center mb-4">
-              <div className="relative w-64">
-                <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
-                <Input
-                  type="search"
-                  placeholder="Search tankers..."
-                  className="pl-8"
-                  value={searchQuery}
-                  onChange={handleSearch}
-                />
-              </div>
+              <SearchInput
+                placeholder="Search tankers..."
+                value={searchQuery}
+                onChange={handleSearch}
+                className="w-64"
+              />
 
               {searchQuery && (
                 <div className="text-sm text-muted-foreground">
@@ -354,8 +342,8 @@ export default function TankersPage() {
                     totalPages={totalPages}
                     itemsPerPage={itemsPerPage}
                     totalItems={filteredTankers.length}
-                    onPageChange={onPageChange}
-                  onItemsPerPageChange={onItemsPerPageChange}
+                    onPageChange={handlePageChange}
+                    onItemsPerPageChange={handleItemsPerPageChange}
                     className="mt-6"
                   />
                 </>

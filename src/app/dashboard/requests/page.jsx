@@ -4,6 +4,7 @@ import { useState, useEffect, useMemo, useCallback } from "react";
 import { DashboardShell } from "@/components/dashboard/dashboard-shell";
 import { DashboardHeader } from "@/components/dashboard/dashboard-header";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import {
   Card,
   CardContent,
@@ -20,10 +21,12 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
-import { Droplets, Search, RefreshCw } from "lucide-react";
-import { Pagination } from "@/components/ui/pagination";
+import { Droplets, RefreshCw } from "lucide-react";
+import { useSearch } from "@/hooks/useSearch";
+import { SearchInput } from "@/components/common/search-input";
+import { Pagination } from "@/components/common/pagination";
 import { usePagination } from "@/hooks/usePagination";
-import { Input } from "@/components/ui/input";
+
 import { toast } from "sonner";
 import {
   AlertDialog,
@@ -50,7 +53,7 @@ import { useRequests, useAcceptRequest, useRejectRequest, useCreateNotification 
 export default function RequestsPage() {
   const { user } = useUser();
   const [adminId, setAdminId] = useState(null);
-  const [searchQuery, setSearchQuery] = useState("");
+
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [rejectDialogOpen, setRejectDialogOpen] = useState(false);
   const [selectedRequestId, setSelectedRequestId] = useState(null);
@@ -75,9 +78,17 @@ export default function RequestsPage() {
   const rejectRequestMutation = useRejectRequest();
   const createNotificationMutation = useCreateNotification();
 
+  // Search functionality
+  const {
+    searchQuery,
+    filteredData: searchFilteredRequests,
+    handleSearch,
+    clearSearch
+  } = useSearch(requests, ['Customer.full_name', 'request_id', 'request_status', 'description']);
+
   // Filter and sort requests
   const filteredRequests = useMemo(() => {
-    let filtered = [...requests];
+    let filtered = [...searchFilteredRequests];
     
     // Sort by request date (newest first)
     filtered.sort((a, b) => new Date(b.request_date) - new Date(a.request_date));
@@ -87,20 +98,8 @@ export default function RequestsPage() {
       filtered = filtered.filter(request => request.request_status === statusFilter);
     }
     
-    // Apply search filter
-    if (searchQuery.trim()) {
-      const query = searchQuery.toLowerCase();
-      filtered = filtered.filter(
-        (request) =>
-          request.Customer?.full_name?.toLowerCase().includes(query) ||
-          request.request_id?.toString().includes(query) ||
-          request.request_status?.toLowerCase().includes(query) ||
-          request.description?.toLowerCase().includes(query)
-      );
-    }
-    
     return filtered;
-  }, [requests, statusFilter, searchQuery]);
+  }, [searchFilteredRequests, statusFilter]);
 
   // Pagination hook
   const {
@@ -116,10 +115,7 @@ export default function RequestsPage() {
 
 
 
-  // Handle search
-  const handleSearch = useCallback((e) => {
-    setSearchQuery(e.target.value);
-  }, []);
+
 
 
 
@@ -246,16 +242,11 @@ export default function RequestsPage() {
           </CardHeader>
           <CardContent>
             <div className="flex justify-between items-center mb-4">
-              <div className="relative w-64">
-                <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
-                <Input
-                  type="search"
-                  placeholder="Search requests..."
-                  className="pl-8"
-                  value={searchQuery}
-                  onChange={handleSearch}
-                />
-              </div>
+              <SearchInput
+                placeholder="Search requests..."
+                value={searchQuery}
+                onChange={handleSearch}
+              />
 
               {searchQuery && (
                 <div className="text-sm text-muted-foreground">

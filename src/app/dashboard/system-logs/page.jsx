@@ -21,7 +21,6 @@ import {
 } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
 import { FileText, RefreshCw, Search } from "lucide-react";
-import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
 import {
@@ -41,7 +40,9 @@ import {
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from "@/components/ui/select";
 import { usePagination } from "@/hooks";
-import { Pagination } from "@/components/ui/pagination";
+import { useSearch } from "@/hooks/useSearch";
+import { SearchInput } from "@/components/common/search-input";
+import { Pagination } from "@/components/common/pagination";
 
 export default function SystemLogsPage() {
   // React Query hooks
@@ -49,24 +50,18 @@ export default function SystemLogsPage() {
   const refreshAuditLogs = useRefreshAuditLogs();
   
   // Local state
-  const [searchQuery, setSearchQuery] = useState("");
   const [viewingLog, setViewingLog] = useState(null);
   const [isViewModalOpen, setIsViewModalOpen] = useState(false);
-  // Filtered logs based on search query
-  const filteredLogs = useMemo(() => {
-    if (!searchQuery.trim()) {
-      return logs;
-    }
-
-    return logs.filter(
-      (log) =>
-        log.table_name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        log.operation_type?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        log.primary_key_value?.toString().toLowerCase().includes(searchQuery.toLowerCase()) ||
-        log.changed_by?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        (log.changed_data && log.changed_data.toLowerCase().includes(searchQuery.toLowerCase()))
-    );
-  }, [logs, searchQuery]);
+  // Search functionality
+  const {
+    searchQuery,
+    filteredData: filteredLogs,
+    handleSearch,
+    clearSearch
+  } = useSearch(logs, ['table_name', 'operation_type', 'primary_key_value', 'changed_by', 'changed_data'], {
+    resetPageOnSearch: true,
+    onPageReset: () => handlePageChange(1)
+  });
   
   // Use pagination hook
   const {
@@ -80,12 +75,7 @@ export default function SystemLogsPage() {
     goToPreviousPage
   } = usePagination(filteredLogs, 10);
 
-  // Handle search
-  const handleSearch = useCallback((e) => {
-    const query = e.target.value;
-    setSearchQuery(query);
-    handlePageChange(1); // Reset to first page when searching
-  }, [handlePageChange]);
+
 
   // Handle refresh
   const handleRefresh = () => {
@@ -157,9 +147,8 @@ export default function SystemLogsPage() {
 
       <div className="space-y-4">
         <div className="flex items-center justify-between">
-          <div className="flex items-center space-x-2 w-full md:w-1/2 lg:w-1/3">
-            <Search className="h-4 w-4 text-muted-foreground" />
-            <Input
+          <div className="w-full md:w-1/2 lg:w-1/3">
+            <SearchInput
               placeholder="Search logs..."
               value={searchQuery}
               onChange={handleSearch}
