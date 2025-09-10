@@ -8,7 +8,7 @@ import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { Badge } from "@/components/ui/badge"
-import { Car, Search, RefreshCw, X, Plus, Pencil, Eye, MoreHorizontal, Trash2, ChevronLeft, ChevronRight } from "lucide-react"
+import { Car, Search, RefreshCw, X, Plus, Pencil, Eye, MoreHorizontal, Trash2 } from "lucide-react"
 import { Input } from "@/components/ui/input"
 import { toast } from "sonner"
 import {
@@ -39,7 +39,8 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
 
-import { useDrivers, useCreateDriver, useUpdateDriver, useDeleteDriver, useDriverDeliveryReport } from "@/hooks"
+import { useDrivers, useCreateDriver, useUpdateDriver, useDeleteDriver, useDriverDeliveryReport, usePagination } from "@/hooks"
+import { Pagination } from "@/components/ui/pagination"
 import { PDFTemplates } from "../../../lib/pdfGenerator"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 
@@ -60,9 +61,6 @@ export default function DriversPage() {
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false)
   const [selectedDriver, setSelectedDriver] = useState(null)
   const [statusFilter, setStatusFilter] = useState("All")
-  const [currentPage, setCurrentPage] = useState(1)
-  const [itemsPerPage, setItemsPerPage] = useState(10)
-  
 
   // Form states for create
   const [fullName, setFullName] = useState("")
@@ -137,21 +135,19 @@ export default function DriversPage() {
     return filtered
   }, [sortedDrivers, searchQuery, statusFilter])
 
-  const totalPages = useMemo(() => {
-    return Math.ceil(filteredDrivers.length / itemsPerPage)
-  }, [filteredDrivers, itemsPerPage])
+  // Pagination hook
+  const {
+    currentPage,
+    itemsPerPage,
+    totalPages,
+    paginatedData: paginatedDrivers,
+    goToNextPage,
+    goToPreviousPage,
+    handlePageChange,
+    handleItemsPerPageChange
+  } = usePagination(filteredDrivers, 10)
 
-  const paginatedDrivers = useMemo(() => {
-    const indexOfFirstItem = (currentPage - 1) * itemsPerPage
-    const indexOfLastItem = indexOfFirstItem + itemsPerPage
-    return filteredDrivers.slice(indexOfFirstItem, indexOfLastItem)
-  }, [filteredDrivers, currentPage, itemsPerPage])
 
-  useEffect(() => {
-    if (currentPage > totalPages && totalPages > 0) {
-      setCurrentPage(totalPages)
-    }
-  }, [totalPages, currentPage])
 
   useEffect(() => {
     if (user?.user_type) {
@@ -159,22 +155,7 @@ export default function DriversPage() {
     }
   }, [user]);
 
-  const goToNextPage = () => {
-    if (currentPage < totalPages) {
-      setCurrentPage(currentPage + 1);
-    }
-  };
 
-  const goToPreviousPage = () => {
-    if (currentPage > 1) {
-      setCurrentPage(currentPage - 1);
-    }
-  };
-
-  const handleItemsPerPageChange = useCallback((value) => {
-    setItemsPerPage(Number(value));
-    setCurrentPage(1);
-  }, []);
 
 
 
@@ -659,50 +640,15 @@ export default function DriversPage() {
                   </TableBody>
                 </Table>
 
-                <div className="flex items-center justify-between mt-6">
-                  <div className="flex items-center space-x-2">
-                    <p className="text-sm text-muted-foreground">
-                      Showing {paginatedDrivers.length} of {filteredDrivers.length} drivers
-                    </p>
-                    <Select 
-                      value={itemsPerPage.toString()} 
-                      onValueChange={handleItemsPerPageChange}
-                    >
-                      <SelectTrigger className="h-8 w-[70px]">
-                        <SelectValue placeholder={itemsPerPage} />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="5">5</SelectItem>
-                        <SelectItem value="10">10</SelectItem>
-                        <SelectItem value="20">20</SelectItem>
-                        <SelectItem value="50">50</SelectItem>
-                      </SelectContent>
-                    </Select>
-                    <p className="text-sm text-muted-foreground">per page</p>
-                  </div>
-                  
-                  <div className="flex items-center space-x-2">
-                    <Button
-                      variant="outline"
-                      size="icon"
-                      onClick={goToPreviousPage}
-                      disabled={currentPage === 1}
-                    >
-                      <ChevronLeft className="h-4 w-4" />
-                    </Button>
-                    <p className="text-sm text-muted-foreground">
-                      Page {currentPage} of {totalPages}
-                    </p>
-                    <Button
-                      variant="outline"
-                      size="icon"
-                      onClick={goToNextPage}
-                      disabled={currentPage === totalPages}
-                    >
-                      <ChevronRight className="h-4 w-4" />
-                    </Button>
-                  </div>
-                </div>
+                <Pagination
+                  currentPage={currentPage}
+                  totalPages={totalPages}
+                  itemsPerPage={itemsPerPage}
+                  totalItems={filteredDrivers.length}
+                  onPageChange={handlePageChange}
+                  onItemsPerPageChange={handleItemsPerPageChange}
+                  className="mt-6"
+                />
               </>
             )}
           </CardContent>
@@ -864,19 +810,6 @@ export default function DriversPage() {
                   onChange={handleSearch}
                 />
               </div>
-              <div className="flex items-center gap-2">
-                <Select onValueChange={handleItemsPerPageChange} defaultValue="10">
-                  <SelectTrigger className="w-[100px]">
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="5">5</SelectItem>
-                    <SelectItem value="10">10</SelectItem>
-                    <SelectItem value="20">20</SelectItem>
-                    <SelectItem value="50">50</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
             </div>
             {isLoading ? (
               <div className="flex justify-center items-center py-8">
@@ -962,33 +895,14 @@ export default function DriversPage() {
                   </Table>
                 </div>
                 
-                <div className="flex items-center justify-between space-x-2 py-4">
-                  <div className="text-sm text-muted-foreground">
-                    Showing {((currentPage - 1) * itemsPerPage) + 1} to {Math.min(currentPage * itemsPerPage, filteredDrivers.length)} of {filteredDrivers.length} drivers
-                  </div>
-                  
-                  <div className="flex items-center space-x-2">
-                    <Button
-                      variant="outline"
-                      size="icon"
-                      onClick={goToPreviousPage}
-                      disabled={currentPage === 1}
-                    >
-                      <ChevronLeft className="h-4 w-4" />
-                    </Button>
-                    <p className="text-sm text-muted-foreground">
-                      Page {currentPage} of {totalPages}
-                    </p>
-                    <Button
-                      variant="outline"
-                      size="icon"
-                      onClick={goToNextPage}
-                      disabled={currentPage === totalPages}
-                    >
-                      <ChevronRight className="h-4 w-4" />
-                    </Button>
-                  </div>
-                </div>
+                <Pagination
+                  currentPage={currentPage}
+                  totalPages={totalPages}
+                  itemsPerPage={itemsPerPage}
+                  totalItems={filteredDrivers.length}
+                  onPageChange={handlePageChange}
+                    onItemsPerPageChange={handleItemsPerPageChange}
+                />
               </>
             )}
           </CardContent>

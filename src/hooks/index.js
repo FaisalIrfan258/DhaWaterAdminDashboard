@@ -13,3 +13,4 @@ export * from './useSensors';
 export * from './useTanks';
 export * from './useAudit';
 export * from './useSecureAuth';
+export * from './usePagination';

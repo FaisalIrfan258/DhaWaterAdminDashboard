@@ -20,7 +20,9 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
-import { Droplets, Search, RefreshCw, ChevronLeft, ChevronRight } from "lucide-react";
+import { Droplets, Search, RefreshCw } from "lucide-react";
+import { Pagination } from "@/components/ui/pagination";
+import { usePagination } from "@/hooks/usePagination";
 import { Input } from "@/components/ui/input";
 import { toast } from "sonner";
 import {
@@ -57,9 +59,7 @@ export default function RequestsPage() {
   const [statusFilter, setStatusFilter] = useState("All");
   const [rejectReason, setRejectReason] = useState("hydrant closed");
   const [notificationTitle, setNotificationTitle] = useState("");
-  // Pagination states
-  const [currentPage, setCurrentPage] = useState(1);
-  const [itemsPerPage, setItemsPerPage] = useState(10);
+
 
 
   useEffect(() => {
@@ -102,36 +102,17 @@ export default function RequestsPage() {
     return filtered;
   }, [requests, statusFilter, searchQuery]);
 
-  const totalPages = useMemo(() => Math.ceil(filteredRequests.length / itemsPerPage), [filteredRequests, itemsPerPage]);
-
-  const paginatedRequests = useMemo(() => {
-    const indexOfLastItem = currentPage * itemsPerPage;
-    const indexOfFirstItem = indexOfLastItem - itemsPerPage;
-    return filteredRequests.slice(indexOfFirstItem, indexOfLastItem);
-  }, [filteredRequests, currentPage, itemsPerPage]);
-
-  useEffect(() => {
-    if (currentPage > totalPages && totalPages > 0) {
-      setCurrentPage(totalPages);
-    }
-  }, [totalPages]);
-
-  const goToNextPage = () => {
-    if (currentPage < totalPages) {
-      setCurrentPage(currentPage + 1);
-    }
-  };
-
-  const goToPreviousPage = () => {
-    if (currentPage > 1) {
-      setCurrentPage(currentPage - 1);
-    }
-  };
-
-  const handleItemsPerPageChange = useCallback((value) => {
-    setItemsPerPage(Number(value));
-    setCurrentPage(1); // Reset to first page when changing items per page
-  }, []);
+  // Pagination hook
+  const {
+    currentPage,
+    totalPages,
+    paginatedData: paginatedRequests,
+    itemsPerPage,
+    goToNextPage,
+    goToPreviousPage,
+    handlePageChange,
+    handleItemsPerPageChange
+  } = usePagination(filteredRequests, 10);
 
 
 
@@ -396,50 +377,14 @@ export default function RequestsPage() {
                 </Table>
 
                 {/* Pagination Controls */}
-                <div className="flex items-center justify-between mt-6">
-                  <div className="flex items-center space-x-2">
-                    <p className="text-sm text-muted-foreground">
-                      Showing {paginatedRequests.length} of {filteredRequests.length} requests
-                    </p>
-                    <Select 
-                      value={itemsPerPage.toString()} 
-                      onValueChange={handleItemsPerPageChange}
-                    >
-                      <SelectTrigger className="h-8 w-[70px]">
-                        <SelectValue placeholder={itemsPerPage} />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="5">5</SelectItem>
-                        <SelectItem value="10">10</SelectItem>
-                        <SelectItem value="20">20</SelectItem>
-                        <SelectItem value="50">50</SelectItem>
-                      </SelectContent>
-                    </Select>
-                    <p className="text-sm text-muted-foreground">per page</p>
-                  </div>
-                  
-                  <div className="flex items-center space-x-2">
-                    <Button
-                      variant="outline"
-                      size="icon"
-                      onClick={goToPreviousPage}
-                      disabled={currentPage === 1}
-                    >
-                      <ChevronLeft className="h-4 w-4" />
-                    </Button>
-                    <p className="text-sm text-muted-foreground">
-                      Page {currentPage} of {totalPages}
-                    </p>
-                    <Button
-                      variant="outline"
-                      size="icon"
-                      onClick={goToNextPage}
-                      disabled={currentPage === totalPages}
-                    >
-                      <ChevronRight className="h-4 w-4" />
-                    </Button>
-                  </div>
-                </div>
+                <Pagination
+                  currentPage={currentPage}
+                  totalPages={totalPages}
+                  itemsPerPage={itemsPerPage}
+                  totalItems={filteredRequests.length}
+                  onPageChange={handlePageChange}
+                  onItemsPerPageChange={handleItemsPerPageChange}
+                />
               </>
             )}
           </CardContent>

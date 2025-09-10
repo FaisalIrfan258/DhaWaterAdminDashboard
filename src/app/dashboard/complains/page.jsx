@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useMemo, useEffect, useCallback } from "react";
+import { useState, useCallback, useMemo, useEffect } from "react";
 import { DashboardShell } from "@/components/dashboard/dashboard-shell";
 import { DashboardHeader } from "@/components/dashboard/dashboard-header";
 import { Button } from "@/components/ui/button";
@@ -20,7 +20,7 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
-import { MessageSquare, Search, RefreshCw, ChevronLeft, ChevronRight } from "lucide-react";
+import { MessageSquare, Search, RefreshCw } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import {
   Dialog,
@@ -40,7 +40,8 @@ import {
   SelectItem,
 } from "@/components/ui/select";
 
-import { useComplaints, useUpdateComplaintRemarks } from "@/hooks";
+import { useComplaints, useUpdateComplaintRemarks, usePagination } from "@/hooks";
+import { Pagination } from "@/components/ui/pagination";
 
 export default function ComplaintsPage() {
   const { user } = useUser();
@@ -52,10 +53,6 @@ export default function ComplaintsPage() {
   const [isUpdateDialogOpen, setIsUpdateDialogOpen] = useState(false);
   const [selectedComplaint, setSelectedComplaint] = useState(null);
   const [remarks, setRemarks] = useState("");
-  // Pagination states
-  const [currentPage, setCurrentPage] = useState(1);
-  const [itemsPerPage, setItemsPerPage] = useState(10);
-
   // Filter and sort complaints using useMemo
   const filteredComplaints = useMemo(() => {
     let filtered = complaints;
@@ -80,42 +77,23 @@ export default function ComplaintsPage() {
     return filtered.sort((a, b) => new Date(b.complain_date) - new Date(a.complain_date));
   }, [complaints, statusFilter, searchQuery]);
 
-  const totalPages = useMemo(() => Math.ceil(filteredComplaints.length / itemsPerPage), [filteredComplaints, itemsPerPage]);
-
-  const paginatedComplaints = useMemo(() => {
-    const startIndex = (currentPage - 1) * itemsPerPage;
-    const endIndex = startIndex + itemsPerPage;
-    return filteredComplaints.slice(startIndex, endIndex);
-  }, [filteredComplaints, currentPage, itemsPerPage]);
-
-  useEffect(() => {
-    if (currentPage > totalPages && totalPages > 0) {
-      setCurrentPage(totalPages);
-    }
-  }, [totalPages, currentPage]);
-
-  const goToNextPage = () => {
-    if (currentPage < totalPages) {
-      setCurrentPage(currentPage + 1);
-    }
-  };
-
-  const goToPreviousPage = () => {
-    if (currentPage > 1) {
-      setCurrentPage(currentPage - 1);
-    }
-  };
-
-  const handleItemsPerPageChange = useCallback((value) => {
-    setItemsPerPage(Number(value));
-    setCurrentPage(1); // Reset to first page when changing items per page
-  }, []);
+  // Use pagination hook
+  const {
+    currentPage,
+    totalPages,
+    paginatedData: paginatedComplaints,
+    itemsPerPage,
+    handlePageChange,
+    handleItemsPerPageChange,
+    goToNextPage,
+    goToPreviousPage
+  } = usePagination(filteredComplaints, 10);
 
   // Handle search
   const handleSearch = useCallback((e) => {
     setSearchQuery(e.target.value);
-    setCurrentPage(1); // Reset to first page when searching
-  }, []);
+    handlePageChange(1); // Reset to first page when searching
+  }, [handlePageChange]);
 
   // Handle refresh
   const handleRefresh = async () => {
@@ -310,50 +288,15 @@ export default function ComplaintsPage() {
                 </Table>
 
                 {/* Pagination Controls */}
-                <div className="flex items-center justify-between mt-6">
-                  <div className="flex items-center space-x-2">
-                    <p className="text-sm text-muted-foreground">
-                      Showing {paginatedComplaints.length} of {filteredComplaints.length} complaints
-                    </p>
-                    <Select 
-                      value={itemsPerPage.toString()} 
-                      onValueChange={handleItemsPerPageChange}
-                    >
-                      <SelectTrigger className="h-8 w-[70px]">
-                        <SelectValue placeholder={itemsPerPage} />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="5">5</SelectItem>
-                        <SelectItem value="10">10</SelectItem>
-                        <SelectItem value="20">20</SelectItem>
-                        <SelectItem value="50">50</SelectItem>
-                      </SelectContent>
-                    </Select>
-                    <p className="text-sm text-muted-foreground">per page</p>
-                  </div>
-                  
-                  <div className="flex items-center space-x-2">
-                    <Button
-                      variant="outline"
-                      size="icon"
-                      onClick={goToPreviousPage}
-                      disabled={currentPage === 1}
-                    >
-                      <ChevronLeft className="h-4 w-4" />
-                    </Button>
-                    <p className="text-sm text-muted-foreground">
-                      Page {currentPage} of {totalPages}
-                    </p>
-                    <Button
-                      variant="outline"
-                      size="icon"
-                      onClick={goToNextPage}
-                      disabled={currentPage === totalPages}
-                    >
-                      <ChevronRight className="h-4 w-4" />
-                    </Button>
-                  </div>
-                </div>
+                <Pagination
+                  currentPage={currentPage}
+                  totalPages={totalPages}
+                  itemsPerPage={itemsPerPage}
+                  totalItems={filteredComplaints.length}
+                  onPageChange={handlePageChange}
+                onItemsPerPageChange={handleItemsPerPageChange}
+                  className="mt-6"
+                />
               </>
             )}
           </CardContent>

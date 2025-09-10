@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useMemo, useCallback, useEffect } from "react";
+import { useState, useCallback, useMemo, useEffect } from "react";
 import { DashboardShell } from "@/components/dashboard/dashboard-shell";
 import { DashboardHeader } from "@/components/dashboard/dashboard-header";
 import { useAuditLogs, useRefreshAuditLogs } from "@/hooks";
@@ -20,7 +20,7 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
-import { FileText, RefreshCw, Search, ChevronLeft, ChevronRight } from "lucide-react";
+import { FileText, RefreshCw, Search } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
@@ -40,6 +40,8 @@ import {
 } from "@/components/ui/dialog";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from "@/components/ui/select";
+import { usePagination } from "@/hooks";
+import { Pagination } from "@/components/ui/pagination";
 
 export default function SystemLogsPage() {
   // React Query hooks
@@ -50,10 +52,6 @@ export default function SystemLogsPage() {
   const [searchQuery, setSearchQuery] = useState("");
   const [viewingLog, setViewingLog] = useState(null);
   const [isViewModalOpen, setIsViewModalOpen] = useState(false);
-  // Pagination states
-  const [currentPage, setCurrentPage] = useState(1);
-  const [itemsPerPage, setItemsPerPage] = useState(10);
-  
   // Filtered logs based on search query
   const filteredLogs = useMemo(() => {
     if (!searchQuery.trim()) {
@@ -70,45 +68,24 @@ export default function SystemLogsPage() {
     );
   }, [logs, searchQuery]);
   
-  const totalPages = useMemo(() => {
-    return Math.ceil(filteredLogs.length / itemsPerPage);
-  }, [filteredLogs, itemsPerPage]);
-
-  const paginatedLogs = useMemo(() => {
-    const indexOfFirstItem = (currentPage - 1) * itemsPerPage;
-    const indexOfLastItem = indexOfFirstItem + itemsPerPage;
-    return filteredLogs.slice(indexOfFirstItem, indexOfLastItem);
-  }, [filteredLogs, currentPage, itemsPerPage]);
-
-  useEffect(() => {
-    if (currentPage > totalPages && totalPages > 0) {
-      setCurrentPage(totalPages);
-    }
-  }, [totalPages, currentPage]);
-
-  const goToNextPage = () => {
-    if (currentPage < totalPages) {
-      setCurrentPage(currentPage + 1);
-    }
-  };
-
-  const goToPreviousPage = () => {
-    if (currentPage > 1) {
-      setCurrentPage(currentPage - 1);
-    }
-  };
-
-  const handleItemsPerPageChange = useCallback((value) => {
-    setItemsPerPage(Number(value));
-    setCurrentPage(1); // Reset to first page when changing items per page
-  }, []);
+  // Use pagination hook
+  const {
+    currentPage,
+    totalPages,
+    paginatedData: paginatedLogs,
+    itemsPerPage,
+    handlePageChange,
+    handleItemsPerPageChange,
+    goToNextPage,
+    goToPreviousPage
+  } = usePagination(filteredLogs, 10);
 
   // Handle search
   const handleSearch = useCallback((e) => {
     const query = e.target.value;
     setSearchQuery(query);
-    setCurrentPage(1); // Reset to first page when searching
-  }, []);
+    handlePageChange(1); // Reset to first page when searching
+  }, [handlePageChange]);
 
   // Handle refresh
   const handleRefresh = () => {
@@ -289,50 +266,15 @@ export default function SystemLogsPage() {
                 </div>
 
                 {/* Pagination Controls */}
-                <div className="flex items-center justify-between mt-6">
-                  <div className="flex items-center space-x-2">
-                    <p className="text-sm text-muted-foreground">
-                      Showing {paginatedLogs.length} of {filteredLogs.length} logs
-                    </p>
-                    <Select 
-                      value={itemsPerPage.toString()} 
-                      onValueChange={handleItemsPerPageChange}
-                    >
-                      <SelectTrigger className="h-8 w-[70px]">
-                        <SelectValue placeholder={itemsPerPage} />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="5">5</SelectItem>
-                        <SelectItem value="10">10</SelectItem>
-                        <SelectItem value="20">20</SelectItem>
-                        <SelectItem value="50">50</SelectItem>
-                      </SelectContent>
-                    </Select>
-                    <p className="text-sm text-muted-foreground">per page</p>
-                  </div>
-                  
-                  <div className="flex items-center space-x-2">
-                    <Button
-                      variant="outline"
-                      size="icon"
-                      onClick={goToPreviousPage}
-                      disabled={currentPage === 1}
-                    >
-                      <ChevronLeft className="h-4 w-4" />
-                    </Button>
-                    <p className="text-sm text-muted-foreground">
-                      Page {currentPage} of {totalPages}
-                    </p>
-                    <Button
-                      variant="outline"
-                      size="icon"
-                      onClick={goToNextPage}
-                      disabled={currentPage === totalPages}
-                    >
-                      <ChevronRight className="h-4 w-4" />
-                    </Button>
-                  </div>
-                </div>
+                <Pagination
+                  currentPage={currentPage}
+                  totalPages={totalPages}
+                  itemsPerPage={itemsPerPage}
+                  totalItems={filteredLogs.length}
+                  onPageChange={handlePageChange}
+                  onItemsPerPageChange={handleItemsPerPageChange}
+                  className="mt-6"
+                />
               </>
             )}
           </CardContent>

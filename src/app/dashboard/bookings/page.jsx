@@ -21,7 +21,9 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
-import { Calendar, Search, RefreshCw, MoreHorizontal, ChevronLeft, ChevronRight } from "lucide-react";
+import { Calendar, Search, RefreshCw, MoreHorizontal } from "lucide-react";
+import { Pagination } from "@/components/ui/pagination";
+import { usePagination } from "@/hooks";
 import { Input } from "@/components/ui/input";
 import { toast } from "sonner";
 import {
@@ -67,13 +69,6 @@ export default function BookingsPage() {
   const [selectedBooking, setSelectedBooking] = useState(null);
   const [statusFilter, setStatusFilter] = useState("All");
   const [isSuper, setIsSuper] = useState(false);
-  // Pagination states
-  const [currentPage, setCurrentPage] = useState(1);
-  const [itemsPerPage, setItemsPerPage] = useState(10);
-  
-  
-
-
   // Check if user is super admin
   useEffect(() => {
     if (user?.user_type) {
@@ -110,36 +105,19 @@ export default function BookingsPage() {
     return filtered;
   }, [sortedBookings, searchQuery, statusFilter]);
 
-  const totalPages = useMemo(() => Math.ceil(filteredBookings.length / itemsPerPage), [filteredBookings, itemsPerPage]);
+  // Pagination hook
+  const {
+    currentPage,
+    itemsPerPage,
+    totalPages,
+    paginatedData: paginatedBookings,
+    goToNextPage,
+    goToPreviousPage,
+    handlePageChange,
+    handleItemsPerPageChange
+  } = usePagination(filteredBookings, 10);
 
-  const paginatedBookings = useMemo(() => {
-    const indexOfLastItem = currentPage * itemsPerPage;
-    const indexOfFirstItem = indexOfLastItem - itemsPerPage;
-    return filteredBookings.slice(indexOfFirstItem, indexOfLastItem);
-  }, [filteredBookings, currentPage, itemsPerPage]);
 
-  useEffect(() => {
-    if (currentPage > totalPages && totalPages > 0) {
-      setCurrentPage(totalPages);
-    }
-  }, [totalPages, currentPage]);
-
-  const goToNextPage = () => {
-    if (currentPage < totalPages) {
-      setCurrentPage(currentPage + 1);
-    }
-  };
-
-  const goToPreviousPage = () => {
-    if (currentPage > 1) {
-      setCurrentPage(currentPage - 1);
-    }
-  };
-
-  const handleItemsPerPageChange = useCallback((value) => {
-    setItemsPerPage(Number(value));
-    setCurrentPage(1); // Reset to first page when changing items per page
-  }, []);
 
   const handleSearch = useCallback((e) => {
     setSearchQuery(e.target.value);
@@ -362,50 +340,14 @@ export default function BookingsPage() {
                 </Table>
 
                 {/* Pagination Controls */}
-                <div className="flex items-center justify-between mt-6">
-                  <div className="flex items-center space-x-2">
-                    <p className="text-sm text-muted-foreground">
-                      Showing {paginatedBookings.length} of {filteredBookings.length} bookings
-                    </p>
-                    <Select 
-                      value={itemsPerPage.toString()} 
-                      onValueChange={handleItemsPerPageChange}
-                    >
-                      <SelectTrigger className="h-8 w-[70px]">
-                        <SelectValue placeholder={itemsPerPage} />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="5">5</SelectItem>
-                        <SelectItem value="10">10</SelectItem>
-                        <SelectItem value="20">20</SelectItem>
-                        <SelectItem value="50">50</SelectItem>
-                      </SelectContent>
-                    </Select>
-                    <p className="text-sm text-muted-foreground">per page</p>
-                  </div>
-                  
-                  <div className="flex items-center space-x-2">
-                    <Button
-                      variant="outline"
-                      size="icon"
-                      onClick={goToPreviousPage}
-                      disabled={currentPage === 1}
-                    >
-                      <ChevronLeft className="h-4 w-4" />
-                    </Button>
-                    <p className="text-sm text-muted-foreground">
-                      Page {currentPage} of {totalPages}
-                    </p>
-                    <Button
-                      variant="outline"
-                      size="icon"
-                      onClick={goToNextPage}
-                      disabled={currentPage === totalPages}
-                    >
-                      <ChevronRight className="h-4 w-4" />
-                    </Button>
-                  </div>
-                </div>
+                <Pagination
+                  currentPage={currentPage}
+                  totalPages={totalPages}
+                  itemsPerPage={itemsPerPage}
+                  totalItems={filteredBookings.length}
+                  onPageChange={handlePageChange}
+                  onItemsPerPageChange={handleItemsPerPageChange}
+                />
               </>
             )}
           </div>

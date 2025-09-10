@@ -7,9 +7,11 @@ import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { Badge } from "@/components/ui/badge"
-import { Truck, Search, RefreshCw, Plus, MoreHorizontal, Trash2, ChevronLeft, ChevronRight } from "lucide-react"
+import { Truck, Search, RefreshCw, Plus, MoreHorizontal, Trash2 } from "lucide-react"
 import { Input } from "@/components/ui/input"
 import { toast } from "sonner"
+import { usePagination } from "@/hooks"
+import { Pagination } from "@/components/ui/pagination"
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"
 import { TankerModal } from "@/components/modals/tankers/tanker-modal"
 import { TankerDetailsModal } from "@/components/modals/tankers/tanker-details-modal"
@@ -38,13 +40,6 @@ export default function TankersPage() {
   const [statusFilter, setStatusFilter] = useState("All")
   const [isSuper, setIsSuper] = useState(false)
   const [isDeleting, setIsDeleting] = useState(false)
-  // Pagination states
-  const [currentPage, setCurrentPage] = useState(1)
-  const [itemsPerPage, setItemsPerPage] = useState(10)
-  
-  
-
-
   // Check if user is a super admin
   useEffect(() => {
     if (user?.user_type) {
@@ -80,39 +75,20 @@ export default function TankersPage() {
     return filtered
   }, [sortedTankers, searchQuery, statusFilter])
 
-  // Paginate tankers function
-  const totalPages = useMemo(() => {
-    return Math.ceil(filteredTankers.length / itemsPerPage)
-  }, [filteredTankers, itemsPerPage])
-
-  const paginatedTankers = useMemo(() => {
-    const indexOfFirstItem = (currentPage - 1) * itemsPerPage
-    const indexOfLastItem = indexOfFirstItem + itemsPerPage
-    return filteredTankers.slice(indexOfFirstItem, indexOfLastItem)
-  }, [filteredTankers, currentPage, itemsPerPage])
-
-  useEffect(() => {
-    if (currentPage > totalPages && totalPages > 0) {
-      setCurrentPage(totalPages)
-    }
-  }, [totalPages, currentPage])
-
-  const goToNextPage = () => {
-    if (currentPage < totalPages) {
-      setCurrentPage(currentPage + 1)
-    }
-  }
-
-  const goToPreviousPage = () => {
-    if (currentPage > 1) {
-      setCurrentPage(currentPage - 1)
-    }
-  }
-
-  const handleItemsPerPageChange = useCallback((value) => {
-    setItemsPerPage(Number(value))
-    setCurrentPage(1) // Reset to first page when changing items per page
-  }, [])
+  // Initialize pagination hook
+  const {
+    currentPage,
+    totalPages,
+    itemsPerPage,
+    paginatedData: paginatedTankers,
+    onPageChange,
+    onItemsPerPageChange,
+    onNextPage,
+    onPreviousPage,
+  } = usePagination({
+    data: filteredTankers,
+    initialItemsPerPage: 10,
+  })
 
   const getStatusBadgeVariant = (status) => {
     switch (status) {
@@ -373,50 +349,15 @@ export default function TankersPage() {
                   </Table>
 
                   {/* Pagination Controls */}
-                  <div className="flex items-center justify-between mt-6">
-                    <div className="flex items-center space-x-2">
-                      <p className="text-sm text-muted-foreground">
-                        Showing {paginatedTankers.length} of {filteredTankers.length} tankers
-                      </p>
-                      <Select 
-                        value={itemsPerPage.toString()} 
-                        onValueChange={handleItemsPerPageChange}
-                      >
-                        <SelectTrigger className="h-8 w-[70px]">
-                          <SelectValue placeholder={itemsPerPage} />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="5">5</SelectItem>
-                          <SelectItem value="10">10</SelectItem>
-                          <SelectItem value="20">20</SelectItem>
-                          <SelectItem value="50">50</SelectItem>
-                        </SelectContent>
-                      </Select>
-                      <p className="text-sm text-muted-foreground">per page</p>
-                    </div>
-                    
-                    <div className="flex items-center space-x-2">
-                      <Button
-                        variant="outline"
-                        size="icon"
-                        onClick={goToPreviousPage}
-                        disabled={currentPage === 1}
-                      >
-                        <ChevronLeft className="h-4 w-4" />
-                      </Button>
-                      <p className="text-sm text-muted-foreground">
-                        Page {currentPage} of {totalPages}
-                      </p>
-                      <Button
-                        variant="outline"
-                        size="icon"
-                        onClick={goToNextPage}
-                        disabled={currentPage === totalPages}
-                      >
-                        <ChevronRight className="h-4 w-4" />
-                      </Button>
-                    </div>
-                  </div>
+                  <Pagination
+                    currentPage={currentPage}
+                    totalPages={totalPages}
+                    itemsPerPage={itemsPerPage}
+                    totalItems={filteredTankers.length}
+                    onPageChange={onPageChange}
+                  onItemsPerPageChange={onItemsPerPageChange}
+                    className="mt-6"
+                  />
                 </>
               )}
             </div>

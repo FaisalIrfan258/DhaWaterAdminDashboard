@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect, useCallback, useMemo } from "react"
+import { useState, useCallback } from "react"
 import { useRouter } from "next/navigation"
 import ProtectedRoute from "@/components/auth/ProtectedRoute"
 import AdminList from "@/components/dashboard/admin-list"
@@ -11,18 +11,30 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import { PlusCircle, ChevronLeft, ChevronRight } from "lucide-react"
-import { useAdmins, useCreateAdmin, useUpdateAdmin, useDeleteAdmin } from "@/hooks"
+import { Pagination } from "@/components/ui/pagination"
+import { PlusCircle } from "lucide-react"
+import { useAdmins, useCreateAdmin, useUpdateAdmin, useDeleteAdmin, usePagination } from "@/hooks"
 
 function AdminManagementPageContent() {
   const router = useRouter();
   
   // React Query hooks
   const { data, isLoading, error, refetch } = useAdmins();
-  const admins = useMemo(() => Array.isArray(data?.admins) ? data.admins : [], [data]);
+  const admins = Array.isArray(data?.admins) ? data.admins : [];
   const createAdminMutation = useCreateAdmin();
   const updateAdminMutation = useUpdateAdmin();
   const deleteAdminMutation = useDeleteAdmin();
+  
+  // Pagination hook
+  const {
+    currentPage,
+    itemsPerPage,
+    totalPages,
+    totalItems,
+    paginatedData: paginatedAdmins,
+    handlePageChange,
+    handleItemsPerPageChange
+  } = usePagination(admins, 10);
   
   const [fullName, setFullName] = useState("")
   const [email, setEmail] = useState("")
@@ -30,42 +42,8 @@ function AdminManagementPageContent() {
   const [userType, setUserType] = useState("")
   const [selectedAdmin, setSelectedAdmin] = useState(null)
   const [isModalOpen, setIsModalOpen] = useState(false)
-  // Pagination states
-  const [currentPage, setCurrentPage] = useState(1)
-  const [itemsPerPage, setItemsPerPage] = useState(10)
-  
-  
 
-  const totalPages = useMemo(() => Math.ceil(admins.length / itemsPerPage), [admins, itemsPerPage]);
 
-  const paginatedAdmins = useMemo(() => {
-    const indexOfLastItem = currentPage * itemsPerPage;
-    const indexOfFirstItem = indexOfLastItem - itemsPerPage;
-    return admins.slice(indexOfFirstItem, indexOfLastItem);
-  }, [admins, currentPage, itemsPerPage]);
-
-  useEffect(() => {
-    if (currentPage > totalPages && totalPages > 0) {
-      setCurrentPage(totalPages);
-    }
-  }, [totalPages, currentPage]);
-
-  const goToNextPage = () => {
-    if (currentPage < totalPages) {
-      setCurrentPage(currentPage + 1);
-    }
-  };
-
-  const goToPreviousPage = () => {
-    if (currentPage > 1) {
-      setCurrentPage(currentPage - 1);
-    }
-  };
-
-  const handleItemsPerPageChange = useCallback((value) => {
-    setItemsPerPage(Number(value));
-    setCurrentPage(1); // Reset to first page when changing items per page
-  }, []);
 
   const handleRefresh = async () => {
     await refetch();
@@ -185,50 +163,14 @@ function AdminManagementPageContent() {
               />
               
               {/* Pagination Controls */}
-              <div className="flex items-center justify-between mt-6">
-                <div className="flex items-center space-x-2">
-                  <p className="text-sm text-muted-foreground">
-                    Showing {paginatedAdmins.length} of {admins.length} admins
-                  </p>
-                  <Select 
-                    value={itemsPerPage.toString()} 
-                    onValueChange={handleItemsPerPageChange}
-                  >
-                    <SelectTrigger className="h-8 w-[70px]">
-                      <SelectValue placeholder={itemsPerPage} />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="5">5</SelectItem>
-                      <SelectItem value="10">10</SelectItem>
-                      <SelectItem value="20">20</SelectItem>
-                      <SelectItem value="50">50</SelectItem>
-                    </SelectContent>
-                  </Select>
-                  <p className="text-sm text-muted-foreground">per page</p>
-                </div>
-                
-                <div className="flex items-center space-x-2">
-                  <Button
-                    variant="outline"
-                    size="icon"
-                    onClick={goToPreviousPage}
-                    disabled={currentPage === 1}
-                  >
-                    <ChevronLeft className="h-4 w-4" />
-                  </Button>
-                  <p className="text-sm text-muted-foreground">
-                    Page {currentPage} of {totalPages}
-                  </p>
-                  <Button
-                    variant="outline"
-                    size="icon"
-                    onClick={goToNextPage}
-                    disabled={currentPage === totalPages}
-                  >
-                    <ChevronRight className="h-4 w-4" />
-                  </Button>
-                </div>
-              </div>
+              <Pagination
+                currentPage={currentPage}
+                totalPages={totalPages}
+                itemsPerPage={itemsPerPage}
+                totalItems={totalItems}
+                onPageChange={handlePageChange}
+                onItemsPerPageChange={handleItemsPerPageChange}
+              />
             </>
           )}
         </CardContent>

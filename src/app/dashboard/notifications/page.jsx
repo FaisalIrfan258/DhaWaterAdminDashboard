@@ -1,15 +1,17 @@
 "use client"
 
-import { useEffect, useState, useCallback, useMemo } from "react"
+import { useState, useEffect, useMemo, useCallback } from "react"
 import { DashboardShell } from "@/components/dashboard/dashboard-shell"
 import { DashboardHeader } from "@/components/dashboard/dashboard-header"
 import { useNotifications, useCreateNotification, useUpdateNotification, useDeleteNotification } from "@/hooks"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
-import { Bell, Search, RefreshCw, X, Plus, Pencil, Eye, ChevronLeft, ChevronRight } from "lucide-react"
+import { Bell, Search, RefreshCw, X, Plus, Pencil, Eye } from "lucide-react"
 import { Input } from "@/components/ui/input"
 import { toast } from "sonner"
+import { usePagination } from "@/hooks"
+import { Pagination } from "@/components/ui/pagination"
 import {
   Dialog,
   DialogContent,
@@ -38,7 +40,7 @@ import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from "@
 export default function NotificationsPage() {
   const { user } = useUser()
   const [adminId, setAdminId] = useState(null)
-  const [filteredNotifications, setFilteredNotifications] = useState([])
+
   const [searchQuery, setSearchQuery] = useState("")
   
   // React Query hooks
@@ -56,55 +58,40 @@ export default function NotificationsPage() {
   const [customerId, setCustomerId] = useState("")
   const [editTitle, setEditTitle] = useState("")
   const [editMessage, setEditMessage] = useState("")
-  // Pagination states
-  const [currentPage, setCurrentPage] = useState(1)
-  const [itemsPerPage, setItemsPerPage] = useState(10)
-  
-  
-
-
+  // Get admin_id from UserContext
   useEffect(() => {
-    // Get admin_id from UserContext
     if (user?.id) {
       setAdminId(user.id)
     }
   }, [user])
 
+  // Sort notifications in descending order by date
+  const sortedNotifications = useMemo(() => {
+    return [...notifications].sort((a, b) => new Date(b.created_at) - new Date(a.created_at))
+  }, [notifications])
 
-
-  // Paginate notifications function
-  const totalPages = useMemo(() => {
-    return Math.ceil(filteredNotifications.length / itemsPerPage)
-  }, [filteredNotifications, itemsPerPage])
-
-  const paginatedNotifications = useMemo(() => {
-    const indexOfFirstItem = (currentPage - 1) * itemsPerPage
-    const indexOfLastItem = indexOfFirstItem + itemsPerPage
-    return filteredNotifications.slice(indexOfFirstItem, indexOfLastItem)
-  }, [filteredNotifications, currentPage, itemsPerPage])
-
-  useEffect(() => {
-    if (currentPage > totalPages && totalPages > 0) {
-      setCurrentPage(totalPages)
+  // Filter notifications based on search query
+  const filteredNotificationsList = useMemo(() => {
+    if (!searchQuery.trim()) {
+      return sortedNotifications
     }
-  }, [totalPages, currentPage])
+    return sortedNotifications.filter(notification => 
+      notification.title?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      notification.message?.toLowerCase().includes(searchQuery.toLowerCase())
+    )
+  }, [sortedNotifications, searchQuery])
 
-  const goToNextPage = () => {
-    if (currentPage < totalPages) {
-      setCurrentPage(currentPage + 1)
-    }
-  }
-
-  const goToPreviousPage = () => {
-    if (currentPage > 1) {
-      setCurrentPage(currentPage - 1)
-    }
-  }
-
-  const handleItemsPerPageChange = useCallback((value) => {
-    setItemsPerPage(Number(value))
-    setCurrentPage(1) // Reset to first page when changing items per page
-  }, [])
+  // Pagination hook
+  const {
+    currentPage,
+    totalPages,
+    paginatedData: paginatedNotifications,
+    itemsPerPage,
+    goToNextPage,
+    goToPreviousPage,
+    handlePageChange,
+    handleItemsPerPageChange
+  } = usePagination(filteredNotificationsList, 10)
 
   // Handle refresh
   const handleRefresh = useCallback(() => {
@@ -117,39 +104,10 @@ export default function NotificationsPage() {
     setIsViewDialogOpen(true)
   }, [])
 
-  // Sort notifications in descending order by date
-  const sortedNotifications = useMemo(() => {
-    return [...notifications].sort((a, b) => new Date(b.created_at) - new Date(a.created_at))
-  }, [notifications])
-
   // Handle search
-  const handleSearch = useCallback((e) => {
-    const query = e.target.value.toLowerCase()
+  const handleSearch = useCallback((query) => {
     setSearchQuery(query)
-
-    if (!query.trim()) {
-      setFilteredNotifications(sortedNotifications)
-      return
-    }
-
-    const filtered = sortedNotifications.filter(
-      (notification) =>
-        notification.title?.toLowerCase().includes(query) ||
-        notification.message?.toLowerCase().includes(query) ||
-        notification.notification_id?.toString().includes(query) ||
-        notification.Admin?.full_name?.toLowerCase().includes(query) ||
-        notification.Admin?.email?.toLowerCase().includes(query),
-    )
-
-    setFilteredNotifications(filtered)
-  }, [sortedNotifications])
-
-  // Initialize filtered notifications when notifications data changes
-  useEffect(() => {
-    if (!searchQuery.trim()) {
-      setFilteredNotifications(sortedNotifications)
-    }
-  }, [sortedNotifications, searchQuery])
+  }, [])
 
   // Handle refresh
   const handleRefreshData = async () => {
@@ -432,50 +390,15 @@ export default function NotificationsPage() {
                 </Table>
 
                 {/* Pagination Controls */}
-                <div className="flex items-center justify-between mt-6">
-                  <div className="flex items-center space-x-2">
-                    <p className="text-sm text-muted-foreground">
-                      Showing {paginatedNotifications.length} of {filteredNotifications.length} notifications
-                    </p>
-                    <Select 
-                      value={itemsPerPage.toString()} 
-                      onValueChange={handleItemsPerPageChange}
-                    >
-                      <SelectTrigger className="h-8 w-[70px]">
-                        <SelectValue placeholder={itemsPerPage} />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="5">5</SelectItem>
-                        <SelectItem value="10">10</SelectItem>
-                        <SelectItem value="20">20</SelectItem>
-                        <SelectItem value="50">50</SelectItem>
-                      </SelectContent>
-                    </Select>
-                    <p className="text-sm text-muted-foreground">per page</p>
-                  </div>
-                  
-                  <div className="flex items-center space-x-2">
-                    <Button
-                      variant="outline"
-                      size="icon"
-                      onClick={goToPreviousPage}
-                      disabled={currentPage === 1}
-                    >
-                      <ChevronLeft className="h-4 w-4" />
-                    </Button>
-                    <p className="text-sm text-muted-foreground">
-                      Page {currentPage} of {totalPages}
-                    </p>
-                    <Button
-                      variant="outline"
-                      size="icon"
-                      onClick={goToNextPage}
-                      disabled={currentPage === totalPages}
-                    >
-                      <ChevronRight className="h-4 w-4" />
-                    </Button>
-                  </div>
-                </div>
+                <Pagination
+                  currentPage={currentPage}
+                  totalPages={totalPages}
+                  itemsPerPage={itemsPerPage}
+                  totalItems={filteredNotificationsList.length}
+                  onPageChange={handlePageChange}
+                onItemsPerPageChange={handleItemsPerPageChange}
+                  className="mt-6"
+                />
               </>
             )}
           </CardContent>

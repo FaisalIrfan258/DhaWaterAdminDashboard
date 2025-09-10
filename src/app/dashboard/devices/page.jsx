@@ -31,12 +31,12 @@ import {
   Eye,
   Pencil,
   Trash2,
-  ChevronLeft,
-  ChevronRight,
 } from "lucide-react";
 import { SensorModal } from "@/components/modals/sensors/sensor-modal";
 import { Input } from "@/components/ui/input";
 import { toast } from "sonner";
+import { usePagination } from "@/hooks";
+import { Pagination } from "@/components/ui/pagination";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -71,13 +71,6 @@ export default function DevicesPage() {
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [statusFilter, setStatusFilter] = useState("All");
   const [isSuper, setIsSuper] = useState(false);
-  // Pagination states
-  const [currentPage, setCurrentPage] = useState(1);
-  const [itemsPerPage, setItemsPerPage] = useState(10);
-
-
-
-
   // Filter devices based on search query and status using useMemo
   const sortedDevices = useMemo(() => [...devices].sort(
     (a, b) => new Date(b.created_at) - new Date(a.created_at)
@@ -106,19 +99,17 @@ export default function DevicesPage() {
     return filtered;
   }, [sortedDevices, searchQuery, statusFilter]);
 
-  const totalPages = useMemo(() => Math.ceil(filteredDevices.length / itemsPerPage), [filteredDevices, itemsPerPage]);
-
-  const paginatedDevices = useMemo(() => {
-    const indexOfLastItem = currentPage * itemsPerPage;
-    const indexOfFirstItem = indexOfLastItem - itemsPerPage;
-    return filteredDevices.slice(indexOfFirstItem, indexOfLastItem);
-  }, [filteredDevices, currentPage, itemsPerPage]);
-
-  useEffect(() => {
-    if (currentPage > totalPages && totalPages > 0) {
-      setCurrentPage(totalPages);
-    }
-  }, [totalPages]);
+  // Initialize pagination hook
+  const {
+    currentPage,
+    totalPages,
+    itemsPerPage,
+    paginatedData: paginatedDevices,
+    handlePageChange,
+    handleItemsPerPageChange,
+    goToNextPage,
+    goToPreviousPage,
+  } = usePagination(filteredDevices, 10);
 
   // Check if user is super admin
   useEffect(() => {
@@ -128,23 +119,6 @@ export default function DevicesPage() {
   }, [user]);
 
   // Data is automatically fetched by React Query
-
-  const goToNextPage = () => {
-    if (currentPage < totalPages) {
-      setCurrentPage(currentPage + 1);
-    }
-  };
-
-  const goToPreviousPage = () => {
-    if (currentPage > 1) {
-      setCurrentPage(currentPage - 1);
-    }
-  };
-
-  const handleItemsPerPageChange = useCallback((value) => {
-    setItemsPerPage(Number(value));
-    setCurrentPage(1); // Reset to first page when changing items per page
-  }, []);
 
 
 
@@ -197,6 +171,17 @@ export default function DevicesPage() {
       toast.error("Failed to refresh devices");
     } finally {
       setIsRefreshing(false);
+    }
+  };
+
+  const handleDeleteDevice = async (sensorId) => {
+    if (window.confirm("Are you sure you want to delete this device?")) {
+      const success = await deleteSensor(sensorId);
+      if (success) {
+        toast.success("Device deleted successfully");
+      } else {
+        toast.error("Failed to delete device");
+      }
     }
   };
 
@@ -402,50 +387,15 @@ export default function DevicesPage() {
                 </Table>
                 
                 {/* Pagination Controls */}
-                <div className="flex items-center justify-between mt-6">
-                  <div className="flex items-center space-x-2">
-                    <p className="text-sm text-muted-foreground">
-                      Showing {paginatedDevices.length} of {filteredDevices.length} devices
-                    </p>
-                    <Select 
-                      value={itemsPerPage.toString()} 
-                      onValueChange={handleItemsPerPageChange}
-                    >
-                      <SelectTrigger className="h-8 w-[70px]">
-                        <SelectValue placeholder={itemsPerPage} />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="5">5</SelectItem>
-                        <SelectItem value="10">10</SelectItem>
-                        <SelectItem value="20">20</SelectItem>
-                        <SelectItem value="50">50</SelectItem>
-                      </SelectContent>
-                    </Select>
-                    <p className="text-sm text-muted-foreground">per page</p>
-                  </div>
-                  
-                  <div className="flex items-center space-x-2">
-                    <Button
-                      variant="outline"
-                      size="icon"
-                      onClick={goToPreviousPage}
-                      disabled={currentPage === 1}
-                    >
-                      <ChevronLeft className="h-4 w-4" />
-                    </Button>
-                    <p className="text-sm text-muted-foreground">
-                      Page {currentPage} of {totalPages}
-                    </p>
-                    <Button
-                      variant="outline"
-                      size="icon"
-                      onClick={goToNextPage}
-                      disabled={currentPage === totalPages}
-                    >
-                      <ChevronRight className="h-4 w-4" />
-                    </Button>
-                  </div>
-                </div>
+                <Pagination
+                  currentPage={currentPage}
+                  totalPages={totalPages}
+                  itemsPerPage={itemsPerPage}
+                  totalItems={filteredDevices.length}
+                  onPageChange={handlePageChange}
+                  onItemsPerPageChange={handleItemsPerPageChange}
+                  className="mt-6"
+                />
               </>
             )}
           </CardContent>
