@@ -33,7 +33,7 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
-import AcceptRequestModal from "@/components/accept-request-modal";
+import AcceptRequestModal from "@/components/modals/booking/accept-request-modal";
 import { useUser } from "@/context/UserContext";
 import {
   Select,

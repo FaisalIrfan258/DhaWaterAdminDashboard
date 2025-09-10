@@ -22,7 +22,7 @@ import {
 import { Badge } from "@/components/ui/badge";
 import { Users, Plus, Search, RefreshCw, ChevronLeft, ChevronRight } from "lucide-react";
 import { Input } from "@/components/ui/input";
-import { UserModal } from "@/components/users/user-modal";
+import { UserModal } from "@/components/modals/users/user-modal";
 import { toast } from "sonner";
 import { useUsers, useCreateUser, useUpdateUser, useDeleteUser, useSensors } from "@/hooks";
 import {
@@ -32,7 +32,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { MoreHorizontal, Eye, Pencil, Trash2 } from "lucide-react";
-import { ViewUserModal } from "@/components/users/view-user-modal";
+import { ViewUserModal } from "@/components/modals/users/view-user-modal";
 import {
   AlertDialog,
   AlertDialogAction,

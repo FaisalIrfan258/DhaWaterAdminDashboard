@@ -94,4 +94,4 @@ export function ViewUserModal({ isOpen, onClose, user, sensors = [] }) {
       </DialogContent>
     </Dialog>
   )
-} 
+}

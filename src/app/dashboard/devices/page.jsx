@@ -34,7 +34,7 @@ import {
   ChevronLeft,
   ChevronRight,
 } from "lucide-react";
-import { SensorModal } from "@/components/sensors/sensor-modal";
+import { SensorModal } from "@/components/modals/sensors/sensor-modal";
 import { Input } from "@/components/ui/input";
 import { toast } from "sonner";
 import {

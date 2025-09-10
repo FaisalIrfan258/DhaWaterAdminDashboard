@@ -2,7 +2,7 @@
 
 import React, { Suspense, useMemo } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { WaterTank } from '@/components/water-tank';
+import { WaterTank } from '@/components/common/water-tank';
 import { Skeleton } from '@/components/ui/skeleton';
 import { motion } from 'framer-motion';
 import { Badge } from '@/components/ui/badge';

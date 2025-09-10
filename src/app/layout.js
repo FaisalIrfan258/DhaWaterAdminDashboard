@@ -1,6 +1,6 @@
 import { Inter } from "next/font/google"
 import "./globals.css"
-import { ThemeProvider } from "@/components/theme-provider"
+import { ThemeProvider } from "@/components/common/theme-provider"
 import { Toaster } from 'sonner'
 import { UserProvider } from '../context/UserContext'
 import QueryProvider from '@/components/providers/QueryProvider'

@@ -5,7 +5,7 @@ import { useSearchParams } from "next/navigation";
 import { toast } from "sonner";
 import { useUser } from "@/context/UserContext";
 import DashboardStats from "@/components/dashboard/dashboard-stats";
-import TankDetailsContent from "@/components/tank-details-content";
+import TankDetailsContent from "@/components/common/tank-details-content";
 import DailyDeliveryTracking from "@/components/dashboard/daily-delivery-tracking";
 import DateRangeDeliveryDetails from "@/components/dashboard/date-range-delivery-details";
 

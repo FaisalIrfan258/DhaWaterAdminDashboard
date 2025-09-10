@@ -30,8 +30,8 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import BookingViewModal from "@/components/BookingViewModal";
-import BookingEditModal from "@/components/BookingEditModal";
+import BookingViewModal from "@/components/modals/booking/BookingViewModal";
+import BookingEditModal from "@/components/modals/booking/BookingEditModal";
 import {
   AlertDialog,
   AlertDialogAction,
