@@ -1,4 +1,4 @@
-import { securePost, secureGet } from '../lib/secureApiClient';
+import { securePost, secureGet } from "../lib/secureApiClient";
 
 class SecureAuthService {
   /**
@@ -10,13 +10,17 @@ class SecureAuthService {
    */
   async adminLogin(credentials) {
     try {
-      const response = await securePost('/api/admin/login', credentials);
-      
+      const response = await securePost("/api/admin/login", credentials);
+
       // The server should set httpOnly cookies automatically
       // No need to store anything in localStorage
       return response;
     } catch (error) {
-      throw new Error(error.response?.data?.message || error.message || "Login failed. Please check your credentials.");
+      throw new Error(
+        error.response?.data?.message ||
+          error.message ||
+          "Login failed. Please check your credentials."
+      );
     }
   }
 
@@ -29,12 +33,16 @@ class SecureAuthService {
    */
   async superAdminLogin(credentials) {
     try {
-      const response = await securePost('/api/superadmin/login', credentials);
-      
+      const response = await securePost("/api/superadmin/login", credentials);
+
       // The server should set httpOnly cookies automatically
       return response;
     } catch (error) {
-      throw new Error(error.response?.data?.message || error.message || "Login failed. Please check your credentials.");
+      throw new Error(
+        error.response?.data?.message ||
+          error.message ||
+          "Login failed. Please check your credentials."
+      );
     }
   }
 
@@ -44,20 +52,20 @@ class SecureAuthService {
    */
   async logout() {
     try {
-      await securePost('/api/auth/logout', {});
-      
+      await securePost("/api/auth/logout", {});
+
       // Clear any client-side data if needed
-      if (typeof window !== 'undefined') {
+      if (typeof window !== "undefined") {
         // Clear any non-sensitive data from localStorage
-        localStorage.removeItem('user_preferences');
-        localStorage.removeItem('theme');
+        localStorage.removeItem("user_preferences");
+        localStorage.removeItem("theme");
       }
     } catch (error) {
-      console.error('Logout error:', error);
+      console.error("Logout error:", error);
       // Even if logout fails, clear client-side data
-      if (typeof window !== 'undefined') {
-        localStorage.removeItem('user_preferences');
-        localStorage.removeItem('theme');
+      if (typeof window !== "undefined") {
+        localStorage.removeItem("user_preferences");
+        localStorage.removeItem("theme");
       }
     }
   }
@@ -68,7 +76,7 @@ class SecureAuthService {
    */
   async isAuthenticated() {
     try {
-      const response = await secureGet('/api/auth/verify');
+      const response = await secureGet("/api/auth/verify");
       return response.authenticated === true;
     } catch (error) {
       return false;
@@ -81,8 +89,8 @@ class SecureAuthService {
    */
   async getCurrentUser() {
     try {
-      const response = await secureGet('/api/auth/user');
-      
+      const response = await secureGet("/api/auth/user");
+
       return {
         id: response.user_id,
         name: response.full_name,
@@ -91,7 +99,7 @@ class SecureAuthService {
         user_type: response.user_type,
       };
     } catch (error) {
-      console.error('Error fetching user data:', error);
+      console.error("Error fetching user data:", error);
       return null;
     }
   }
@@ -115,10 +123,10 @@ class SecureAuthService {
    */
   async refreshToken() {
     try {
-      await securePost('/api/auth/refresh', {});
+      await securePost("/api/auth/refresh", {});
       return true;
     } catch (error) {
-      console.error('Token refresh failed:', error);
+      console.error("Token refresh failed:", error);
       return false;
     }
   }
@@ -129,10 +137,10 @@ class SecureAuthService {
    */
   async getCSRFToken() {
     try {
-      const response = await secureGet('/api/auth/csrf');
+      const response = await secureGet("/api/auth/csrf");
       return response.csrf_token;
     } catch (error) {
-      console.error('Error fetching CSRF token:', error);
+      console.error("Error fetching CSRF token:", error);
       return null;
     }
   }

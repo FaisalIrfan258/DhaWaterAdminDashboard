@@ -1,7 +1,7 @@
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { toast } from 'sonner';
-import { tankerService } from '@/services';
-import { queryKeys } from '@/lib/queryClient';
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { toast } from "sonner";
+import { tankerService } from "@/services";
+import { queryKeys } from "@/lib/queryClient";
 
 // Get all tankers
 export const useTankers = () => {
@@ -44,23 +44,26 @@ export const useAvailableTankers = () => {
 // Create tanker mutation
 export const useCreateTanker = () => {
   const queryClient = useQueryClient();
-  
+
   return useMutation({
     mutationFn: (tankerData) => tankerService.createTanker(tankerData),
     onSuccess: (data) => {
       // Invalidate and refetch tankers
       queryClient.invalidateQueries({ queryKey: queryKeys.tankers.all() });
       queryClient.invalidateQueries({ queryKey: queryKeys.tankers.total() });
-      queryClient.invalidateQueries({ queryKey: queryKeys.tankers.available() });
-      
-      toast.success('Tanker created successfully', {
-        description: 'The new tanker has been added to the fleet.',
+      queryClient.invalidateQueries({
+        queryKey: queryKeys.tankers.available(),
+      });
+
+      toast.success("Tanker created successfully", {
+        description: "The new tanker has been added to the fleet.",
       });
     },
     onError: (error) => {
-      console.error('Error creating tanker:', error);
-      toast.error('Failed to create tanker', {
-        description: error?.response?.data?.message || 'Please try again later.',
+      console.error("Error creating tanker:", error);
+      toast.error("Failed to create tanker", {
+        description:
+          error?.response?.data?.message || "Please try again later.",
       });
     },
   });
@@ -69,23 +72,29 @@ export const useCreateTanker = () => {
 // Update tanker mutation
 export const useUpdateTanker = () => {
   const queryClient = useQueryClient();
-  
+
   return useMutation({
-    mutationFn: ({ tankerId, tankerData }) => tankerService.updateTanker(tankerId, tankerData),
+    mutationFn: ({ tankerId, tankerData }) =>
+      tankerService.updateTanker(tankerId, tankerData),
     onSuccess: (data, variables) => {
       // Invalidate and refetch tankers
       queryClient.invalidateQueries({ queryKey: queryKeys.tankers.all() });
-      queryClient.invalidateQueries({ queryKey: queryKeys.tankers.byId(variables.tankerId) });
-      queryClient.invalidateQueries({ queryKey: queryKeys.tankers.available() });
-      
-      toast.success('Tanker updated successfully', {
-        description: 'The tanker information has been updated.',
+      queryClient.invalidateQueries({
+        queryKey: queryKeys.tankers.byId(variables.tankerId),
+      });
+      queryClient.invalidateQueries({
+        queryKey: queryKeys.tankers.available(),
+      });
+
+      toast.success("Tanker updated successfully", {
+        description: "The tanker information has been updated.",
       });
     },
     onError: (error) => {
-      console.error('Error updating tanker:', error);
-      toast.error('Failed to update tanker', {
-        description: error?.response?.data?.message || 'Please try again later.',
+      console.error("Error updating tanker:", error);
+      toast.error("Failed to update tanker", {
+        description:
+          error?.response?.data?.message || "Please try again later.",
       });
     },
   });
@@ -94,23 +103,26 @@ export const useUpdateTanker = () => {
 // Delete tanker mutation
 export const useDeleteTanker = () => {
   const queryClient = useQueryClient();
-  
+
   return useMutation({
     mutationFn: (tankerId) => tankerService.deleteTanker(tankerId),
     onSuccess: (data) => {
       // Invalidate and refetch tankers
       queryClient.invalidateQueries({ queryKey: queryKeys.tankers.all() });
       queryClient.invalidateQueries({ queryKey: queryKeys.tankers.total() });
-      queryClient.invalidateQueries({ queryKey: queryKeys.tankers.available() });
-      
-      toast.success('Tanker deleted successfully', {
-        description: 'The tanker has been removed from the fleet.',
+      queryClient.invalidateQueries({
+        queryKey: queryKeys.tankers.available(),
+      });
+
+      toast.success("Tanker deleted successfully", {
+        description: "The tanker has been removed from the fleet.",
       });
     },
     onError: (error) => {
-      console.error('Error deleting tanker:', error);
-      toast.error('Failed to delete tanker', {
-        description: error?.response?.data?.message || 'Please try again later.',
+      console.error("Error deleting tanker:", error);
+      toast.error("Failed to delete tanker", {
+        description:
+          error?.response?.data?.message || "Please try again later.",
       });
     },
   });

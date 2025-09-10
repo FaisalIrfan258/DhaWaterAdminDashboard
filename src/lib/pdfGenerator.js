@@ -1,5 +1,5 @@
-import jsPDF from "jspdf"
-import autoTable from "jspdf-autotable"
+import jsPDF from "jspdf";
+import autoTable from "jspdf-autotable";
 
 /**
  * Dynamic PDF Generator Utility
@@ -7,10 +7,10 @@ import autoTable from "jspdf-autotable"
  */
 class PDFGenerator {
   constructor() {
-    this.doc = null
-    this.currentY = 20
-    this.pageHeight = 280 // A4 page height minus margins
-    this.margin = 20
+    this.doc = null;
+    this.currentY = 20;
+    this.pageHeight = 280; // A4 page height minus margins
+    this.margin = 20;
   }
 
   /**
@@ -19,10 +19,10 @@ class PDFGenerator {
    * @param {string} unit - 'mm', 'pt', 'in'
    * @param {string} format - 'a4', 'letter', etc.
    */
-  init(orientation = 'portrait', unit = 'mm', format = 'a4') {
-    this.doc = new jsPDF(orientation, unit, format)
-    this.currentY = 20
-    return this
+  init(orientation = "portrait", unit = "mm", format = "a4") {
+    this.doc = new jsPDF(orientation, unit, format);
+    this.currentY = 20;
+    return this;
   }
 
   /**
@@ -31,44 +31,65 @@ class PDFGenerator {
    */
   addHeader(options = {}) {
     const {
-      title = 'DHA Water Services Report',
-      subtitle = 'Defence Housing Authority Services – Karachi',
-      address = '174/B, QASIM STREET-1, KHAYABAN-E-SHUJAAT, PHASE-VIII, KARACHI',
-      phone = 'Phone: 111-111-895 / 35250061',
-      email = 'Email: info@dhaservices.com',
+      title = "DHA Water Services Report",
+      subtitle = "Defence Housing Authority Services – Karachi",
+      address = "174/B, QASIM STREET-1, KHAYABAN-E-SHUJAAT, PHASE-VIII, KARACHI",
+      phone = "Phone: 111-111-895 / 35250061",
+      email = "Email: info@dhaservices.com",
       showLogo = false,
-      logoPath = null
-    } = options
+      logoPath = null,
+    } = options;
 
     // Main title
-    this.doc.setFontSize(18)
-    this.doc.setFont('helvetica', 'bold')
-    this.doc.text(title, this.doc.internal.pageSize.width / 2, this.currentY, { align: 'center' })
-    this.currentY += 15
+    this.doc.setFontSize(18);
+    this.doc.setFont("helvetica", "bold");
+    this.doc.text(title, this.doc.internal.pageSize.width / 2, this.currentY, {
+      align: "center",
+    });
+    this.currentY += 15;
 
     // Subtitle
-    this.doc.setFontSize(12)
-    this.doc.setFont('helvetica', 'normal')
-    this.doc.text(subtitle, this.doc.internal.pageSize.width / 2, this.currentY, { align: 'center' })
-    this.currentY += 10
+    this.doc.setFontSize(12);
+    this.doc.setFont("helvetica", "normal");
+    this.doc.text(
+      subtitle,
+      this.doc.internal.pageSize.width / 2,
+      this.currentY,
+      { align: "center" }
+    );
+    this.currentY += 10;
 
     // Address
-    this.doc.setFontSize(10)
-    this.doc.text(address, this.doc.internal.pageSize.width / 2, this.currentY, { align: 'center' })
-    this.currentY += 8
+    this.doc.setFontSize(10);
+    this.doc.text(
+      address,
+      this.doc.internal.pageSize.width / 2,
+      this.currentY,
+      { align: "center" }
+    );
+    this.currentY += 8;
 
     // Contact info
-    this.doc.text(phone, this.doc.internal.pageSize.width / 2, this.currentY, { align: 'center' })
-    this.currentY += 6
-    this.doc.text(email, this.doc.internal.pageSize.width / 2, this.currentY, { align: 'center' })
-    this.currentY += 15
+    this.doc.text(phone, this.doc.internal.pageSize.width / 2, this.currentY, {
+      align: "center",
+    });
+    this.currentY += 6;
+    this.doc.text(email, this.doc.internal.pageSize.width / 2, this.currentY, {
+      align: "center",
+    });
+    this.currentY += 15;
 
     // Add a line separator
-    this.doc.setLineWidth(0.5)
-    this.doc.line(this.margin, this.currentY, this.doc.internal.pageSize.width - this.margin, this.currentY)
-    this.currentY += 10
+    this.doc.setLineWidth(0.5);
+    this.doc.line(
+      this.margin,
+      this.currentY,
+      this.doc.internal.pageSize.width - this.margin,
+      this.currentY
+    );
+    this.currentY += 10;
 
-    return this
+    return this;
   }
 
   /**
@@ -77,12 +98,12 @@ class PDFGenerator {
    * @param {number} fontSize - Font size (default: 14)
    */
   addSectionTitle(title, fontSize = 14) {
-    this.checkPageBreak(20)
-    this.doc.setFontSize(fontSize)
-    this.doc.setFont('helvetica', 'bold')
-    this.doc.text(title, this.margin, this.currentY)
-    this.currentY += 12
-    return this
+    this.checkPageBreak(20);
+    this.doc.setFontSize(fontSize);
+    this.doc.setFont("helvetica", "bold");
+    this.doc.text(title, this.margin, this.currentY);
+    this.currentY += 12;
+    return this;
   }
 
   /**
@@ -91,40 +112,36 @@ class PDFGenerator {
    * @param {Object} options - Formatting options
    */
   addKeyValueSection(data, options = {}) {
-    const {
-      columns = 2,
-      keyWidth = 60,
-      fontSize = 10,
-      spacing = 8
-    } = options
+    const { columns = 2, keyWidth = 60, fontSize = 10, spacing = 8 } = options;
 
-    this.doc.setFontSize(fontSize)
-    this.doc.setFont('helvetica', 'normal')
+    this.doc.setFontSize(fontSize);
+    this.doc.setFont("helvetica", "normal");
 
-    const itemsPerRow = columns
-    const columnWidth = (this.doc.internal.pageSize.width - 2 * this.margin) / itemsPerRow
+    const itemsPerRow = columns;
+    const columnWidth =
+      (this.doc.internal.pageSize.width - 2 * this.margin) / itemsPerRow;
 
     for (let i = 0; i < data.length; i += itemsPerRow) {
-      this.checkPageBreak(15)
-      
+      this.checkPageBreak(15);
+
       for (let j = 0; j < itemsPerRow && i + j < data.length; j++) {
-        const item = data[i + j]
-        const x = this.margin + j * columnWidth
-        
+        const item = data[i + j];
+        const x = this.margin + j * columnWidth;
+
         // Key (bold)
-        this.doc.setFont('helvetica', 'bold')
-        this.doc.text(`${item.key}:`, x, this.currentY)
-        
+        this.doc.setFont("helvetica", "bold");
+        this.doc.text(`${item.key}:`, x, this.currentY);
+
         // Value (normal)
-        this.doc.setFont('helvetica', 'normal')
-        this.doc.text(String(item.value || 'N/A'), x + keyWidth, this.currentY)
+        this.doc.setFont("helvetica", "normal");
+        this.doc.text(String(item.value || "N/A"), x + keyWidth, this.currentY);
       }
-      
-      this.currentY += spacing
+
+      this.currentY += spacing;
     }
 
-    this.currentY += 5
-    return this
+    this.currentY += 5;
+    return this;
   }
 
   /**
@@ -136,19 +153,23 @@ class PDFGenerator {
       headers,
       data,
       title = null,
-      theme = 'grid',
-      headerStyles = { fillColor: [66, 139, 202], textColor: [255, 255, 255], fontStyle: 'bold' },
+      theme = "grid",
+      headerStyles = {
+        fillColor: [66, 139, 202],
+        textColor: [255, 255, 255],
+        fontStyle: "bold",
+      },
       bodyStyles = { fontSize: 9 },
       columnStyles = {},
       showFooter = false,
       footerData = null,
-      alternateRowColors = true
-    } = tableConfig
+      alternateRowColors = true,
+    } = tableConfig;
 
-    this.checkPageBreak(40)
+    this.checkPageBreak(40);
 
     if (title) {
-      this.addSectionTitle(title, 12)
+      this.addSectionTitle(title, 12);
     }
 
     const tableOptions = {
@@ -161,30 +182,30 @@ class PDFGenerator {
       columnStyles,
       margin: { left: this.margin, right: this.margin },
       didDrawPage: (data) => {
-        this.currentY = data.cursor.y
-      }
-    }
+        this.currentY = data.cursor.y;
+      },
+    };
 
     if (alternateRowColors) {
-      tableOptions.alternateRowStyles = { fillColor: [245, 245, 245] }
+      tableOptions.alternateRowStyles = { fillColor: [245, 245, 245] };
     }
 
-    autoTable(this.doc, tableOptions)
-    this.currentY = this.doc.lastAutoTable.finalY + 10
+    autoTable(this.doc, tableOptions);
+    this.currentY = this.doc.lastAutoTable.finalY + 10;
 
     // Add footer row if specified
     if (showFooter && footerData) {
       autoTable(this.doc, {
         startY: this.currentY - 10,
         body: [footerData],
-        theme: 'plain',
-        styles: { fontStyle: 'bold', fillColor: [230, 230, 230] },
-        margin: { left: this.margin, right: this.margin }
-      })
-      this.currentY = this.doc.lastAutoTable.finalY + 10
+        theme: "plain",
+        styles: { fontStyle: "bold", fillColor: [230, 230, 230] },
+        margin: { left: this.margin, right: this.margin },
+      });
+      this.currentY = this.doc.lastAutoTable.finalY + 10;
     }
 
-    return this
+    return this;
   }
 
   /**
@@ -192,47 +213,48 @@ class PDFGenerator {
    * @param {Array} stats - Array of {label, value, color} objects
    */
   addSummaryCards(stats) {
-    this.checkPageBreak(30)
-    
-    const cardsPerRow = 3
-    const cardWidth = (this.doc.internal.pageSize.width - 2 * this.margin - 20) / cardsPerRow
-    const cardHeight = 25
+    this.checkPageBreak(30);
+
+    const cardsPerRow = 3;
+    const cardWidth =
+      (this.doc.internal.pageSize.width - 2 * this.margin - 20) / cardsPerRow;
+    const cardHeight = 25;
 
     for (let i = 0; i < stats.length; i += cardsPerRow) {
-      this.checkPageBreak(cardHeight + 10)
-      
+      this.checkPageBreak(cardHeight + 10);
+
       for (let j = 0; j < cardsPerRow && i + j < stats.length; j++) {
-        const stat = stats[i + j]
-        const x = this.margin + j * (cardWidth + 10)
-        
+        const stat = stats[i + j];
+        const x = this.margin + j * (cardWidth + 10);
+
         // Draw card background
-        const color = stat.color || [240, 240, 240]
+        const color = stat.color || [240, 240, 240];
         if (Array.isArray(color)) {
-          this.doc.setFillColor(color[0], color[1], color[2])
+          this.doc.setFillColor(color[0], color[1], color[2]);
         } else {
-          this.doc.setFillColor(color)
+          this.doc.setFillColor(color);
         }
-        this.doc.rect(x, this.currentY, cardWidth, cardHeight, 'F')
-        
+        this.doc.rect(x, this.currentY, cardWidth, cardHeight, "F");
+
         // Draw border
-        this.doc.setDrawColor(200, 200, 200)
-        this.doc.rect(x, this.currentY, cardWidth, cardHeight)
-        
+        this.doc.setDrawColor(200, 200, 200);
+        this.doc.rect(x, this.currentY, cardWidth, cardHeight);
+
         // Add text
-        this.doc.setTextColor(0, 0, 0)
-        this.doc.setFontSize(10)
-        this.doc.setFont('helvetica', 'normal')
-        this.doc.text(stat.label, x + 5, this.currentY + 8)
-        
-        this.doc.setFontSize(14)
-        this.doc.setFont('helvetica', 'bold')
-        this.doc.text(String(stat.value), x + 5, this.currentY + 18)
+        this.doc.setTextColor(0, 0, 0);
+        this.doc.setFontSize(10);
+        this.doc.setFont("helvetica", "normal");
+        this.doc.text(stat.label, x + 5, this.currentY + 8);
+
+        this.doc.setFontSize(14);
+        this.doc.setFont("helvetica", "bold");
+        this.doc.text(String(stat.value), x + 5, this.currentY + 18);
       }
-      
-      this.currentY += cardHeight + 15
+
+      this.currentY += cardHeight + 15;
     }
 
-    return this
+    return this;
   }
 
   /**
@@ -244,35 +266,45 @@ class PDFGenerator {
       showTimestamp = true,
       showPageNumbers = true,
       customText = null,
-      fontSize = 8
-    } = options
+      fontSize = 8,
+    } = options;
 
-    const pageCount = this.doc.internal.getNumberOfPages()
-    
+    const pageCount = this.doc.internal.getNumberOfPages();
+
     for (let i = 1; i <= pageCount; i++) {
-      this.doc.setPage(i)
-      this.doc.setFontSize(fontSize)
-      this.doc.setFont('helvetica', 'normal')
-      this.doc.setTextColor(100, 100, 100)
-      
-      const footerY = this.doc.internal.pageSize.height - 15
-      
+      this.doc.setPage(i);
+      this.doc.setFontSize(fontSize);
+      this.doc.setFont("helvetica", "normal");
+      this.doc.setTextColor(100, 100, 100);
+
+      const footerY = this.doc.internal.pageSize.height - 15;
+
       if (showTimestamp) {
-        const timestamp = `Generated: ${new Date().toLocaleDateString()} at ${new Date().toLocaleTimeString()}`
-        this.doc.text(timestamp, this.margin, footerY)
+        const timestamp = `Generated: ${new Date().toLocaleDateString()} at ${new Date().toLocaleTimeString()}`;
+        this.doc.text(timestamp, this.margin, footerY);
       }
-      
+
       if (showPageNumbers) {
-        const pageText = `Page ${i} of ${pageCount}`
-        this.doc.text(pageText, this.doc.internal.pageSize.width - this.margin, footerY, { align: 'right' })
+        const pageText = `Page ${i} of ${pageCount}`;
+        this.doc.text(
+          pageText,
+          this.doc.internal.pageSize.width - this.margin,
+          footerY,
+          { align: "right" }
+        );
       }
-      
+
       if (customText) {
-        this.doc.text(customText, this.doc.internal.pageSize.width / 2, footerY, { align: 'center' })
+        this.doc.text(
+          customText,
+          this.doc.internal.pageSize.width / 2,
+          footerY,
+          { align: "center" }
+        );
       }
     }
 
-    return this
+    return this;
   }
 
   /**
@@ -281,8 +313,8 @@ class PDFGenerator {
    */
   checkPageBreak(requiredSpace = 20) {
     if (this.currentY + requiredSpace > this.pageHeight) {
-      this.doc.addPage()
-      this.currentY = 20
+      this.doc.addPage();
+      this.currentY = 20;
     }
   }
 
@@ -294,29 +326,36 @@ class PDFGenerator {
   addText(text, options = {}) {
     const {
       fontSize = 10,
-      fontStyle = 'normal',
-      align = 'left',
+      fontStyle = "normal",
+      align = "left",
       color = [0, 0, 0],
       x = this.margin,
-      spacing = 8
-    } = options
+      spacing = 8,
+    } = options;
 
-    this.checkPageBreak(15)
-    
-    this.doc.setFontSize(fontSize)
-    this.doc.setFont('helvetica', fontStyle)
-    this.doc.setTextColor(...color)
-    
-    if (align === 'center') {
-      this.doc.text(text, this.doc.internal.pageSize.width / 2, this.currentY, { align: 'center' })
-    } else if (align === 'right') {
-      this.doc.text(text, this.doc.internal.pageSize.width - this.margin, this.currentY, { align: 'right' })
+    this.checkPageBreak(15);
+
+    this.doc.setFontSize(fontSize);
+    this.doc.setFont("helvetica", fontStyle);
+    this.doc.setTextColor(...color);
+
+    if (align === "center") {
+      this.doc.text(text, this.doc.internal.pageSize.width / 2, this.currentY, {
+        align: "center",
+      });
+    } else if (align === "right") {
+      this.doc.text(
+        text,
+        this.doc.internal.pageSize.width - this.margin,
+        this.currentY,
+        { align: "right" }
+      );
     } else {
-      this.doc.text(text, x, this.currentY)
+      this.doc.text(text, x, this.currentY);
     }
-    
-    this.currentY += spacing
-    return this
+
+    this.currentY += spacing;
+    return this;
   }
 
   /**
@@ -327,36 +366,43 @@ class PDFGenerator {
   addText(text, options = {}) {
     const {
       fontSize = 12,
-      style = 'normal',
-      align = 'left',
+      style = "normal",
+      align = "left",
       marginTop = 10,
       x = 20,
-      color = [0, 0, 0]
+      color = [0, 0, 0],
     } = options;
-    
+
     this.currentY += marginTop;
-    
+
     this.doc.setFontSize(fontSize);
     this.doc.setTextColor(...color);
-    
-    if (style === 'italic') {
-      this.doc.setFont('helvetica', 'italic');
-    } else if (style === 'bold') {
-      this.doc.setFont('helvetica', 'bold');
+
+    if (style === "italic") {
+      this.doc.setFont("helvetica", "italic");
+    } else if (style === "bold") {
+      this.doc.setFont("helvetica", "bold");
     } else {
-      this.doc.setFont('helvetica', 'normal');
+      this.doc.setFont("helvetica", "normal");
     }
-    
-    if (align === 'center') {
-      this.doc.text(text, this.doc.internal.pageSize.width / 2, this.currentY, { align: 'center' });
-    } else if (align === 'right') {
-      this.doc.text(text, this.doc.internal.pageSize.width - 20, this.currentY, { align: 'right' });
+
+    if (align === "center") {
+      this.doc.text(text, this.doc.internal.pageSize.width / 2, this.currentY, {
+        align: "center",
+      });
+    } else if (align === "right") {
+      this.doc.text(
+        text,
+        this.doc.internal.pageSize.width - 20,
+        this.currentY,
+        { align: "right" }
+      );
     } else {
       this.doc.text(text, x, this.currentY);
     }
-    
+
     this.currentY += fontSize * 0.5;
-    
+
     return this;
   }
 
@@ -370,41 +416,41 @@ class PDFGenerator {
       columns = 2,
       marginTop = 20,
       blockHeight = 30,
-      blockWidth = 80
-    } = options
-    
-    this.currentY += marginTop
-    
-    const pageWidth = this.doc.internal.pageSize.width
-    const totalWidth = columns * blockWidth
-    const spacing = (pageWidth - totalWidth - 40) / (columns - 1)
-    
+      blockWidth = 80,
+    } = options;
+
+    this.currentY += marginTop;
+
+    const pageWidth = this.doc.internal.pageSize.width;
+    const totalWidth = columns * blockWidth;
+    const spacing = (pageWidth - totalWidth - 40) / (columns - 1);
+
     signatures.forEach((signature, index) => {
-      const col = index % columns
-      const row = Math.floor(index / columns)
-      
-      const x = 20 + col * (blockWidth + spacing)
-      const y = this.currentY + row * (blockHeight + 10)
-      
+      const col = index % columns;
+      const row = Math.floor(index / columns);
+
+      const x = 20 + col * (blockWidth + spacing);
+      const y = this.currentY + row * (blockHeight + 10);
+
       // Title
-      this.doc.setFontSize(10)
-      this.doc.setFont('helvetica', 'normal')
-      this.doc.text(signature.title, x, y)
-      
+      this.doc.setFontSize(10);
+      this.doc.setFont("helvetica", "normal");
+      this.doc.text(signature.title, x, y);
+
       // Signature line
-      this.doc.line(x, y + 15, x + blockWidth - 10, y + 15)
-      
+      this.doc.line(x, y + 15, x + blockWidth - 10, y + 15);
+
       // Name (if provided)
-      if (signature.name && signature.name !== '_____________') {
-        this.doc.setFontSize(9)
-        this.doc.text(signature.name, x, y + 25)
+      if (signature.name && signature.name !== "_____________") {
+        this.doc.setFontSize(9);
+        this.doc.text(signature.name, x, y + 25);
       }
-    })
-    
-    const rows = Math.ceil(signatures.length / columns)
-    this.currentY += rows * (blockHeight + 10)
-    
-    return this
+    });
+
+    const rows = Math.ceil(signatures.length / columns);
+    this.currentY += rows * (blockHeight + 10);
+
+    return this;
   }
 
   /**
@@ -413,10 +459,10 @@ class PDFGenerator {
    */
   save(filename) {
     if (!this.doc) {
-      throw new Error('PDF document not initialized. Call init() first.')
+      throw new Error("PDF document not initialized. Call init() first.");
     }
-    this.doc.save(filename)
-    return this
+    this.doc.save(filename);
+    return this;
   }
 
   /**
@@ -425,9 +471,9 @@ class PDFGenerator {
    */
   getBlob() {
     if (!this.doc) {
-      throw new Error('PDF document not initialized. Call init() first.')
+      throw new Error("PDF document not initialized. Call init() first.");
     }
-    return this.doc.output('blob')
+    return this.doc.output("blob");
   }
 
   /**
@@ -436,14 +482,14 @@ class PDFGenerator {
    */
   getDataURL() {
     if (!this.doc) {
-      throw new Error('PDF document not initialized. Call init() first.')
+      throw new Error("PDF document not initialized. Call init() first.");
     }
-    return this.doc.output('dataurlstring')
+    return this.doc.output("dataurlstring");
   }
 }
 
 // Export a factory function for creating new PDF generators
-export const createPDFGenerator = () => new PDFGenerator()
+export const createPDFGenerator = () => new PDFGenerator();
 
 // Export some common PDF templates
 export const PDFTemplates = {
@@ -453,82 +499,82 @@ export const PDFTemplates = {
    * @param {Object} options - Template options
    */
   deliveryReport: (data, options = {}) => {
-    const pdf = createPDFGenerator().init()
-    
+    const pdf = createPDFGenerator().init();
+
     // Header
     pdf.addHeader({
-      title: data.title || 'Delivery Report',
-      ...options.header
-    })
-    
+      title: data.title || "Delivery Report",
+      ...options.header,
+    });
+
     // Summary stats
     if (data.summary) {
-      pdf.addSummaryCards(data.summary)
+      pdf.addSummaryCards(data.summary);
     }
-    
+
     // Key information
     if (data.keyInfo) {
-      pdf.addKeyValueSection(data.keyInfo, { columns: 2 })
+      pdf.addKeyValueSection(data.keyInfo, { columns: 2 });
     }
-    
+
     // Main data table
     if (data.tableData) {
       pdf.addTable({
-        title: data.tableTitle || 'Delivery Details',
+        title: data.tableTitle || "Delivery Details",
         headers: data.headers,
         data: data.tableData,
-        ...options.table
-      })
+        ...options.table,
+      });
     }
-    
+
     // Additional tables
     if (data.additionalTables) {
-      data.additionalTables.forEach(table => {
-        pdf.addTable(table)
-      })
+      data.additionalTables.forEach((table) => {
+        pdf.addTable(table);
+      });
     }
-    
+
     // Footer
-    pdf.addFooter(options.footer)
-    
-    return pdf
+    pdf.addFooter(options.footer);
+
+    return pdf;
   },
-  
+
   /**
    * Generate a summary report PDF
    * @param {Object} data - Report data
    * @param {Object} options - Template options
    */
   summaryReport: (data, options = {}) => {
-    const pdf = createPDFGenerator().init()
-    
+    const pdf = createPDFGenerator().init();
+
     pdf.addHeader({
-      title: data.title || 'Summary Report',
-      ...options.header
-    })
-    
+      title: data.title || "Summary Report",
+      ...options.header,
+    });
+
     // Key metrics
     if (data.metrics) {
-      pdf.addSectionTitle('Key Metrics')
-      pdf.addSummaryCards(data.metrics)
+      pdf.addSectionTitle("Key Metrics");
+      pdf.addSummaryCards(data.metrics);
     }
-    
+
     // Breakdown sections
     if (data.breakdowns) {
-      data.breakdowns.forEach(breakdown => {
-        pdf.addSectionTitle(breakdown.title)
-        if (breakdown.type === 'table') {
-          pdf.addTable(breakdown.data)
-        } else if (breakdown.type === 'keyValue') {
-          pdf.addKeyValueSection(breakdown.data)
+      data.breakdowns.forEach((breakdown) => {
+        pdf.addSectionTitle(breakdown.title);
+        if (breakdown.type === "table") {
+          pdf.addTable(breakdown.data);
+        } else if (breakdown.type === "keyValue") {
+          pdf.addKeyValueSection(breakdown.data);
         }
-      })
+      });
     }
-    
-    pdf.addFooter(options.footer)
-    
-    return pdf
-  }
-}
 
-export default PDFGenerator
+    pdf.addFooter(options.footer);
+
+    return pdf;
+  },
+};
+
+export default PDFGenerator;

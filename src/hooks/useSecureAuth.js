@@ -1,9 +1,9 @@
-import React from 'react';
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { useRouter } from 'next/navigation';
-import secureAuthService from '@/services/secureAuthService';
-import { queryKeys } from '@/lib/queryClient';
-import { toast } from 'sonner';
+import React from "react";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { useRouter } from "next/navigation";
+import secureAuthService from "@/services/secureAuthService";
+import { queryKeys } from "@/lib/queryClient";
+import { toast } from "sonner";
 
 // Hook to check authentication status
 export const useAuth = () => {
@@ -19,7 +19,7 @@ export const useAuth = () => {
 // Hook to get current user data
 export const useCurrentUser = () => {
   return useQuery({
-    queryKey: ['auth', 'currentUser'],
+    queryKey: ["auth", "currentUser"],
     queryFn: () => secureAuthService.getCurrentUser(),
     staleTime: 5 * 60 * 1000, // 5 minutes
     retry: false,
@@ -31,20 +31,20 @@ export const useCurrentUser = () => {
 export const useAdminLogin = () => {
   const router = useRouter();
   const queryClient = useQueryClient();
-  
+
   return useMutation({
     mutationFn: (credentials) => secureAuthService.adminLogin(credentials),
     onSuccess: (data) => {
       // Invalidate auth queries to refetch user data
       queryClient.invalidateQueries({ queryKey: queryKeys.auth.user() });
-      queryClient.invalidateQueries({ queryKey: ['auth', 'currentUser'] });
-      
-      toast.success('Login successful!');
-      router.push('/dashboard');
+      queryClient.invalidateQueries({ queryKey: ["auth", "currentUser"] });
+
+      toast.success("Login successful!");
+      router.push("/dashboard");
     },
     onError: (error) => {
-      console.error('Login error:', error);
-      toast.error(error.message || 'Login failed. Please try again.');
+      console.error("Login error:", error);
+      toast.error(error.message || "Login failed. Please try again.");
     },
   });
 };
@@ -53,20 +53,20 @@ export const useAdminLogin = () => {
 export const useSuperAdminLogin = () => {
   const router = useRouter();
   const queryClient = useQueryClient();
-  
+
   return useMutation({
     mutationFn: (credentials) => secureAuthService.superAdminLogin(credentials),
     onSuccess: (data) => {
       // Invalidate auth queries to refetch user data
       queryClient.invalidateQueries({ queryKey: queryKeys.auth.user() });
-      queryClient.invalidateQueries({ queryKey: ['auth', 'currentUser'] });
-      
-      toast.success('Super Admin login successful!');
-      router.push('/dashboard');
+      queryClient.invalidateQueries({ queryKey: ["auth", "currentUser"] });
+
+      toast.success("Super Admin login successful!");
+      router.push("/dashboard");
     },
     onError: (error) => {
-      console.error('Super Admin login error:', error);
-      toast.error(error.message || 'Login failed. Please try again.');
+      console.error("Super Admin login error:", error);
+      toast.error(error.message || "Login failed. Please try again.");
     },
   });
 };
@@ -75,22 +75,22 @@ export const useSuperAdminLogin = () => {
 export const useLogout = () => {
   const router = useRouter();
   const queryClient = useQueryClient();
-  
+
   return useMutation({
     mutationFn: () => secureAuthService.logout(),
     onSuccess: () => {
       // Clear all cached data
       queryClient.clear();
-      
-      toast.success('Logged out successfully');
-      router.push('/login');
+
+      toast.success("Logged out successfully");
+      router.push("/login");
     },
     onError: (error) => {
-      console.error('Logout error:', error);
+      console.error("Logout error:", error);
       // Even if logout fails on server, clear client cache and redirect
       queryClient.clear();
-      toast.warning('Logged out (with errors)');
-      router.push('/login');
+      toast.warning("Logged out (with errors)");
+      router.push("/login");
     },
   });
 };
@@ -98,16 +98,16 @@ export const useLogout = () => {
 // Hook to refresh authentication token
 export const useRefreshToken = () => {
   const queryClient = useQueryClient();
-  
+
   return useMutation({
     mutationFn: () => secureAuthService.refreshToken(),
     onSuccess: () => {
       // Invalidate auth queries to refetch user data
       queryClient.invalidateQueries({ queryKey: queryKeys.auth.user() });
-      queryClient.invalidateQueries({ queryKey: ['auth', 'currentUser'] });
+      queryClient.invalidateQueries({ queryKey: ["auth", "currentUser"] });
     },
     onError: (error) => {
-      console.error('Token refresh error:', error);
+      console.error("Token refresh error:", error);
       // If refresh fails, user needs to login again
       queryClient.clear();
     },
@@ -117,7 +117,7 @@ export const useRefreshToken = () => {
 // Hook to check if user is super admin
 export const useIsSuperAdmin = () => {
   return useQuery({
-    queryKey: ['auth', 'isSuperAdmin'],
+    queryKey: ["auth", "isSuperAdmin"],
     queryFn: () => secureAuthService.isSuperAdmin(),
     staleTime: 5 * 60 * 1000, // 5 minutes
     retry: false,
@@ -128,7 +128,7 @@ export const useIsSuperAdmin = () => {
 // Hook to get CSRF token
 export const useCSRFToken = () => {
   return useQuery({
-    queryKey: ['auth', 'csrf'],
+    queryKey: ["auth", "csrf"],
     queryFn: () => secureAuthService.getCSRFToken(),
     staleTime: 30 * 60 * 1000, // 30 minutes
     retry: 1,
@@ -139,14 +139,14 @@ export const useCSRFToken = () => {
 export const useProtectedRoute = () => {
   const { data: isAuthenticated, isLoading, error } = useAuth();
   const router = useRouter();
-  
+
   // Redirect to login if not authenticated
   React.useEffect(() => {
     if (!isLoading && !isAuthenticated) {
-      router.push('/login');
+      router.push("/login");
     }
   }, [isAuthenticated, isLoading, router]);
-  
+
   return {
     isAuthenticated,
     isLoading,

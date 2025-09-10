@@ -1,4 +1,4 @@
-import { get, post, put, del } from '../lib/apiClient';
+import { get, post, put, del } from "../lib/apiClient";
 
 class AdminService {
   /**
@@ -6,7 +6,7 @@ class AdminService {
    * @returns {Promise<Array>} List of admins
    */
   async getAllAdmins() {
-    return await get('/api/superadmin/view-admins');
+    return await get("/api/superadmin/view-admins");
   }
 
   /**
@@ -15,7 +15,7 @@ class AdminService {
    * @returns {Promise<Object>} Created admin data
    */
   async createAdmin(adminData) {
-    return await post('/api/superadmin/create-admin', adminData);
+    return await post("/api/superadmin/create-admin", adminData);
   }
 
   /**
@@ -24,7 +24,7 @@ class AdminService {
    * @returns {Promise<Object>} Updated admin data
    */
   async updateAdmin(adminData) {
-    return await put('/api/superadmin/update-admin', adminData);
+    return await put("/api/superadmin/update-admin", adminData);
   }
 
   /**

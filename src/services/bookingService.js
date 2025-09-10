@@ -1,4 +1,4 @@
-import { get, post, put, del } from '../lib/apiClient';
+import { get, post, put, del } from "../lib/apiClient";
 
 class BookingService {
   /**
@@ -6,7 +6,7 @@ class BookingService {
    * @returns {Promise<Array>} List of bookings
    */
   async getAllBookings() {
-    return await get('/api/bookings/all-bookings');
+    return await get("/api/bookings/all-bookings");
   }
 
   /**
@@ -24,7 +24,7 @@ class BookingService {
    * @returns {Promise<Object>} Created booking data
    */
   async createBooking(bookingData) {
-    return await post('/api/bookings/create-booking', bookingData);
+    return await post("/api/bookings/create-booking", bookingData);
   }
 
   /**
@@ -53,7 +53,10 @@ class BookingService {
    * @returns {Promise<Object>} Rejection response
    */
   async rejectRequest(requestId, rejectionData) {
-    return await put(`/api/bookings/reject-request/${requestId}`, rejectionData);
+    return await put(
+      `/api/bookings/reject-request/${requestId}`,
+      rejectionData
+    );
   }
 
   /**
@@ -62,7 +65,7 @@ class BookingService {
    * @returns {Promise<Object>} Acceptance response
    */
   async acceptRequest(requestData) {
-    return await post('/api/accept-request', requestData);
+    return await post("/api/accept-request", requestData);
   }
 
   /**

@@ -20,7 +20,7 @@ export const useSearch = (data = [], searchFields = [], options = {}) => {
 
   // Helper function to get nested property value
   const getNestedValue = useCallback((obj, path) => {
-    return path.split('.').reduce((current, key) => {
+    return path.split(".").reduce((current, key) => {
       return current && current[key] !== undefined ? current[key] : null;
     }, obj);
   }, []);
@@ -32,12 +32,12 @@ export const useSearch = (data = [], searchFields = [], options = {}) => {
     }
 
     const query = searchQuery.toLowerCase();
-    
+
     return safeData.filter((item) => {
       return searchFields.some((field) => {
         const value = getNestedValue(item, field);
         if (value === null || value === undefined) return false;
-        
+
         // Convert to string and search
         return value.toString().toLowerCase().includes(query);
       });
@@ -45,15 +45,18 @@ export const useSearch = (data = [], searchFields = [], options = {}) => {
   }, [safeData, searchQuery, searchFields, getNestedValue]);
 
   // Handle search input change
-  const handleSearch = useCallback((e) => {
-    const query = typeof e === 'string' ? e : e.target.value;
-    setSearchQuery(query);
-    
-    // Reset pagination if requested
-    if (resetPageOnSearch && onPageReset) {
-      onPageReset(1);
-    }
-  }, [resetPageOnSearch, onPageReset]);
+  const handleSearch = useCallback(
+    (e) => {
+      const query = typeof e === "string" ? e : e.target.value;
+      setSearchQuery(query);
+
+      // Reset pagination if requested
+      if (resetPageOnSearch && onPageReset) {
+        onPageReset(1);
+      }
+    },
+    [resetPageOnSearch, onPageReset]
+  );
 
   // Clear search
   const clearSearch = useCallback(() => {
@@ -70,6 +73,6 @@ export const useSearch = (data = [], searchFields = [], options = {}) => {
     handleSearch,
     clearSearch,
     hasSearchQuery: searchQuery.trim().length > 0,
-    resultCount: filteredData.length
+    resultCount: filteredData.length,
   };
 };

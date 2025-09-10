@@ -1,16 +1,21 @@
-import { NextResponse } from 'next/server';
+import { NextResponse } from "next/server";
 
 export function middleware(request) {
   const { pathname } = request.nextUrl;
-  
+
   // Allow access to login page and public assets
-  if (pathname === '/login' || pathname.startsWith('/_next') || pathname.startsWith('/favicon') || pathname.startsWith('/api')) {
+  if (
+    pathname === "/login" ||
+    pathname.startsWith("/_next") ||
+    pathname.startsWith("/favicon") ||
+    pathname.startsWith("/api")
+  ) {
     return NextResponse.next();
   }
 
   // For dashboard routes, we'll handle authentication on the client side
   // since we're using localStorage instead of cookies
-  if (pathname.startsWith('/dashboard')) {
+  if (pathname.startsWith("/dashboard")) {
     return NextResponse.next();
   }
 
@@ -27,6 +32,6 @@ export const config = {
      * - _next/image (image optimization files)
      * - favicon.ico (favicon file)
      */
-    '/((?!api|_next/static|_next/image|favicon.ico).*)',
+    "/((?!api|_next/static|_next/image|favicon.ico).*)",
   ],
 };

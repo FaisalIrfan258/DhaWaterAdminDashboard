@@ -1,4 +1,4 @@
-import { get, post, put, del } from '../lib/apiClient';
+import { get, post, put, del } from "../lib/apiClient";
 
 class NotificationService {
   /**
@@ -6,7 +6,7 @@ class NotificationService {
    * @returns {Promise<Array>} List of notifications
    */
   async getAllNotifications() {
-    return await get('/api/notification/all-notifications');
+    return await get("/api/notification/all-notifications");
   }
 
   /**
@@ -24,7 +24,10 @@ class NotificationService {
    * @returns {Promise<Object>} Created notification data
    */
   async createNotification(notificationData) {
-    return await post('/api/notification/create-notification', notificationData);
+    return await post(
+      "/api/notification/create-notification",
+      notificationData
+    );
   }
 
   /**
@@ -33,7 +36,10 @@ class NotificationService {
    * @returns {Promise<Object>} Created notification data
    */
   async createNotificationForAll(notificationData) {
-    return await post('/api/notification/create-notification-for-all', notificationData);
+    return await post(
+      "/api/notification/create-notification-for-all",
+      notificationData
+    );
   }
 
   /**
@@ -43,7 +49,10 @@ class NotificationService {
    * @returns {Promise<Object>} Updated notification data
    */
   async updateNotification(notificationId, notificationData) {
-    return await put(`/api/notification/update-notification/${notificationId}`, notificationData);
+    return await put(
+      `/api/notification/update-notification/${notificationId}`,
+      notificationData
+    );
   }
 
   /**

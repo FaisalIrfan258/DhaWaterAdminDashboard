@@ -1,5 +1,5 @@
-import axios from 'axios';
-import { toast } from 'sonner';
+import axios from "axios";
+import { toast } from "sonner";
 
 // Create axios instance with secure configuration
 const secureApiClient = axios.create({
@@ -7,7 +7,7 @@ const secureApiClient = axios.create({
   timeout: 10000, // 10 seconds timeout
   withCredentials: true, // Always include cookies
   headers: {
-    'Content-Type': 'application/json',
+    "Content-Type": "application/json",
   },
 });
 
@@ -15,23 +15,28 @@ const secureApiClient = axios.create({
 secureApiClient.interceptors.request.use(
   async (config) => {
     // Add CSRF token for state-changing requests
-    if (['post', 'put', 'patch', 'delete'].includes(config.method?.toLowerCase())) {
+    if (
+      ["post", "put", "patch", "delete"].includes(config.method?.toLowerCase())
+    ) {
       try {
         // Get CSRF token from a dedicated endpoint
-        const csrfResponse = await axios.get(`${process.env.NEXT_PUBLIC_BASE_URL}/api/auth/csrf`, {
-          withCredentials: true,
-        });
+        const csrfResponse = await axios.get(
+          `${process.env.NEXT_PUBLIC_BASE_URL}/api/auth/csrf`,
+          {
+            withCredentials: true,
+          }
+        );
         if (csrfResponse.data.csrf_token) {
-          config.headers['X-CSRF-Token'] = csrfResponse.data.csrf_token;
+          config.headers["X-CSRF-Token"] = csrfResponse.data.csrf_token;
         }
       } catch (error) {
-        console.warn('Failed to get CSRF token:', error);
+        console.warn("Failed to get CSRF token:", error);
       }
     }
-    
+
     // Add security headers
-    config.headers['X-Requested-With'] = 'XMLHttpRequest';
-    
+    config.headers["X-Requested-With"] = "XMLHttpRequest";
+
     return config;
   },
   (error) => {
@@ -49,51 +54,53 @@ secureApiClient.interceptors.response.use(
     if (error.response) {
       // Server responded with error status
       const { status, data } = error.response;
-      
+
       switch (status) {
         case 401:
           // Unauthorized - try to refresh token first
           try {
-            await secureApiClient.post('/api/auth/refresh');
+            await secureApiClient.post("/api/auth/refresh");
             // Retry the original request
             return secureApiClient.request(error.config);
           } catch (refreshError) {
             // Refresh failed - redirect to login
-            toast.error('Session expired. Please login again.');
-            if (typeof window !== 'undefined') {
+            toast.error("Session expired. Please login again.");
+            if (typeof window !== "undefined") {
               // Clear any client-side data
               localStorage.clear();
               sessionStorage.clear();
-              window.location.href = '/login';
+              window.location.href = "/login";
             }
           }
           break;
         case 403:
-          toast.error('Access denied. You do not have permission to perform this action.');
+          toast.error(
+            "Access denied. You do not have permission to perform this action."
+          );
           break;
         case 404:
-          toast.error('Resource not found.');
+          toast.error("Resource not found.");
           break;
         case 422:
-          toast.error(data?.message || 'Validation error occurred.');
+          toast.error(data?.message || "Validation error occurred.");
           break;
         case 429:
-          toast.error('Too many requests. Please wait a moment and try again.');
+          toast.error("Too many requests. Please wait a moment and try again.");
           break;
         case 500:
-          toast.error('Internal server error. Please try again later.');
+          toast.error("Internal server error. Please try again later.");
           break;
         default:
-          toast.error(data?.message || 'An unexpected error occurred.');
+          toast.error(data?.message || "An unexpected error occurred.");
       }
     } else if (error.request) {
       // Network error
-      toast.error('Network error. Please check your connection.');
+      toast.error("Network error. Please check your connection.");
     } else {
       // Other error
-      toast.error('An unexpected error occurred.');
+      toast.error("An unexpected error occurred.");
     }
-    
+
     return Promise.reject(error);
   }
 );

@@ -1,4 +1,4 @@
-import { get, post, put, del } from '../lib/apiClient';
+import { get, post, put, del } from "../lib/apiClient";
 
 class SensorService {
   /**
@@ -6,7 +6,7 @@ class SensorService {
    * @returns {Promise<Array>} List of sensors
    */
   async getAllSensors() {
-    return await get('/api/sensor');
+    return await get("/api/sensor");
   }
 
   /**
@@ -14,7 +14,7 @@ class SensorService {
    * @returns {Promise<Array>} List of available sensors
    */
   async getAvailableSensors() {
-    return await get('/api/sensor/available-sensors');
+    return await get("/api/sensor/available-sensors");
   }
 
   /**
@@ -23,7 +23,7 @@ class SensorService {
    * @returns {Promise<Object>} Created sensor data
    */
   async createSensor(sensorData) {
-    return await post('/api/sensor', sensorData);
+    return await post("/api/sensor", sensorData);
   }
 
   /**
@@ -32,7 +32,7 @@ class SensorService {
    * @returns {Promise<Object>} Updated sensor data
    */
   async updateSensor(sensorData) {
-    return await put('/api/sensor', sensorData);
+    return await put("/api/sensor", sensorData);
   }
 
   /**

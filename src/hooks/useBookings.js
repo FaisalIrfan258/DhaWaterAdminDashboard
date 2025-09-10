@@ -1,7 +1,7 @@
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { toast } from 'sonner';
-import { bookingService } from '@/services';
-import { queryKeys } from '@/lib/queryClient';
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { toast } from "sonner";
+import { bookingService } from "@/services";
+import { queryKeys } from "@/lib/queryClient";
 
 // Get all bookings
 export const useBookings = () => {
@@ -40,7 +40,7 @@ export const usePendingBookings = () => {
     queryKey: queryKeys.bookings.pending(),
     queryFn: async () => {
       const allBookings = await bookingService.getAllBookings();
-      return allBookings.filter(booking => booking.status === 'Pending');
+      return allBookings.filter((booking) => booking.status === "Pending");
     },
     staleTime: 1 * 60 * 1000, // 1 minute
   });
@@ -49,7 +49,7 @@ export const usePendingBookings = () => {
 // Create booking mutation
 export const useCreateBooking = () => {
   const queryClient = useQueryClient();
-  
+
   return useMutation({
     mutationFn: (bookingData) => bookingService.createBooking(bookingData),
     onSuccess: (data) => {
@@ -57,17 +57,20 @@ export const useCreateBooking = () => {
       queryClient.invalidateQueries({ queryKey: queryKeys.bookings.all() });
       queryClient.invalidateQueries({ queryKey: queryKeys.bookings.pending() });
       if (data.customer_id) {
-        queryClient.invalidateQueries({ queryKey: queryKeys.bookings.byUser(data.customer_id) });
+        queryClient.invalidateQueries({
+          queryKey: queryKeys.bookings.byUser(data.customer_id),
+        });
       }
-      
-      toast.success('Booking created successfully', {
-        description: 'The water delivery booking has been created.',
+
+      toast.success("Booking created successfully", {
+        description: "The water delivery booking has been created.",
       });
     },
     onError: (error) => {
-      console.error('Error creating booking:', error);
-      toast.error('Failed to create booking', {
-        description: error?.response?.data?.message || 'Please try again later.',
+      console.error("Error creating booking:", error);
+      toast.error("Failed to create booking", {
+        description:
+          error?.response?.data?.message || "Please try again later.",
       });
     },
   });
@@ -76,23 +79,27 @@ export const useCreateBooking = () => {
 // Update booking mutation
 export const useUpdateBooking = () => {
   const queryClient = useQueryClient();
-  
+
   return useMutation({
-    mutationFn: ({ bookingId, bookingData }) => bookingService.updateBooking(bookingId, bookingData),
+    mutationFn: ({ bookingId, bookingData }) =>
+      bookingService.updateBooking(bookingId, bookingData),
     onSuccess: (data, variables) => {
       // Invalidate and refetch bookings
       queryClient.invalidateQueries({ queryKey: queryKeys.bookings.all() });
-      queryClient.invalidateQueries({ queryKey: queryKeys.bookings.byId(variables.bookingId) });
+      queryClient.invalidateQueries({
+        queryKey: queryKeys.bookings.byId(variables.bookingId),
+      });
       queryClient.invalidateQueries({ queryKey: queryKeys.bookings.pending() });
-      
-      toast.success('Booking updated successfully', {
-        description: 'The booking information has been updated.',
+
+      toast.success("Booking updated successfully", {
+        description: "The booking information has been updated.",
       });
     },
     onError: (error) => {
-      console.error('Error updating booking:', error);
-      toast.error('Failed to update booking', {
-        description: error?.response?.data?.message || 'Please try again later.',
+      console.error("Error updating booking:", error);
+      toast.error("Failed to update booking", {
+        description:
+          error?.response?.data?.message || "Please try again later.",
       });
     },
   });
@@ -101,22 +108,23 @@ export const useUpdateBooking = () => {
 // Delete booking mutation
 export const useDeleteBooking = () => {
   const queryClient = useQueryClient();
-  
+
   return useMutation({
     mutationFn: (bookingId) => bookingService.deleteBooking(bookingId),
     onSuccess: (data) => {
       // Invalidate and refetch bookings
       queryClient.invalidateQueries({ queryKey: queryKeys.bookings.all() });
       queryClient.invalidateQueries({ queryKey: queryKeys.bookings.pending() });
-      
-      toast.success('Booking deleted successfully', {
-        description: 'The booking has been removed from the system.',
+
+      toast.success("Booking deleted successfully", {
+        description: "The booking has been removed from the system.",
       });
     },
     onError: (error) => {
-      console.error('Error deleting booking:', error);
-      toast.error('Failed to delete booking', {
-        description: error?.response?.data?.message || 'Please try again later.',
+      console.error("Error deleting booking:", error);
+      toast.error("Failed to delete booking", {
+        description:
+          error?.response?.data?.message || "Please try again later.",
       });
     },
   });
@@ -125,7 +133,7 @@ export const useDeleteBooking = () => {
 // Accept booking request mutation
 export const useAcceptBookingRequest = () => {
   const queryClient = useQueryClient();
-  
+
   return useMutation({
     mutationFn: (requestData) => bookingService.acceptRequest(requestData),
     onSuccess: (data) => {
@@ -133,16 +141,19 @@ export const useAcceptBookingRequest = () => {
       queryClient.invalidateQueries({ queryKey: queryKeys.bookings.all() });
       queryClient.invalidateQueries({ queryKey: queryKeys.bookings.pending() });
       queryClient.invalidateQueries({ queryKey: queryKeys.requests.all() });
-      queryClient.invalidateQueries({ queryKey: queryKeys.requests.totalPending() });
-      
-      toast.success('Booking request accepted successfully', {
-        description: 'The booking request has been accepted and processed.',
+      queryClient.invalidateQueries({
+        queryKey: queryKeys.requests.totalPending(),
+      });
+
+      toast.success("Booking request accepted successfully", {
+        description: "The booking request has been accepted and processed.",
       });
     },
     onError: (error) => {
-      console.error('Error accepting booking request:', error);
-      toast.error('Failed to accept booking request', {
-        description: error?.response?.data?.message || 'Please try again later.',
+      console.error("Error accepting booking request:", error);
+      toast.error("Failed to accept booking request", {
+        description:
+          error?.response?.data?.message || "Please try again later.",
       });
     },
   });

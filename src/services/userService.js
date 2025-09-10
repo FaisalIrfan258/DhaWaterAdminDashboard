@@ -1,4 +1,4 @@
-import { get, post, put, del } from '../lib/apiClient';
+import { get, post, put, del } from "../lib/apiClient";
 
 class UserService {
   /**
@@ -6,7 +6,7 @@ class UserService {
    * @returns {Promise<Array>} List of users
    */
   async getAllUsers() {
-    return await get('/api/users/');
+    return await get("/api/users/");
   }
 
   /**
@@ -24,7 +24,7 @@ class UserService {
    * @returns {Promise<Object>} Created user data
    */
   async createUser(userData) {
-    return await post('/api/users/signup', userData);
+    return await post("/api/users/signup", userData);
   }
 
   /**
@@ -33,7 +33,7 @@ class UserService {
    * @returns {Promise<Object>} Updated user data
    */
   async updateUser(userData) {
-    return await put('/api/customer/update', userData);
+    return await put("/api/customer/update", userData);
   }
 
   /**
@@ -62,7 +62,9 @@ class UserService {
    * @returns {Promise<Array>} Tank status data
    */
   async getUserTankStatus(userId, startDate, endDate) {
-    return await get(`/api/tankStatus/hourly-tank-status?customer_id=${userId}&start_date=${startDate}&end_date=${endDate}`);
+    return await get(
+      `/api/tankStatus/hourly-tank-status?customer_id=${userId}&start_date=${startDate}&end_date=${endDate}`
+    );
   }
 
   /**
@@ -70,7 +72,7 @@ class UserService {
    * @returns {Promise<Object>} Total users count
    */
   async getTotalUsers() {
-    return await get('/api/customer/total-users');
+    return await get("/api/customer/total-users");
   }
 }
 

@@ -1,4 +1,4 @@
-import { get, post, put, del } from '../lib/apiClient';
+import { get, post, put, del } from "../lib/apiClient";
 
 class TankerService {
   /**
@@ -6,7 +6,7 @@ class TankerService {
    * @returns {Promise<Array>} List of tankers
    */
   async getAllTankers() {
-    return await get('/api/tankers');
+    return await get("/api/tankers");
   }
 
   /**
@@ -24,7 +24,7 @@ class TankerService {
    * @returns {Promise<Object>} Created tanker data
    */
   async createTanker(tankerData) {
-    return await post('/api/tankers', tankerData);
+    return await post("/api/tankers", tankerData);
   }
 
   /**
@@ -51,7 +51,7 @@ class TankerService {
    * @returns {Promise<Array>} List of available tankers
    */
   async getAvailableTankers() {
-    return await get('/api/tankers/available-tankers');
+    return await get("/api/tankers/available-tankers");
   }
 
   /**
@@ -59,7 +59,7 @@ class TankerService {
    * @returns {Promise<Object>} Total tankers count
    */
   async getTotalTankers() {
-    return await get('/api/tankers/total-tankers');
+    return await get("/api/tankers/total-tankers");
   }
 }
 

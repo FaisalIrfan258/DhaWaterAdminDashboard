@@ -1,4 +1,4 @@
-import { get, post, put, del } from '../lib/apiClient';
+import { get, post, put, del } from "../lib/apiClient";
 
 class TankService {
   /**
@@ -16,7 +16,9 @@ class TankService {
    * @returns {Promise<Object>} Latest water level in gallons
    */
   async getLatestWaterLevelGallons(tankId) {
-    return await get(`/api/tankStatus/latest-water-level-gallons/?tank_id=${tankId}`);
+    return await get(
+      `/api/tankStatus/latest-water-level-gallons/?tank_id=${tankId}`
+    );
   }
 
   /**
@@ -27,7 +29,9 @@ class TankService {
    * @returns {Promise<Array>} Hourly tank status data
    */
   async getHourlyTankStatus(customerId, startDate, endDate) {
-    return await get(`/api/tankStatus/hourly-tank-status?customer_id=${customerId}&start_date=${startDate}&end_date=${endDate}`);
+    return await get(
+      `/api/tankStatus/hourly-tank-status?customer_id=${customerId}&start_date=${startDate}&end_date=${endDate}`
+    );
   }
 }
 

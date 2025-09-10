@@ -1,4 +1,4 @@
-import { get, post, put, del } from '../lib/apiClient';
+import { get, post, put, del } from "../lib/apiClient";
 
 class ComplaintService {
   /**
@@ -6,7 +6,7 @@ class ComplaintService {
    * @returns {Promise<Array>} List of complaints
    */
   async getAllComplaints() {
-    return await get('/api/complain/all-complains');
+    return await get("/api/complain/all-complains");
   }
 
   /**
@@ -16,7 +16,10 @@ class ComplaintService {
    * @returns {Promise<Object>} Updated complaint data
    */
   async updateComplaintRemarks(complaintId, remarksData) {
-    return await put(`/api/complain/update-complain-remarks/${complaintId}`, remarksData);
+    return await put(
+      `/api/complain/update-complain-remarks/${complaintId}`,
+      remarksData
+    );
   }
 }
 

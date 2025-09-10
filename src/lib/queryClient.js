@@ -1,5 +1,5 @@
-import { QueryClient } from '@tanstack/react-query';
-import { toast } from 'sonner';
+import { QueryClient } from "@tanstack/react-query";
+import { toast } from "sonner";
 
 // Create a client
 export const queryClient = new QueryClient({
@@ -26,11 +26,11 @@ export const queryClient = new QueryClient({
       refetchOnReconnect: true,
       // Error handling
       onError: (error) => {
-        console.error('Query error:', error);
+        console.error("Query error:", error);
         // Show toast for network errors or server errors
         if (error?.response?.status >= 500 || !error?.response) {
-          toast.error('Network error', {
-            description: 'Please check your connection and try again.',
+          toast.error("Network error", {
+            description: "Please check your connection and try again.",
           });
         }
       },
@@ -47,19 +47,19 @@ export const queryClient = new QueryClient({
       },
       // Error handling for mutations
       onError: (error) => {
-        console.error('Mutation error:', error);
+        console.error("Mutation error:", error);
         // Show specific error messages based on status code
         if (error?.response?.status === 401) {
-          toast.error('Authentication failed', {
-            description: 'Please log in again.',
+          toast.error("Authentication failed", {
+            description: "Please log in again.",
           });
         } else if (error?.response?.status === 403) {
-          toast.error('Access denied', {
-            description: 'You do not have permission to perform this action.',
+          toast.error("Access denied", {
+            description: "You do not have permission to perform this action.",
           });
         } else if (error?.response?.status >= 500 || !error?.response) {
-          toast.error('Server error', {
-            description: 'Something went wrong. Please try again later.',
+          toast.error("Server error", {
+            description: "Something went wrong. Please try again later.",
           });
         }
       },
@@ -71,68 +71,86 @@ export const queryClient = new QueryClient({
 export const queryKeys = {
   // Auth
   auth: {
-    user: () => ['auth', 'user'],
+    user: () => ["auth", "user"],
   },
   // Users
   users: {
-    all: () => ['users'],
-    profile: (userId) => ['users', 'profile', userId],
-    total: () => ['users', 'total'],
-    tankStatus: (userId, startDate, endDate) => ['users', 'tankStatus', userId, startDate, endDate],
+    all: () => ["users"],
+    profile: (userId) => ["users", "profile", userId],
+    total: () => ["users", "total"],
+    tankStatus: (userId, startDate, endDate) => [
+      "users",
+      "tankStatus",
+      userId,
+      startDate,
+      endDate,
+    ],
   },
   // Tankers
   tankers: {
-    all: () => ['tankers'],
-    byId: (tankerId) => ['tankers', tankerId],
-    total: () => ['tankers', 'total'],
-    available: () => ['tankers', 'available'],
+    all: () => ["tankers"],
+    byId: (tankerId) => ["tankers", tankerId],
+    total: () => ["tankers", "total"],
+    available: () => ["tankers", "available"],
   },
   // Bookings
   bookings: {
-    all: () => ['bookings'],
-    byId: (bookingId) => ['bookings', bookingId],
-    byUser: (userId) => ['bookings', 'user', userId],
-    pending: () => ['bookings', 'pending'],
+    all: () => ["bookings"],
+    byId: (bookingId) => ["bookings", bookingId],
+    byUser: (userId) => ["bookings", "user", userId],
+    pending: () => ["bookings", "pending"],
   },
   // Drivers
   drivers: {
-    all: () => ['drivers'],
-    byId: (driverId) => ['drivers', driverId],
-    deliveryReport: (driverId, startDate, endDate) => ['drivers', 'deliveryReport', driverId, startDate, endDate],
+    all: () => ["drivers"],
+    byId: (driverId) => ["drivers", driverId],
+    deliveryReport: (driverId, startDate, endDate) => [
+      "drivers",
+      "deliveryReport",
+      driverId,
+      startDate,
+      endDate,
+    ],
   },
   // Requests
   requests: {
-    all: () => ['requests'],
-    pending: () => ['requests', 'pending'],
-    totalPending: () => ['requests', 'totalPending'],
+    all: () => ["requests"],
+    pending: () => ["requests", "pending"],
+    totalPending: () => ["requests", "totalPending"],
   },
   // Notifications
   notifications: {
-    all: () => ['notifications'],
-    byId: (notificationId) => ['notifications', notificationId],
+    all: () => ["notifications"],
+    byId: (notificationId) => ["notifications", notificationId],
   },
   // Complaints
   complaints: {
-    all: () => ['complaints'],
-    byId: (complaintId) => ['complaints', complaintId],
+    all: () => ["complaints"],
+    byId: (complaintId) => ["complaints", complaintId],
   },
   // Admins
   admins: {
-    all: () => ['admins'],
+    all: () => ["admins"],
   },
   // Sensors
   sensors: {
-    all: () => ['sensors'],
-    available: () => ['sensors', 'available'],
+    all: () => ["sensors"],
+    available: () => ["sensors", "available"],
   },
   // Tanks
   tanks: {
-    waterLevel: (tankId) => ['tanks', 'waterLevel', tankId],
-    waterLevelGallons: (tankId) => ['tanks', 'waterLevelGallons', tankId],
-    hourlyStatus: (customerId, startDate, endDate) => ['tanks', 'hourlyStatus', customerId, startDate, endDate],
+    waterLevel: (tankId) => ["tanks", "waterLevel", tankId],
+    waterLevelGallons: (tankId) => ["tanks", "waterLevelGallons", tankId],
+    hourlyStatus: (customerId, startDate, endDate) => [
+      "tanks",
+      "hourlyStatus",
+      customerId,
+      startDate,
+      endDate,
+    ],
   },
   // Audit
   audit: {
-    logs: () => ['audit', 'logs'],
+    logs: () => ["audit", "logs"],
   },
 };
