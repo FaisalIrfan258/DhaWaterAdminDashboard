@@ -134,7 +134,7 @@ export default function TankersPage() {
         capacity: Number.parseInt(data.capacity),
         availability_status: data.availability_status,
         plate_number: data.plate_number,
-        price_per_liter: data.price_per_liter,
+        price_per_gallon: data.price_per_gallon,
         cost: data.cost,
         assigned_driver_id: data.assigned_driver_id
           ? Number.parseInt(data.assigned_driver_id)
@@ -163,7 +163,7 @@ export default function TankersPage() {
         capacity: Number.parseInt(data.capacity),
         availability_status: data.availability_status,
         plate_number: data.plate_number,
-        price_per_liter: data.price_per_liter,
+        price_per_gallon: data.price_per_gallon,
         cost: data.cost,
         assigned_driver_id: data.assigned_driver_id
           ? Number.parseInt(data.assigned_driver_id)
