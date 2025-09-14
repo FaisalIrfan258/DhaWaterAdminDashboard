@@ -273,8 +273,8 @@ export default function DriversPage() {
 
     try {
       await updateDriverMutation.mutateAsync({
-        id: selectedDriver.driver_id,
-        data: {
+        driverId: selectedDriver.driver_id,
+        driverData: {
           full_name: editFullName,
           email: editEmail,
           phone_number: editPhoneNumber,
