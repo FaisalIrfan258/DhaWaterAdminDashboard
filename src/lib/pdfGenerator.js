@@ -112,7 +112,7 @@ class PDFGenerator {
    * @param {Object} options - Formatting options
    */
   addKeyValueSection(data, options = {}) {
-    const { columns = 2, keyWidth = 60, fontSize = 10, spacing = 8 } = options;
+    const { columns = 2, keyWidth = 50, fontSize = 10, spacing = 10 } = options;
 
     this.doc.setFontSize(fontSize);
     this.doc.setFont("helvetica", "normal");
@@ -127,14 +127,27 @@ class PDFGenerator {
       for (let j = 0; j < itemsPerRow && i + j < data.length; j++) {
         const item = data[i + j];
         const x = this.margin + j * columnWidth;
+        
+        // Calculate available width for value text
+        const valueX = x + keyWidth;
+        const availableWidth = columnWidth - keyWidth - 5; // 5mm padding
 
         // Key (bold)
         this.doc.setFont("helvetica", "bold");
         this.doc.text(`${item.key}:`, x, this.currentY);
 
-        // Value (normal)
+        // Value (normal) - with text wrapping if needed
         this.doc.setFont("helvetica", "normal");
-        this.doc.text(String(item.value || "N/A"), x + keyWidth, this.currentY);
+        const valueText = String(item.value || "N/A");
+        
+        // Split long text if it exceeds available width
+        const textWidth = this.doc.getTextWidth(valueText);
+        if (textWidth > availableWidth) {
+          const lines = this.doc.splitTextToSize(valueText, availableWidth);
+          this.doc.text(lines, valueX, this.currentY);
+        } else {
+          this.doc.text(valueText, valueX, this.currentY);
+        }
       }
 
       this.currentY += spacing;
@@ -358,53 +371,7 @@ class PDFGenerator {
     return this;
   }
 
-  /**
-   * Add custom text with formatting options
-   * @param {string} text - Text to add
-   * @param {Object} options - Formatting options
-   */
-  addText(text, options = {}) {
-    const {
-      fontSize = 12,
-      style = "normal",
-      align = "left",
-      marginTop = 10,
-      x = 20,
-      color = [0, 0, 0],
-    } = options;
 
-    this.currentY += marginTop;
-
-    this.doc.setFontSize(fontSize);
-    this.doc.setTextColor(...color);
-
-    if (style === "italic") {
-      this.doc.setFont("helvetica", "italic");
-    } else if (style === "bold") {
-      this.doc.setFont("helvetica", "bold");
-    } else {
-      this.doc.setFont("helvetica", "normal");
-    }
-
-    if (align === "center") {
-      this.doc.text(text, this.doc.internal.pageSize.width / 2, this.currentY, {
-        align: "center",
-      });
-    } else if (align === "right") {
-      this.doc.text(
-        text,
-        this.doc.internal.pageSize.width - 20,
-        this.currentY,
-        { align: "right" }
-      );
-    } else {
-      this.doc.text(text, x, this.currentY);
-    }
-
-    this.currentY += fontSize * 0.5;
-
-    return this;
-  }
 
   /**
    * Add signature blocks for document approval

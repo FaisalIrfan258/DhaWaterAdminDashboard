@@ -14,6 +14,14 @@ import {
 } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
+import {
   Car,
   RefreshCw,
   X,
@@ -441,12 +449,20 @@ export default function DriversPage() {
     const options = {
       table: {
         columnStyles: {
-          0: { cellWidth: 25 },
-          1: { cellWidth: 35 },
-          2: { cellWidth: 25 },
-          3: { cellWidth: 25 },
-          4: { cellWidth: 40 },
-          5: { cellWidth: 20 },
+          0: { cellWidth: 20 }, // Booking ID - reduced
+          1: { cellWidth: 30 }, // Customer - reduced
+          2: { cellWidth: 25 }, // Tanker - same
+          3: { cellWidth: 22 }, // Date - reduced
+          4: { cellWidth: 50 }, // Address - increased for longer text
+          5: { cellWidth: 18 }, // Status - reduced
+        },
+        bodyStyles: {
+          fontSize: 8, // Smaller font to fit more text
+          cellPadding: 2,
+        },
+        headStyles: {
+          fontSize: 9,
+          cellPadding: 3,
         },
       },
     };
