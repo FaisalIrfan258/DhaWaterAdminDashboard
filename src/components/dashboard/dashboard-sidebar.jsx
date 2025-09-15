@@ -78,6 +78,7 @@ const CustomSidebar = () => {
           width={80}
           height={80}
           priority={true}
+          style={{ width: 'auto', height: 'auto' }}
         />
         <Image
           src="/assets/dhasrviceslogo.jpg"
@@ -85,6 +86,7 @@ const CustomSidebar = () => {
           width={80}
           height={80}
           priority={true}
+          style={{ width: 'auto', height: 'auto' }}
         />
       </div>
       <div className="p-4 mt-4">
