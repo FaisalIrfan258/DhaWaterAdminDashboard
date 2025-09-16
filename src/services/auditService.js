@@ -6,7 +6,7 @@ class AuditService {
    * @returns {Promise<Array>} List of audit logs
    */
   async getAuditLogs() {
-    return await get("/api/auditLogs/get-audit-logs");
+    return await get("/auditLogs/get-audit-logs");
   }
 }
 

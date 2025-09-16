@@ -6,7 +6,7 @@ class NotificationService {
    * @returns {Promise<Array>} List of notifications
    */
   async getAllNotifications() {
-    return await get("/api/notification/all-notifications");
+    return await get("/notification/all-notifications");
   }
 
   /**
@@ -15,7 +15,7 @@ class NotificationService {
    * @returns {Promise<Object>} Notification data
    */
   async getNotificationById(notificationId) {
-    return await get(`/api/notification/single-notification/${notificationId}`);
+    return await get(`/notification/single-notification/${notificationId}`);
   }
 
   /**
@@ -25,7 +25,7 @@ class NotificationService {
    */
   async createNotification(notificationData) {
     return await post(
-      "/api/notification/create-notification",
+      "/notification/create-notification",
       notificationData
     );
   }
@@ -37,7 +37,7 @@ class NotificationService {
    */
   async createNotificationForAll(notificationData) {
     return await post(
-      "/api/notification/create-notification-for-all",
+      "/notification/create-notification-for-all",
       notificationData
     );
   }
@@ -50,7 +50,7 @@ class NotificationService {
    */
   async updateNotification(notificationId, notificationData) {
     return await put(
-      `/api/notification/update-notification/${notificationId}`,
+      `/notification/update-notification/${notificationId}`,
       notificationData
     );
   }
@@ -61,7 +61,7 @@ class NotificationService {
    * @returns {Promise<Object>} Deletion response
    */
   async deleteNotification(notificationId) {
-    return await del(`/api/notification/delete-notification/${notificationId}`);
+    return await del(`/notification/delete-notification/${notificationId}`);
   }
 }
 

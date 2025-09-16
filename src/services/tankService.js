@@ -7,7 +7,7 @@ class TankService {
    * @returns {Promise<Object>} Latest water level data
    */
   async getLatestWaterLevel(tankId) {
-    return await get(`/api/tankStatus/latest-water-level/?tank_id=${tankId}`);
+    return await get(`/tankStatus/latest-water-level/?tank_id=${tankId}`);
   }
 
   /**
@@ -17,7 +17,7 @@ class TankService {
    */
   async getLatestWaterLevelGallons(tankId) {
     return await get(
-      `/api/tankStatus/latest-water-level-gallons/?tank_id=${tankId}`
+      `/tankStatus/latest-water-level-gallons/?tank_id=${tankId}`
     );
   }
 
@@ -30,7 +30,7 @@ class TankService {
    */
   async getHourlyTankStatus(customerId, startDate, endDate) {
     return await get(
-      `/api/tankStatus/hourly-tank-status?customer_id=${customerId}&start_date=${startDate}&end_date=${endDate}`
+      `/tankStatus/hourly-tank-status?customer_id=${customerId}&start_date=${startDate}&end_date=${endDate}`
     );
   }
 }

@@ -6,7 +6,7 @@ class ComplaintService {
    * @returns {Promise<Array>} List of complaints
    */
   async getAllComplaints() {
-    return await get("/api/complain/all-complains");
+    return await get("/complain/all-complains");
   }
 
   /**
@@ -17,7 +17,7 @@ class ComplaintService {
    */
   async updateComplaintRemarks(complaintId, remarksData) {
     return await put(
-      `/api/complain/update-complain-remarks/${complaintId}`,
+      `/complain/update-complain-remarks/${complaintId}`,
       remarksData
     );
   }

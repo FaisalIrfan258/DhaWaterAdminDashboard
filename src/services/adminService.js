@@ -6,7 +6,7 @@ class AdminService {
    * @returns {Promise<Array>} List of admins
    */
   async getAllAdmins() {
-    return await get("/api/superadmin/view-admins");
+    return await get("/superadmin/view-admins");
   }
 
   /**
@@ -15,7 +15,7 @@ class AdminService {
    * @returns {Promise<Object>} Created admin data
    */
   async createAdmin(adminData) {
-    return await post("/api/superadmin/create-admin", adminData);
+    return await post("/superadmin/create-admin", adminData);
   }
 
   /**
@@ -24,7 +24,7 @@ class AdminService {
    * @returns {Promise<Object>} Updated admin data
    */
   async updateAdmin(adminData) {
-    return await put("/api/superadmin/update-admin", adminData);
+    return await put("/superadmin/update-admin", adminData);
   }
 
   /**
@@ -33,7 +33,7 @@ class AdminService {
    * @returns {Promise<Object>} Deletion response
    */
   async deleteAdmin(adminId) {
-    return await del(`/api/superadmin/delete-admin?admin_id=${adminId}`);
+    return await del(`/superadmin/delete-admin?admin_id=${adminId}`);
   }
 }
 

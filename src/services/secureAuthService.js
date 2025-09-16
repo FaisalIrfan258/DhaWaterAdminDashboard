@@ -10,7 +10,7 @@ class SecureAuthService {
    */
   async adminLogin(credentials) {
     try {
-      const response = await securePost("/api/admin/login", credentials);
+      const response = await securePost("/admin/login", credentials);
 
       // The server should set httpOnly cookies automatically
       // No need to store anything in localStorage
@@ -33,7 +33,7 @@ class SecureAuthService {
    */
   async superAdminLogin(credentials) {
     try {
-      const response = await securePost("/api/superadmin/login", credentials);
+      const response = await securePost("/superadmin/login", credentials);
 
       // The server should set httpOnly cookies automatically
       return response;
@@ -52,7 +52,7 @@ class SecureAuthService {
    */
   async logout() {
     try {
-      await securePost("/api/auth/logout", {});
+      await securePost("/auth/logout", {});
 
       // Clear any client-side data if needed
       if (typeof window !== "undefined") {
@@ -76,7 +76,7 @@ class SecureAuthService {
    */
   async isAuthenticated() {
     try {
-      const response = await secureGet("/api/auth/verify");
+      const response = await secureGet("/auth/verify");
       return response.authenticated === true;
     } catch (error) {
       return false;
@@ -89,7 +89,7 @@ class SecureAuthService {
    */
   async getCurrentUser() {
     try {
-      const response = await secureGet("/api/auth/user");
+      const response = await secureGet("/auth/user");
 
       return {
         id: response.user_id,
@@ -123,7 +123,7 @@ class SecureAuthService {
    */
   async refreshToken() {
     try {
-      await securePost("/api/auth/refresh", {});
+      await securePost("/auth/refresh", {});
       return true;
     } catch (error) {
       console.error("Token refresh failed:", error);
@@ -137,7 +137,7 @@ class SecureAuthService {
    */
   async getCSRFToken() {
     try {
-      const response = await secureGet("/api/auth/csrf");
+      const response = await secureGet("/auth/csrf");
       return response.csrf_token;
     } catch (error) {
       console.error("Error fetching CSRF token:", error);

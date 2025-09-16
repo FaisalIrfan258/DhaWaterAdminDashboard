@@ -6,7 +6,7 @@ class TankerService {
    * @returns {Promise<Array>} List of tankers
    */
   async getAllTankers() {
-    return await get("/api/tankers");
+    return await get("/tankers");
   }
 
   /**
@@ -15,7 +15,7 @@ class TankerService {
    * @returns {Promise<Object>} Tanker data
    */
   async getTankerById(tankerId) {
-    return await get(`/api/tankers/${tankerId}`);
+    return await get(`/tankers/${tankerId}`);
   }
 
   /**
@@ -24,7 +24,7 @@ class TankerService {
    * @returns {Promise<Object>} Created tanker data
    */
   async createTanker(tankerData) {
-    return await post("/api/tankers", tankerData);
+    return await post("/tankers", tankerData);
   }
 
   /**
@@ -34,7 +34,7 @@ class TankerService {
    * @returns {Promise<Object>} Updated tanker data
    */
   async updateTanker(tankerId, tankerData) {
-    return await put(`/api/tankers/${tankerId}`, tankerData);
+    return await put(`/tankers/${tankerId}`, tankerData);
   }
 
   /**
@@ -43,7 +43,7 @@ class TankerService {
    * @returns {Promise<Object>} Deletion response
    */
   async deleteTanker(tankerId) {
-    return await del(`/api/tankers/${tankerId}`);
+    return await del(`/tankers/${tankerId}`);
   }
 
   /**
@@ -51,7 +51,7 @@ class TankerService {
    * @returns {Promise<Array>} List of available tankers
    */
   async getAvailableTankers() {
-    return await get("/api/tankers/available-tankers");
+    return await get("/tankers/available-tankers");
   }
 
   /**
@@ -59,7 +59,7 @@ class TankerService {
    * @returns {Promise<Object>} Total tankers count
    */
   async getTotalTankers() {
-    return await get("/api/tankers/total-tankers");
+    return await get("/tankers/total-tankers");
   }
 }
 

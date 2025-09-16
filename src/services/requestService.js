@@ -6,7 +6,7 @@ class RequestService {
    * @returns {Promise<Array>} List of requests
    */
   async getAllRequests() {
-    return await get("/api/admin/requests");
+    return await get("/admin/requests");
   }
 
   /**
@@ -14,7 +14,7 @@ class RequestService {
    * @returns {Promise<Object>} Total pending requests count
    */
   async getTotalPendingRequests() {
-    return await get("/api/admin/total-pending-requests");
+    return await get("/admin/total-pending-requests");
   }
 
   /**
@@ -23,7 +23,7 @@ class RequestService {
    * @returns {Promise<Object>} Acceptance response
    */
   async acceptRequest(requestData) {
-    return await post("/api/accept-request", requestData);
+    return await post("/accept-request", requestData);
   }
 
   /**
@@ -34,7 +34,7 @@ class RequestService {
    */
   async rejectRequest(requestId, rejectionData) {
     return await put(
-      `/api/bookings/reject-request/${requestId}`,
+      `/bookings/reject-request/${requestId}`,
       rejectionData
     );
   }

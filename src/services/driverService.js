@@ -6,7 +6,7 @@ class DriverService {
    * @returns {Promise<Array>} List of drivers
    */
   async getAllDrivers() {
-    return await get("/api/driver/all");
+    return await get("/driver/all");
   }
 
   /**
@@ -15,7 +15,7 @@ class DriverService {
    * @returns {Promise<Object>} Driver data
    */
   async getDriverById(driverId) {
-    return await get(`/api/driver/${driverId}`);
+    return await get(`/driver/${driverId}`);
   }
 
   /**
@@ -24,7 +24,7 @@ class DriverService {
    * @returns {Promise<Object>} Created driver data
    */
   async createDriver(driverData) {
-    return await post("/api/driver/create", driverData);
+    return await post("/driver/create", driverData);
   }
 
   /**
@@ -34,7 +34,7 @@ class DriverService {
    * @returns {Promise<Object>} Updated driver data
    */
   async updateDriver(driverId, driverData) {
-    return await put(`/api/driver/update/${driverId}`, driverData);
+    return await put(`/driver/update/${driverId}`, driverData);
   }
 
   /**
@@ -43,7 +43,7 @@ class DriverService {
    * @returns {Promise<Object>} Deletion response
    */
   async deleteDriver(driverId) {
-    return await del(`/api/driver/delete/${driverId}`);
+    return await del(`/driver/delete/${driverId}`);
   }
 
   /**
@@ -55,7 +55,7 @@ class DriverService {
    */
   async getDriverDeliveryReport(driverId, startDate, endDate) {
     return await get(
-      `/api/driver/delivery-report/${driverId}?start_date=${startDate}&end_date=${endDate}`
+      `/driver/delivery-report/${driverId}?start_date=${startDate}&end_date=${endDate}`
     );
   }
 }

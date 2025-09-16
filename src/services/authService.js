@@ -10,7 +10,7 @@ class AuthService {
    */
   async adminLogin(credentials) {
     try {
-      const response = await post("/api/admin/login", credentials);
+      const response = await post("/admin/login", credentials);
 
       // Store auth data in localStorage
       this.storeAuthDataFromAPI(response, "admin");
@@ -34,7 +34,7 @@ class AuthService {
    */
   async superAdminLogin(credentials) {
     try {
-      const response = await post("/api/superadmin/login", credentials);
+      const response = await post("/superadmin/login", credentials);
 
       // Store auth data in localStorage
       this.storeAuthDataFromAPI(response, "superAdmin");

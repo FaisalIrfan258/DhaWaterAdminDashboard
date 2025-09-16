@@ -6,7 +6,7 @@ class BookingService {
    * @returns {Promise<Array>} List of bookings
    */
   async getAllBookings() {
-    return await get("/api/bookings/all-bookings");
+    return await get("/bookings/all-bookings");
   }
 
   /**
@@ -15,7 +15,7 @@ class BookingService {
    * @returns {Promise<Object>} Booking data
    */
   async getBookingById(bookingId) {
-    return await get(`/api/bookings/single-booking/${bookingId}`);
+    return await get(`/bookings/single-booking/${bookingId}`);
   }
 
   /**
@@ -24,7 +24,7 @@ class BookingService {
    * @returns {Promise<Object>} Created booking data
    */
   async createBooking(bookingData) {
-    return await post("/api/bookings/create-booking", bookingData);
+    return await post("/bookings/create-booking", bookingData);
   }
 
   /**
@@ -34,7 +34,7 @@ class BookingService {
    * @returns {Promise<Object>} Updated booking data
    */
   async updateBooking(bookingId, bookingData) {
-    return await put(`/api/bookings/update-booking/${bookingId}`, bookingData);
+    return await put(`/bookings/update-booking/${bookingId}`, bookingData);
   }
 
   /**
@@ -43,7 +43,7 @@ class BookingService {
    * @returns {Promise<Object>} Deletion response
    */
   async deleteBooking(bookingId) {
-    return await del(`/api/bookings/delete-booking/${bookingId}`);
+    return await del(`/bookings/delete-booking/${bookingId}`);
   }
 
   /**
@@ -54,7 +54,7 @@ class BookingService {
    */
   async rejectRequest(requestId, rejectionData) {
     return await put(
-      `/api/bookings/reject-request/${requestId}`,
+      `/bookings/reject-request/${requestId}`,
       rejectionData
     );
   }
@@ -65,7 +65,7 @@ class BookingService {
    * @returns {Promise<Object>} Acceptance response
    */
   async acceptRequest(requestData) {
-    return await post("/api/accept-request", requestData);
+    return await post("/accept-request", requestData);
   }
 
   /**
@@ -74,7 +74,7 @@ class BookingService {
    * @returns {Promise<Array>} User bookings
    */
   async getUserBookings(userId) {
-    return await get(`/api/bookings/my-bookings/${userId}`);
+    return await get(`/bookings/my-bookings/${userId}`);
   }
 }
 

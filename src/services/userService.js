@@ -6,7 +6,7 @@ class UserService {
    * @returns {Promise<Array>} List of users
    */
   async getAllUsers() {
-    return await get("/api/users/");
+    return await get("/users/");
   }
 
   /**
@@ -15,7 +15,7 @@ class UserService {
    * @returns {Promise<Object>} User profile data
    */
   async getUserProfile(userId) {
-    return await get(`/api/customer/customer-profile?customer_id=${userId}`);
+    return await get(`/customer/customer-profile?customer_id=${userId}`);
   }
 
   /**
@@ -24,7 +24,7 @@ class UserService {
    * @returns {Promise<Object>} Created user data
    */
   async createUser(userData) {
-    return await post("/api/users/signup", userData);
+    return await post("/users/signup", userData);
   }
 
   /**
@@ -33,7 +33,7 @@ class UserService {
    * @returns {Promise<Object>} Updated user data
    */
   async updateUser(userData) {
-    return await put("/api/customer/update", userData);
+    return await put("/customer/update", userData);
   }
 
   /**
@@ -42,7 +42,7 @@ class UserService {
    * @returns {Promise<Object>} Deletion response
    */
   async deleteUser(userId) {
-    return await del(`/api/customer/delete?customer_id=${userId}`);
+    return await del(`/customer/delete?customer_id=${userId}`);
   }
 
   /**
@@ -51,7 +51,7 @@ class UserService {
    * @returns {Promise<Array>} User bookings
    */
   async getUserBookings(userId) {
-    return await get(`/api/bookings/my-bookings/${userId}`);
+    return await get(`/bookings/my-bookings/${userId}`);
   }
 
   /**
@@ -63,7 +63,7 @@ class UserService {
    */
   async getUserTankStatus(userId, startDate, endDate) {
     return await get(
-      `/api/tankStatus/hourly-tank-status?customer_id=${userId}&start_date=${startDate}&end_date=${endDate}`
+      `/tankStatus/hourly-tank-status?customer_id=${userId}&start_date=${startDate}&end_date=${endDate}`
     );
   }
 
@@ -72,7 +72,7 @@ class UserService {
    * @returns {Promise<Object>} Total users count
    */
   async getTotalUsers() {
-    return await get("/api/customer/total-users");
+    return await get("/customer/total-users");
   }
 }
 
