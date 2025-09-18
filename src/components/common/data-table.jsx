@@ -147,15 +147,15 @@ export function DataTable({
           </TableHeader>
           <TableBody>
             {[...Array(5)].map((_, index) => (
-              <TableRow key={index}>
+              <TableRow key={index} className="border-b border-border/50">
                 {columns.map((_, colIndex) => (
-                  <TableCell key={colIndex}>
-                    <div className="h-4 bg-muted animate-pulse rounded" />
+                  <TableCell key={colIndex} className="py-4 px-6">
+                    <div className="h-4 bg-muted animate-pulse rounded-md" />
                   </TableCell>
                 ))}
                 {showActions && actions.length > 0 && (
-                  <TableCell>
-                    <div className="h-8 w-8 bg-muted animate-pulse rounded" />
+                  <TableCell className="py-4 px-6 text-center">
+                    <div className="h-8 w-8 bg-muted animate-pulse rounded-md mx-auto" />
                   </TableCell>
                 )}
               </TableRow>
@@ -167,15 +167,15 @@ export function DataTable({
   }
 
   return (
-    <div className={cn("rounded-md border bg-card", className)} {...props}>
+    <div className={cn("rounded-lg border bg-card shadow-sm overflow-hidden", className)} {...props}>
       <Table>
         <TableHeader>
-          <TableRow className="hover:bg-muted/50">
+          <TableRow className="bg-muted/30 hover:bg-muted/50 border-b">
             {columns.map((column, index) => (
               <TableHead
                 key={index}
                 className={cn(
-                  "font-semibold text-muted-foreground",
+                  "font-semibold text-foreground h-12 px-6",
                   column.headerClassName,
                   column.align === "right" && "text-right",
                   column.align === "center" && "text-center"
@@ -186,7 +186,7 @@ export function DataTable({
               </TableHead>
             ))}
             {showActions && actions.length > 0 && (
-              <TableHead className="w-[80px]"></TableHead>
+              <TableHead className="w-[80px] text-center">Actions</TableHead>
             )}
           </TableRow>
         </TableHeader>
@@ -197,16 +197,21 @@ export function DataTable({
                 colSpan={
                   columns.length + (showActions && actions.length > 0 ? 1 : 0)
                 }
-                className="text-center py-12 text-muted-foreground"
+                className="text-center py-16"
               >
-                <div className="flex flex-col items-center gap-2">
-                  <div className="text-4xl opacity-20">📋</div>
-                  <div className="font-medium">
+                <div className="flex flex-col items-center gap-3">
+                  <div className="text-5xl opacity-30">📋</div>
+                  <div className="font-medium text-foreground">
                     {searchQuery ? searchEmptyMessage : emptyMessage}
                   </div>
                   {searchQuery && (
                     <div className="text-sm text-muted-foreground">
-                      Try adjusting your search terms
+                      Try adjusting your search terms or filters
+                    </div>
+                  )}
+                  {!searchQuery && (
+                    <div className="text-sm text-muted-foreground">
+                      Data will appear here when available
                     </div>
                   )}
                 </div>
@@ -217,8 +222,10 @@ export function DataTable({
               <TableRow
                 key={item.id || index}
                 className={cn(
-                  "hover:bg-muted/50 transition-colors cursor-pointer",
-                  hoveredRow === index && "bg-muted/30",
+                  "hover:bg-muted/40 transition-all duration-200 cursor-pointer border-b border-border/50",
+                  hoveredRow === index && "bg-muted/30 shadow-sm",
+                  index % 2 === 0 && "bg-background",
+                  index % 2 === 1 && "bg-muted/10",
                   rowClassName && rowClassName(item, index)
                 )}
                 onClick={() => onRowClick && onRowClick(item, index)}
@@ -229,7 +236,7 @@ export function DataTable({
                   <TableCell
                     key={colIndex}
                     className={cn(
-                      "py-3",
+                      "py-4 px-6 text-sm",
                       column.cellClassName,
                       column.align === "right" && "text-right",
                       column.align === "center" && "text-center"
@@ -239,7 +246,7 @@ export function DataTable({
                   </TableCell>
                 ))}
                 {showActions && actions.length > 0 && (
-                  <TableCell className="py-3">
+                  <TableCell className="py-4 px-6 text-center">
                     {renderActions(item, index)}
                   </TableCell>
                 )}

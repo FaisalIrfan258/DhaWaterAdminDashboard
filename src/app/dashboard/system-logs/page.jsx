@@ -137,36 +137,22 @@ export default function SystemLogsPage() {
 
   return (
     <DashboardShell>
-      <DashboardHeader heading="System Logs" text="View all system audit logs">
-        <div className="flex items-center space-x-2">
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={handleRefresh}
-            disabled={refreshAuditLogs.isPending}
-          >
-            <RefreshCw
-              className={`h-4 w-4 mr-2 ${
-                refreshAuditLogs.isPending ? "animate-spin" : ""
-              }`}
-            />
-            Refresh
-          </Button>
-        </div>
+      <DashboardHeader
+        heading="System Logs"
+        text="View and monitor all system activities and changes."
+      >
+        <Button
+          onClick={handleRefresh}
+          disabled={refreshAuditLogs.isPending}
+          size="sm"
+          className="gap-2"
+        >
+          <RefreshCw className={`h-4 w-4 ${refreshAuditLogs.isPending ? 'animate-spin' : ''}`} />
+          Refresh
+        </Button>
       </DashboardHeader>
 
       <div className="space-y-4">
-        <div className="flex items-center justify-between">
-          <div className="w-full md:w-1/2 lg:w-1/3">
-            <SearchInput
-              placeholder="Search logs..."
-              value={searchQuery}
-              onChange={handleSearch}
-              className="h-9"
-            />
-          </div>
-        </div>
-
         <Card>
           <CardHeader>
             <CardTitle>System Audit Logs</CardTitle>
@@ -175,6 +161,21 @@ export default function SystemLogsPage() {
             </CardDescription>
           </CardHeader>
           <CardContent>
+            <div className="flex justify-between items-center mb-4">
+              <SearchInput
+                placeholder="Search logs..."
+                value={searchQuery}
+                onChange={handleSearch}
+                className="w-64"
+              />
+              
+              {searchQuery && (
+                <div className="text-sm text-muted-foreground">
+                  Found {filteredLogs.length}{" "}
+                  {filteredLogs.length === 1 ? "log" : "logs"}
+                </div>
+              )}
+            </div>
             {isLoading ? (
               <div className="py-6 text-center text-muted-foreground">
                 Loading logs...
